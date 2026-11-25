@@ -1,15 +1,21 @@
 import 'dart:io';
 
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:planora/core/calc/planora_calc.dart';
+import 'package:planora/core/calc/planora_v22_calc.dart';
 import 'package:planora/core/format/formatters.dart';
 import 'package:planora/core/theme/app_theme.dart';
+import 'package:planora/core/theme/chart_tokens.dart';
 import 'package:planora/core/theme/planora_colors.dart';
+import 'package:planora/data/db/app_database.dart';
 import 'package:planora/data/repositories/portfolio_repository.dart';
+import 'package:planora/data/repositories/settings_repository.dart';
 import 'package:planora/features/portfolios/contribution_sheet.dart';
 import 'package:planora/features/shared/planora_providers.dart';
+import 'package:planora/widgets/planora_charts.dart';
+import 'package:planora/widgets/planora_logo.dart';
 import 'package:planora/widgets/planora_widgets.dart';
 import 'package:planora/widgets/rebalance_dialog.dart';
 
@@ -21,48 +27,31 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  late DateTime _selectedMonth;
-
-  @override
-  void initState() {
-    super.initState();
-    final now = DateTime.now();
-    _selectedMonth = DateTime(now.year, now.month, 1);
-  }
-
-  bool get _isCurrentMonth {
-    final now = DateTime.now();
-    return _selectedMonth.year == now.year && _selectedMonth.month == now.month;
-  }
-
-  String _greeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 11) return 'Selamat pagi,';
-    if (hour < 15) return 'Selamat siang,';
-    if (hour < 18) return 'Selamat sore,';
-    return 'Selamat malam,';
-  }
+  DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
+  int _chartMonths = 6; // 6 atau 12 bulan (Bab 6)
+  String _chartKind = 'area'; // 'area' | 'stacked'
 
   void _shiftMonth(int delta) {
-    final now = DateTime.now();
-    final next = DateTime(_selectedMonth.year, _selectedMonth.month + delta, 1);
-    final currentMonth = DateTime(now.year, now.month, 1);
-    if (next.isAfter(currentMonth)) return;
-    setState(() => _selectedMonth = next);
+    setState(() {
+      _selectedMonth =
+          DateTime(_selectedMonth.year, _selectedMonth.month + delta);
+    });
   }
 
-  Future<void> _scaleDownToCeiling(FinancialSummary summary) async {
+  Future<void> _showScaleDownDialog(
+    List<PortfolioSnapshot> snapshots,
+    FinancialSummary summary,
+  ) async {
     final ceiling = summary.ceiling;
     if (ceiling == null) return;
 
-    final portfolios = ref.read(portfoliosStreamProvider).value ?? const [];
     final result = PlanoraCalc.scaleAllToCeiling(
-      items: portfolios
+      items: snapshots
           .map(
-            (p) => RebalanceItem(
-              id: p.id,
-              name: p.name,
-              currentAmount: p.monthlyPlan,
+            (s) => RebalanceItem(
+              id: s.portfolio.id,
+              name: s.portfolio.name,
+              currentAmount: s.portfolio.monthlyPlan,
             ),
           )
           .toList(),
@@ -94,39 +83,99 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final profile = ref.watch(userProfileStreamProvider).value;
     final summary = ref.watch(financialSummaryProvider);
     final snapshots = ref.watch(portfolioSnapshotsProvider);
+    final dashboard = ref.watch(dashboardDataProvider);
+    final profile = ref.watch(userProfileStreamProvider).value;
     final checklist = ref.watch(monthlyChecklistProvider(_selectedMonth));
-    final completedCount = checklist.where((c) => c.isCompleted).length;
     final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final now = DateTime.now();
 
-    // Nama sapaan hanya dari Profil Pengguna lokal (FR-03)
-    final nick = profile?.displayName?.trim();
-    final displayTitle = (nick != null && nick.isNotEmpty) ? nick : 'Planora';
-    final avatarPath = profile?.avatarPath;
-    final hasPhoto = avatarPath != null &&
-        avatarPath.isNotEmpty &&
-        File(avatarPath).existsSync();
-    final initial =
-        (nick != null && nick.isNotEmpty) ? nick[0].toUpperCase() : '';
+    final nickName = profile?.displayName?.trim();
+    final greeting =
+        (nickName != null && nickName.isNotEmpty) ? 'Halo, $nickName' : 'Halo';
 
+    if (snapshots.isEmpty) {
+      return Scaffold(
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+            children: [
+              _HeaderRow(
+                greeting: greeting,
+                todayLabel: AppFormatters.shortDate(now),
+                profile: profile,
+                progressPercent: null,
+                onTapProfile: () => context.push('/profile'),
+                onTapHistory: () => context.push('/contributions'),
+              ),
+              const SizedBox(height: 36),
+              PlanoraCard(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 22,
+                  vertical: 28,
+                ),
+                child: Column(
+                  children: [
+                    const PlanoraLogo(size: 72),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Mulai atur tujuan keuanganmu',
+                      textAlign: TextAlign.center,
+                      style: AppTheme.sora(
+                        size: 16.5,
+                        weight: FontWeight.w700,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Catat target, porsi instrumen, dan setoran bulanan langsung di HP — tanpa akun dan tanpa internet.',
+                      textAlign: TextAlign.center,
+                      style: AppTheme.manrope(
+                        size: 12.5,
+                        color: cs.onSurfaceVariant,
+                        height: 1.45,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: () => context.push('/portfolios/new'),
+                        child: const Text('Buat porto pertama'),
+                      ),
+                    ),
+                    if (!summary.hasCeiling) ...[
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: () => context.go('/settings'),
+                          child: const Text('Atur Gaji & Biaya Hidup'),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final completedCount = checklist.where((r) => r.isCompleted).length;
     final ceiling = summary.ceiling;
-    final ceilingRatio = (ceiling == null || ceiling <= 0)
-        ? 0.0
-        : (summary.totalMonthlyPlan / ceiling).clamp(0.0, 1.0);
+    final ceilingRatio = (ceiling != null && ceiling > 0)
+        ? (summary.totalMonthlyPlan / ceiling).clamp(0.0, 1.0)
+        : 0.0;
 
-    // Subtotal dinamis per instrumen yang benar-benar dipakai (FR-28)
-    final instrumentEntries = summary.instrumentSubtotals.entries.toList()
+    final sortedInstruments = summary.instrumentSubtotals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    final topRemaining = snapshots
-        .where((s) => s.hasTarget && s.remaining > 0)
-        .toList()
-      ..sort((a, b) => b.remaining.compareTo(a.remaining));
-    final topTwo = topRemaining.take(2).toList();
-
-    final plafonChip = ceiling == null
+    final ceilingChip = ceiling == null
         ? PlanoraPill.gray('Belum diatur')
         : (summary.isOverCeiling
             ? PlanoraPill.danger('Melebihi batas')
@@ -134,269 +183,256 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ? PlanoraPill.green('Pas batas')
                 : PlanoraPill.green('Dalam batas')));
 
+    final areaPoints = _chartMonths == 12
+        ? dashboard.balanceSeries12m
+        : dashboard.balanceSeries6m;
+
+    final momText = dashboard.momDeltaAmount == 0
+        ? 'Sama dengan bulan lalu'
+        : (dashboard.momDeltaAmount > 0
+            ? '+${AppFormatters.rupiah(dashboard.momDeltaAmount)}'
+            : AppFormatters.rupiah(dashboard.momDeltaAmount));
+    final momPctText = dashboard.momDeltaPercent != null
+        ? ' (${dashboard.momDeltaPercent! >= 0 ? '+' : ''}${PlanoraV22Calc.formatPercent(dashboard.momDeltaPercent!)})'
+        : '';
+
     return Scaffold(
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
           children: [
-            // App Bar: Avatar membuka Profil lokal, lonceng membuka Riwayat
-            Row(
-              children: [
-                InkWell(
-                  borderRadius: BorderRadius.circular(24),
-                  onTap: () => context.push('/profile'),
-                  child: CircleAvatar(
-                    radius: 19,
-                    backgroundColor: PlanoraColors.primary,
-                    backgroundImage:
-                        hasPhoto ? FileImage(File(avatarPath)) : null,
-                    child: hasPhoto
-                        ? null
-                        : (initial.isNotEmpty
-                            ? Text(
-                                initial,
-                                style: AppTheme.sora(
-                                  size: 15,
-                                  weight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.person_outline,
-                                color: Colors.white,
-                                size: 20,
-                              )),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: InkWell(
-                    onTap: () => context.push('/profile'),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _greeting(),
-                          style: AppTheme.manrope(
-                            size: 11.5,
-                            weight: FontWeight.w500,
-                            color: cs.onSurfaceVariant,
-                          ),
-                        ),
-                        Text(
-                          displayTitle,
-                          style: AppTheme.manrope(
-                            size: 15,
-                            weight: FontWeight.w800,
-                            color: cs.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                PlanoraAppBarIconButton(
-                  icon: Icons.history_rounded,
-                  tooltip: 'Riwayat setoran global',
-                  onPressed: () => context.push('/history'),
-                ),
-              ],
+            _HeaderRow(
+              greeting: greeting,
+              todayLabel: AppFormatters.shortDate(now),
+              profile: profile,
+              progressPercent:
+                  summary.totalTarget > 0 ? summary.combinedProgressPct : null,
+              onTapProfile: () => context.push('/profile'),
+              onTapHistory: () => context.push('/contributions'),
+            ),
+
+            const SizedBox(height: 14),
+
+            _TotalBalanceCard(
+              totalBalance: summary.totalBalance,
+              totalTarget: summary.totalTarget,
+              combinedPct: summary.combinedProgressPct,
+              thisMonthDeposit: dashboard.thisMonthDeposit,
+              momLabel: '$momText$momPctText vs bulan lalu',
+              instrumentSubtotals: sortedInstruments,
             ),
 
             const SizedBox(height: 12),
 
-            // 1. Kartu Saldo Hijau Solid (#0B4A34) + subtotal dinamis per instrumen saja (FR-28)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(22),
-              child: Container(
-                color: PlanoraColors.primary,
-                child: Stack(
-                  children: [
-                    Positioned(
-                      right: -28,
-                      top: -28,
-                      child: Container(
-                        width: 132,
-                        height: 132,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.07),
-                            width: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      right: 26,
-                      bottom: -44,
-                      child: Container(
-                        width: 110,
-                        height: 110,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.05),
-                            width: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 15,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'TOTAL SALDO PORTOFOLIO',
-                            style: AppTheme.uppercaseLabel(
-                              color: PlanoraColors.balanceLabel,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            AppFormatters.rupiah(summary.totalBalance),
-                            style: AppTheme.sora(
-                              size: 27,
-                              weight: FontWeight.w800,
-                              color: PlanoraColors.balanceText,
-                              tabular: true,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          if (instrumentEntries.isNotEmpty) ...[
-                            const SizedBox(height: 14),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: instrumentEntries
-                                  .map(
-                                    (e) => _InstrumentSubtotalBox(
-                                      label: e.key.toUpperCase(),
-                                      value: AppFormatters.rupiah(e.value),
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // 2. Kartu Plafon Nabung (mendukung keadaan "belum diatur" FR-05)
             PlanoraCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: Text(
-                          'Batas Nabung — ${AppFormatters.monthYear(_selectedMonth)}',
+                          _chartKind == 'area'
+                              ? 'Pertumbuhan Saldo'
+                              : 'Setoran Bulanan',
                           style: AppTheme.manrope(
-                            size: 13,
+                            size: 13.5,
                             weight: FontWeight.w800,
                             color: cs.onSurface,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      plafonChip,
+                      if (_chartKind == 'area')
+                        _SmallRangeToggle(
+                          options: const [('6 Bln', 6), ('12 Bln', 12)],
+                          selected: _chartMonths,
+                          onSelect: (v) => setState(() => _chartMonths = v),
+                        ),
+                      const SizedBox(width: 6),
+                      InkWell(
+                        onTap: () => setState(
+                          () => _chartKind =
+                              _chartKind == 'area' ? 'stacked' : 'area',
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: Icon(
+                            _chartKind == 'area'
+                                ? Icons.bar_chart_rounded
+                                : Icons.show_chart_rounded,
+                            size: 18,
+                            color: cs.primary,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  if (_chartKind == 'area')
+                    PlanoraBalanceAreaChart(
+                      points: areaPoints,
+                      height: 168,
+                    )
+                  else
+                    PlanoraMonthlyStackedBarChart(
+                      bars: dashboard.stackedBars6m,
+                      height: 168,
+                      onMonthTap: (_) => context.push('/contributions'),
+                    ),
+                ],
+              ),
+            ),
+
+            if (dashboard.insights.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _InsightsSection(
+                insights: dashboard.insights,
+                onTapPortfolio: (pid) => context.push('/portfolios/$pid'),
+              ),
+            ],
+
+            const SizedBox(height: 12),
+
+            PlanoraCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Pengingat Bulan Ini',
+                          style: AppTheme.manrope(
+                            size: 13.5,
+                            weight: FontWeight.w800,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                      ),
+                      PlanoraPill.gray(
+                        'Sisa ${dashboard.daysRemainingInMonth} hari',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          dashboard.activePhaseName != null
+                              ? 'Fase aktif: ${dashboard.activePhaseName}'
+                              : 'Rencana bulanan aktif',
+                          style: AppTheme.manrope(
+                            size: 12,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${AppFormatters.rupiah(dashboard.thisMonthDeposit)} / ${AppFormatters.rupiah(dashboard.activePhaseTotal)}',
+                        style: AppTheme.manrope(
+                          size: 12,
+                          weight: FontWeight.w800,
+                          color: cs.onSurface,
+                          tabular: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  PlanoraProgressBar(
+                    value: dashboard.activePhaseTotal > 0
+                        ? (dashboard.thisMonthDeposit /
+                                dashboard.activePhaseTotal)
+                            .clamp(0.0, 1.0)
+                        : (dashboard.thisMonthDeposit > 0 ? 1.0 : 0.0),
+                    color: dashboard.thisMonthDeposit >=
+                                dashboard.activePhaseTotal &&
+                            dashboard.activePhaseTotal > 0
+                        ? PlanoraChartTokens.chartMoney
+                        : PlanoraColors.primary,
+                    height: 7,
+                  ),
                   const SizedBox(height: 10),
-                  if (ceiling == null) ...[
-                    Text(
-                      'Atur gaji bulanan dan biaya hidup minimum untuk menghitung batas nabung otomatis.',
-                      style: AppTheme.manrope(
-                        size: 12,
-                        color: cs.onSurfaceVariant,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Batas Nabung — ${AppFormatters.monthYear(_selectedMonth)}',
+                          style: AppTheme.manrope(
+                            size: 12,
+                            weight: FontWeight.w700,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () => context.go('/settings'),
-                        child: const Text('Atur Gaji & Biaya Hidup'),
-                      ),
-                    ),
-                  ] else ...[
+                      ceilingChip,
+                    ],
+                  ),
+                  if (ceiling != null) ...[
+                    const SizedBox(height: 6),
                     PlanoraProgressBar(
                       value: ceilingRatio,
                       color: summary.isOverCeiling
                           ? PlanoraColors.danger
                           : PlanoraColors.greenBright,
-                      height: 7,
+                      height: 6,
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Expanded(
-                          child: Text(
-                            'Rencana ${AppFormatters.rupiah(summary.totalMonthlyPlan)} dari batas',
-                            style: AppTheme.manrope(
-                              size: 11.5,
-                              color: cs.onSurfaceVariant,
-                              tabular: true,
-                            ),
+                        Text(
+                          'Rencana ${AppFormatters.rupiah(summary.totalMonthlyPlan)}',
+                          style: AppTheme.manrope(
+                            size: 11.5,
+                            color: cs.onSurfaceVariant,
+                            tabular: true,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: AppFormatters.rupiah(ceiling),
-                                style: AppTheme.manrope(
-                                  size: 13,
-                                  weight: FontWeight.w800,
-                                  color: summary.isOverCeiling
-                                      ? PlanoraColors.danger
-                                      : cs.onSurface,
-                                  tabular: true,
-                                ),
-                              ),
-                              TextSpan(
-                                text: ' /bln',
-                                style: AppTheme.manrope(
-                                  size: 11.5,
-                                  color: cs.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
+                        Text(
+                          'Batas ${AppFormatters.rupiah(ceiling)}/bln',
+                          style: AppTheme.manrope(
+                            size: 11.5,
+                            weight: FontWeight.w700,
+                            color: cs.onSurface,
+                            tabular: true,
                           ),
                         ),
                       ],
                     ),
                     if (summary.isOverCeiling) ...[
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       SizedBox(
                         width: double.infinity,
-                        child: FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: PlanoraColors.danger,
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: PlanoraColors.danger,
+                            side: const BorderSide(color: PlanoraColors.danger),
                           ),
-                          onPressed: () => _scaleDownToCeiling(summary),
-                          icon: const Icon(Icons.balance, size: 18),
-                          label: Text(
-                            'Skalakan Turun Proporsional (${AppFormatters.rupiah(summary.overCeilingBy)})',
+                          onPressed: () =>
+                              _showScaleDownDialog(snapshots, summary),
+                          child: const Text(
+                            'Sesuaikan Rencana ke Batas Nabung',
                           ),
                         ),
                       ),
                     ],
+                  ] else ...[
+                    const SizedBox(height: 6),
+                    InkWell(
+                      onTap: () => context.go('/settings'),
+                      child: Text(
+                        'Atur gaji & biaya hidup untuk batas nabung otomatis →',
+                        style: AppTheme.manrope(
+                          size: 12,
+                          weight: FontWeight.w700,
+                          color: cs.primary,
+                        ),
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -404,38 +440,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
             const SizedBox(height: 12),
 
-            // Keadaan kosong bila belum ada porto (Bab A.4)
-            if (snapshots.isEmpty)
-              PlanoraCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Belum ada portofolio tujuan',
-                      style: AppTheme.manrope(
-                        size: 14,
-                        weight: FontWeight.w800,
-                        color: cs.onSurface,
+            PlanoraCard(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _MetricTile(
+                      label: 'Streak',
+                      value: '${dashboard.streakMonths} bln',
+                      icon: Icons.local_fire_department_outlined,
+                      accent: PlanoraColors.gold,
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    height: 36,
+                    color: cs.outlineVariant,
+                  ),
+                  Expanded(
+                    child: _MetricTile(
+                      label: 'Bulan Ini',
+                      value: PlanoraChartTokens.compactRupiah(
+                        dashboard.thisMonthDeposit,
                       ),
+                      icon: Icons.savings_outlined,
+                      accent: PlanoraChartTokens.chartMoney,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Buat portofolio pertama Anda untuk mulai melacak target, setoran, dan estimasi tercapai.',
-                      style: AppTheme.manrope(
-                        size: 12.5,
-                        color: cs.onSurfaceVariant,
+                  ),
+                  Container(
+                    width: 1,
+                    height: 36,
+                    color: cs.outlineVariant,
+                  ),
+                  Expanded(
+                    child: _MetricTile(
+                      label: 'Rata-rata 3 Bln',
+                      value: PlanoraChartTokens.compactRupiah(
+                        dashboard.avg3MonthsDeposit,
                       ),
+                      icon: Icons.trending_up_rounded,
+                      accent: PlanoraChartTokens.chartBond,
                     ),
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      onPressed: () => context.push('/portfolios/new'),
-                      child: const Text('Buat Porto Pertama'),
-                    ),
-                  ],
-                ),
-              )
-            else ...[
-              // 3. Kartu Checklist Setoran Bulan Ini
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            if (checklist.isNotEmpty) ...[
               PlanoraCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -444,154 +496,254 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            _isCurrentMonth
-                                ? 'Setoran Bulan Ini'
-                                : 'Setoran ${AppFormatters.monthYear(_selectedMonth)}',
+                            'Setoran Bulan Ini',
                             style: AppTheme.manrope(
-                              size: 13,
+                              size: 13.5,
                               weight: FontWeight.w800,
                               color: cs.onSurface,
                             ),
                           ),
                         ),
-                        IconButton(
-                          tooltip: 'Bulan sebelumnya',
-                          visualDensity: VisualDensity.compact,
-                          onPressed: () => _shiftMonth(-1),
-                          icon: const Icon(Icons.chevron_left, size: 18),
-                        ),
-                        if (!_isCurrentMonth)
-                          IconButton(
-                            tooltip: 'Bulan berikutnya',
-                            visualDensity: VisualDensity.compact,
-                            onPressed: () => _shiftMonth(1),
-                            icon: const Icon(Icons.chevron_right, size: 18),
+                        InkWell(
+                          onTap: () => _shiftMonth(-1),
+                          borderRadius: BorderRadius.circular(8),
+                          child: const Padding(
+                            padding: EdgeInsets.all(4),
+                            child: Icon(Icons.chevron_left, size: 18),
                           ),
+                        ),
                         PlanoraPill.gray(
                           '$completedCount dari ${checklist.length}',
                         ),
+                        if (_selectedMonth.year != now.year ||
+                            _selectedMonth.month != now.month)
+                          InkWell(
+                            onTap: () => _shiftMonth(1),
+                            borderRadius: BorderRadius.circular(8),
+                            child: const Padding(
+                              padding: EdgeInsets.all(4),
+                              child: Icon(Icons.chevron_right, size: 18),
+                            ),
+                          ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    if (checklist.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: Text(
-                          'Belum ada porto dengan rencana setoran bulanan di atas Rp 0.',
-                          style: AppTheme.manrope(
-                            size: 12,
-                            color: cs.onSurfaceVariant,
-                          ),
+                    const SizedBox(height: 6),
+                    for (var i = 0; i < checklist.length; i++) ...[
+                      if (i > 0) const Divider(),
+                      _ChecklistRowTile(
+                        row: checklist[i],
+                        onTap: () => showContributionSheet(
+                          context,
+                          ref: ref,
+                          portfolioId: checklist[i].portfolio.id,
+                          portfolioName: checklist[i].portfolio.name,
+                          suggestedAmount: checklist[i].isCompleted
+                              ? checklist[i].monthlyPlan
+                              : (checklist[i].monthlyPlan -
+                                      checklist[i].deposited)
+                                  .clamp(0, checklist[i].monthlyPlan),
                         ),
-                      )
-                    else
-                      for (var i = 0; i < checklist.length; i++) ...[
-                        if (i > 0) const DashedDivider(),
-                        _HomeChecklistRow(
-                          row: checklist[i],
-                          onTap: _isCurrentMonth
-                              ? () => showContributionSheet(
-                                    context,
-                                    ref: ref,
-                                    portfolioId: checklist[i].portfolio.id,
-                                    portfolioName: checklist[i].portfolio.name,
-                                    suggestedAmount: (checklist[i].monthlyPlan -
-                                            checklist[i].deposited)
-                                        .clamp(0, checklist[i].monthlyPlan),
-                                  )
-                              : null,
-                        ),
-                      ],
+                      ),
+                    ],
                   ],
                 ),
               ),
-
               const SizedBox(height: 12),
+            ],
 
-              // 4. Kartu Sisa Kebutuhan Terbesar
-              if (topTwo.isNotEmpty)
-                PlanoraCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            PlanoraCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Sisa Kebutuhan Terbesar',
-                            style: AppTheme.manrope(
-                              size: 13,
-                              weight: FontWeight.w800,
-                              color: cs.onSurface,
-                            ),
-                          ),
-                          InkWell(
-                            onTap: () => context.go('/portfolios'),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                                vertical: 4,
-                              ),
-                              child: Text(
-                                'Lihat Porto',
-                                style: AppTheme.manrope(
-                                  size: 12.5,
-                                  weight: FontWeight.w800,
-                                  color: cs.primary,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                      Text(
+                        'Proyeksi Capaian',
+                        style: AppTheme.manrope(
+                          size: 13.5,
+                          weight: FontWeight.w800,
+                          color: cs.onSurface,
+                        ),
                       ),
-                      const SizedBox(height: 10),
-                      for (var i = 0; i < topTwo.length; i++) ...[
-                        if (i > 0) const SizedBox(height: 12),
+                      InkWell(
+                        onTap: () => context.go('/portfolios'),
+                        child: Text(
+                          'Lihat Porto',
+                          style: AppTheme.manrope(
+                            size: 12,
+                            weight: FontWeight.w700,
+                            color: cs.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  for (var i = 0; i < snapshots.length; i++) ...[
+                    if (i > 0) const Divider(),
+                    _ProjectionRow(
+                      snapshot: snapshots[i],
+                      onTap: () => context
+                          .push('/portfolios/${snapshots[i].portfolio.id}'),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            if (dashboard.recentActivities.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              PlanoraCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Aktivitas Terakhir',
+                          style: AppTheme.manrope(
+                            size: 13.5,
+                            weight: FontWeight.w800,
+                            color: cs.onSurface,
+                          ),
+                        ),
                         InkWell(
-                          onTap: () => context
-                              .push('/portfolios/${topTwo[i].portfolio.id}'),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                          onTap: () => context.push('/contributions'),
+                          child: Text(
+                            'Semua',
+                            style: AppTheme.manrope(
+                              size: 12,
+                              weight: FontWeight.w700,
+                              color: cs.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    for (var i = 0;
+                        i < dashboard.recentActivities.length;
+                        i++) ...[
+                      if (i > 0) const Divider(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 7),
+                        child: Row(
+                          children: [
+                            PortfolioDot(
+                              color: Color(
+                                dashboard.recentActivities[i].portfolio
+                                        ?.color ??
+                                    0xFF0E7C66,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  PortfolioDot(
-                                    color: Color(topTwo[i].portfolio.color),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      topTwo[i].portfolio.name,
-                                      style: AppTheme.manrope(
-                                        size: 13,
-                                        weight: FontWeight.w800,
-                                        color: cs.onSurface,
-                                      ),
+                                  Text(
+                                    dashboard.recentActivities[i].portfolio
+                                            ?.name ??
+                                        'Porto',
+                                    style: AppTheme.manrope(
+                                      size: 12.5,
+                                      weight: FontWeight.w700,
+                                      color: cs.onSurface,
                                     ),
                                   ),
                                   Text(
-                                    'sisa ${AppFormatters.rupiah(topTwo[i].remaining)}',
+                                    AppFormatters.shortDate(
+                                      AppFormatters.parseIsoDate(
+                                            dashboard.recentActivities[i]
+                                                .contribution.date,
+                                          ) ??
+                                          now,
+                                    ),
                                     style: AppTheme.manrope(
-                                      size: 12,
+                                      size: 11,
                                       color: cs.onSurfaceVariant,
-                                      tabular: true,
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 7),
-                              PlanoraProgressBar(
-                                value: topTwo[i].progressPct / 100.0,
-                                color: Color(topTwo[i].portfolio.color),
-                                height: 7,
+                            ),
+                            Text(
+                              '+ ${AppFormatters.rupiah(dashboard.recentActivities[i].contribution.amount)}',
+                              style: AppTheme.manrope(
+                                size: 12.5,
+                                weight: FontWeight.w800,
+                                color: isDark
+                                    ? PlanoraChartTokens.chartMoney
+                                    : PlanoraColors.primary,
+                                tabular: true,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ],
-                  ),
+                  ],
                 ),
+              ),
+            ],
+
+            if (!dashboard.isQuoteDismissedThisMonth) ...[
+              const SizedBox(height: 12),
+              PlanoraNoteBox(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.lightbulb_outline_rounded,
+                      size: 18,
+                      color: cs.primary,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Catatan Hari Ini',
+                            style: AppTheme.manrope(
+                              size: 11,
+                              weight: FontWeight.w800,
+                              color: cs.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            dashboard.dailyQuote,
+                            style: AppTheme.manrope(
+                              size: 12,
+                              color: cs.onSurface,
+                              height: 1.45,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Tutup catatan bulan ini',
+                      onPressed: () {
+                        ref
+                            .read(settingsRepositoryProvider)
+                            .dismissQuoteForMonth(
+                              AppFormatters.toYearMonth(now),
+                            );
+                      },
+                      icon: Icon(
+                        Icons.close_rounded,
+                        size: 17,
+                        color: cs.onSurfaceVariant,
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+              ),
             ],
           ],
         ),
@@ -600,41 +752,250 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-class _InstrumentSubtotalBox extends StatelessWidget {
-  const _InstrumentSubtotalBox({
-    required this.label,
-    required this.value,
+class _HeaderRow extends StatelessWidget {
+  const _HeaderRow({
+    required this.greeting,
+    required this.todayLabel,
+    required this.profile,
+    required this.progressPercent,
+    required this.onTapProfile,
+    required this.onTapHistory,
   });
 
-  final String label;
-  final String value;
+  final String greeting;
+  final String todayLabel;
+  final UserProfile? profile;
+  final double? progressPercent;
+  final VoidCallback onTapProfile;
+  final VoidCallback onTapHistory;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final nick = profile?.displayName?.trim() ?? '';
+    final hasPhoto = profile?.avatarPath != null &&
+        profile!.avatarPath!.isNotEmpty &&
+        File(profile!.avatarPath!).existsSync();
+
+    return Row(
+      children: [
+        InkWell(
+          onTap: onTapProfile,
+          borderRadius: BorderRadius.circular(24),
+          child: CircleAvatar(
+            radius: 20,
+            backgroundColor: PlanoraColors.primary,
+            backgroundImage:
+                hasPhoto ? FileImage(File(profile!.avatarPath!)) : null,
+            child: hasPhoto
+                ? null
+                : (nick.isNotEmpty
+                    ? Text(
+                        nick.substring(0, 1).toUpperCase(),
+                        style: AppTheme.sora(
+                          size: 15,
+                          weight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.person_outline,
+                        size: 20,
+                        color: Colors.white,
+                      )),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: InkWell(
+            onTap: onTapProfile,
+            borderRadius: BorderRadius.circular(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  greeting,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.sora(
+                    size: 16,
+                    weight: FontWeight.w800,
+                    color: cs.onSurface,
+                  ),
+                ),
+                Text(
+                  todayLabel,
+                  style: AppTheme.manrope(
+                    size: 11.5,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (progressPercent != null) ...[
+          PlanoraProgressRing(
+            progressPercent: progressPercent!,
+            size: 40,
+            strokeWidth: 4,
+            color: PlanoraColors.primary,
+          ),
+          const SizedBox(width: 6),
+        ],
+        PlanoraAppBarIconButton(
+          icon: Icons.history_rounded,
+          tooltip: 'Riwayat setoran global',
+          onPressed: onTapHistory,
+        ),
+      ],
+    );
+  }
+}
+
+class _TotalBalanceCard extends StatelessWidget {
+  const _TotalBalanceCard({
+    required this.totalBalance,
+    required this.totalTarget,
+    required this.combinedPct,
+    required this.thisMonthDeposit,
+    required this.momLabel,
+    required this.instrumentSubtotals,
+  });
+
+  final int totalBalance;
+  final int totalTarget;
+  final double combinedPct;
+  final int thisMonthDeposit;
+  final String momLabel;
+  final List<MapEntry<String, int>> instrumentSubtotals;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.09),
-        borderRadius: BorderRadius.circular(12),
+        color: PlanoraColors.primary,
+        borderRadius: BorderRadius.circular(20),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+      child: Stack(
         children: [
-          Text(
-            label,
-            style: AppTheme.uppercaseLabel(
-              color: PlanoraColors.balanceLabel,
+          Positioned(
+            right: -28,
+            top: -28,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  width: 16,
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: AppTheme.manrope(
-              size: 13,
-              weight: FontWeight.w800,
-              color: PlanoraColors.balanceText,
-              tabular: true,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'TOTAL SALDO PORTOFOLIO',
+                      style: AppTheme.uppercaseLabel(
+                        color: PlanoraColors.balanceLabel,
+                      ),
+                    ),
+                    if (totalTarget > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          '${PlanoraV22Calc.formatPercent(combinedPct)} dari target',
+                          style: AppTheme.manrope(
+                            size: 10.5,
+                            weight: FontWeight.w700,
+                            color: Colors.white,
+                            tabular: true,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  AppFormatters.rupiah(totalBalance),
+                  style: AppTheme.sora(
+                    size: 25,
+                    weight: FontWeight.w800,
+                    color: PlanoraColors.balanceText,
+                    tabular: true,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  totalTarget > 0
+                      ? 'Target gabungan ${AppFormatters.rupiah(totalTarget)} · $momLabel'
+                      : momLabel,
+                  style: AppTheme.manrope(
+                    size: 11.5,
+                    color: PlanoraColors.balanceLabel,
+                    tabular: true,
+                  ),
+                ),
+                if (instrumentSubtotals.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: instrumentSubtotals.map((entry) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 11,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              entry.key.toUpperCase(),
+                              style: AppTheme.manrope(
+                                size: 9.5,
+                                weight: FontWeight.w700,
+                                color: PlanoraColors.balanceLabel,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              AppFormatters.rupiah(entry.value),
+                              style: AppTheme.manrope(
+                                size: 12.5,
+                                weight: FontWeight.w800,
+                                color: Colors.white,
+                                tabular: true,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ],
             ),
           ),
         ],
@@ -643,24 +1004,266 @@ class _InstrumentSubtotalBox extends StatelessWidget {
   }
 }
 
-class _HomeChecklistRow extends StatelessWidget {
-  const _HomeChecklistRow({
-    required this.row,
-    this.onTap,
+class _InsightsSection extends StatelessWidget {
+  const _InsightsSection({
+    required this.insights,
+    required this.onTapPortfolio,
   });
 
-  final ChecklistRow row;
-  final VoidCallback? onTap;
+  final List<DashboardInsight> insights;
+  final void Function(String portfolioId) onTapPortfolio;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final p = row.portfolio;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < insights.length; i++) ...[
+          if (i > 0) const SizedBox(height: 8),
+          _buildInsightCard(context, cs, insights[i]),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildInsightCard(
+    BuildContext context,
+    ColorScheme cs,
+    DashboardInsight item,
+  ) {
+    final (icon, accent) = switch (item.kind) {
+      DashboardInsightKind.offTrack => (
+          Icons.warning_amber_rounded,
+          PlanoraColors.danger,
+        ),
+      DashboardInsightKind.noDepositAfterDay10 => (
+          Icons.notifications_none_rounded,
+          PlanoraColors.gold,
+        ),
+      DashboardInsightKind.allocationDeviation ||
+      DashboardInsightKind.emptyComponent => (
+          Icons.pie_chart_outline_rounded,
+          PlanoraChartTokens.chartBond,
+        ),
+      DashboardInsightKind.milestone => (
+          Icons.emoji_events_outlined,
+          PlanoraChartTokens.chartMoney,
+        ),
+      DashboardInsightKind.streak => (
+          Icons.local_fire_department_outlined,
+          PlanoraColors.gold,
+        ),
+    };
+
+    return PlanoraCard(
+      onTap: item.portfolioId != null
+          ? () => onTapPortfolio(item.portfolioId!)
+          : null,
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 17, color: accent),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              item.message,
+              style: AppTheme.manrope(
+                size: 12,
+                weight: FontWeight.w600,
+                color: cs.onSurface,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SmallRangeToggle extends StatelessWidget {
+  const _SmallRangeToggle({
+    required this.options,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  final List<(String, int)> options;
+  final int selected;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: options.map((opt) {
+          final isSel = opt.$2 == selected;
+          return InkWell(
+            onTap: () => onSelect(opt.$2),
+            borderRadius: BorderRadius.circular(6),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: isSel ? cs.surface : Colors.transparent,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                opt.$1,
+                style: AppTheme.manrope(
+                  size: 11,
+                  weight: isSel ? FontWeight.w800 : FontWeight.w600,
+                  color: isSel ? cs.primary : cs.onSurfaceVariant,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.accent,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 17, color: accent),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTheme.manrope(
+            size: 12.5,
+            weight: FontWeight.w800,
+            color: cs.onSurface,
+            tabular: true,
+          ),
+        ),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTheme.manrope(
+            size: 10.5,
+            color: cs.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProjectionRow extends StatelessWidget {
+  const _ProjectionRow({required this.snapshot, required this.onTap});
+
+  final PortfolioSnapshot snapshot;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final p = snapshot.portfolio;
+    final proj = snapshot.projectionV22;
+
+    final statusPill = switch (proj.status) {
+      PortfolioTrackStatusV22.achieved => PlanoraPill.green('Tercapai'),
+      PortfolioTrackStatusV22.notStarted => PlanoraPill.gray('Belum Mulai'),
+      PortfolioTrackStatusV22.onTrack => PlanoraPill.green('On Track'),
+      PortfolioTrackStatusV22.offTrack => PlanoraPill.danger('Off Track'),
+    };
+
+    final projText = proj.status == PortfolioTrackStatusV22.achieved
+        ? 'Target tercapai'
+        : proj.projectedDate != null
+            ? 'Est. ${AppFormatters.shortMonthYear(proj.projectedDate!)}'
+            : (proj.rateEmptyMessage ?? 'Belum ada laju setoran');
 
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 11),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            PortfolioDot(color: Color(p.color)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    p.name,
+                    style: AppTheme.manrope(
+                      size: 13,
+                      weight: FontWeight.w700,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                  Text(
+                    projText,
+                    style: AppTheme.manrope(
+                      size: 11.5,
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            statusPill,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChecklistRowTile extends StatelessWidget {
+  const _ChecklistRowTile({required this.row, required this.onTap});
+
+  final ChecklistRow row;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final done = row.isCompleted;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
             Container(
@@ -668,34 +1271,23 @@ class _HomeChecklistRow extends StatelessWidget {
               height: 22,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: row.isCompleted
-                    ? PlanoraColors.greenBright
-                    : Colors.transparent,
-                border: row.isCompleted
-                    ? null
-                    : Border.all(
-                        color: row.isPartial
-                            ? PlanoraColors.gold
-                            : PlanoraColors.checkBorder,
-                        width: 2,
-                      ),
+                color: done ? PlanoraColors.primary : Colors.transparent,
+                border: Border.all(
+                  color:
+                      done ? PlanoraColors.primary : PlanoraColors.checkBorder,
+                  width: 1.8,
+                ),
               ),
-              child: row.isCompleted
+              child: done
                   ? const Icon(Icons.check, size: 14, color: Colors.white)
-                  : (row.isPartial
-                      ? const Icon(
-                          Icons.more_horiz,
-                          size: 14,
-                          color: PlanoraColors.gold,
-                        )
-                      : null),
+                  : null,
             ),
             const SizedBox(width: 10),
-            PortfolioDot(color: Color(p.color)),
+            PortfolioDot(color: Color(row.portfolio.color)),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                p.name,
+                row.portfolio.name,
                 style: AppTheme.manrope(
                   size: 13,
                   weight: FontWeight.w700,
@@ -706,9 +1298,9 @@ class _HomeChecklistRow extends StatelessWidget {
             Text(
               AppFormatters.rupiah(row.monthlyPlan),
               style: AppTheme.manrope(
-                size: 13,
+                size: 12.5,
                 weight: FontWeight.w800,
-                color: row.isCompleted ? cs.onSurface : cs.onSurfaceVariant,
+                color: done ? cs.onSurface : cs.onSurfaceVariant,
                 tabular: true,
               ),
             ),
@@ -718,3 +1310,4 @@ class _HomeChecklistRow extends StatelessWidget {
     );
   }
 }
+

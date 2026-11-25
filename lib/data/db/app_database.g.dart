@@ -1051,6 +1051,29 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
     requiredDuringInsert: false,
     defaultValue: const Constant(3),
   );
+  static const VerificationMeta _componentInputModeMeta =
+      const VerificationMeta('componentInputMode');
+  @override
+  late final GeneratedColumn<String> componentInputMode =
+      GeneratedColumn<String>(
+        'component_input_mode',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('percent'),
+      );
+  static const VerificationMeta _quoteCardDismissedMonthMeta =
+      const VerificationMeta('quoteCardDismissedMonth');
+  @override
+  late final GeneratedColumn<String> quoteCardDismissedMonth =
+      GeneratedColumn<String>(
+        'quote_card_dismissed_month',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1119,6 +1142,8 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
     phaseLimitAmount,
     onboardingDone,
     seedVersion,
+    componentInputMode,
+    quoteCardDismissedMonth,
     createdAt,
     updatedAt,
     syncStatus,
@@ -1222,6 +1247,24 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
         ),
       );
     }
+    if (data.containsKey('component_input_mode')) {
+      context.handle(
+        _componentInputModeMeta,
+        componentInputMode.isAcceptableOrUnknown(
+          data['component_input_mode']!,
+          _componentInputModeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('quote_card_dismissed_month')) {
+      context.handle(
+        _quoteCardDismissedMonthMeta,
+        quoteCardDismissedMonth.isAcceptableOrUnknown(
+          data['quote_card_dismissed_month']!,
+          _quoteCardDismissedMonthMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1305,6 +1348,14 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
         DriftSqlType.int,
         data['${effectivePrefix}seed_version'],
       )!,
+      componentInputMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}component_input_mode'],
+      )!,
+      quoteCardDismissedMonth: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}quote_card_dismissed_month'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}created_at'],
@@ -1345,6 +1396,12 @@ class Setting extends DataClass implements Insertable<Setting> {
   final int? phaseLimitAmount;
   final bool onboardingDone;
   final int seedVersion;
+
+  /// v2.2: Preferensi mode input komponen ('percent' bawaan | 'nominal')
+  final String componentInputMode;
+
+  /// v2.2: Bulan 'YYYY-MM' saat kartu quote ditutup (muncul lagi saat bulan berganti)
+  final String? quoteCardDismissedMonth;
   final String createdAt;
   final String updatedAt;
   final String syncStatus;
@@ -1361,6 +1418,8 @@ class Setting extends DataClass implements Insertable<Setting> {
     this.phaseLimitAmount,
     required this.onboardingDone,
     required this.seedVersion,
+    required this.componentInputMode,
+    this.quoteCardDismissedMonth,
     required this.createdAt,
     required this.updatedAt,
     required this.syncStatus,
@@ -1388,6 +1447,12 @@ class Setting extends DataClass implements Insertable<Setting> {
     }
     map['onboarding_done'] = Variable<bool>(onboardingDone);
     map['seed_version'] = Variable<int>(seedVersion);
+    map['component_input_mode'] = Variable<String>(componentInputMode);
+    if (!nullToAbsent || quoteCardDismissedMonth != null) {
+      map['quote_card_dismissed_month'] = Variable<String>(
+        quoteCardDismissedMonth,
+      );
+    }
     map['created_at'] = Variable<String>(createdAt);
     map['updated_at'] = Variable<String>(updatedAt);
     map['sync_status'] = Variable<String>(syncStatus);
@@ -1420,6 +1485,10 @@ class Setting extends DataClass implements Insertable<Setting> {
           : Value(phaseLimitAmount),
       onboardingDone: Value(onboardingDone),
       seedVersion: Value(seedVersion),
+      componentInputMode: Value(componentInputMode),
+      quoteCardDismissedMonth: quoteCardDismissedMonth == null && nullToAbsent
+          ? const Value.absent()
+          : Value(quoteCardDismissedMonth),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       syncStatus: Value(syncStatus),
@@ -1450,6 +1519,12 @@ class Setting extends DataClass implements Insertable<Setting> {
       phaseLimitAmount: serializer.fromJson<int?>(json['phaseLimitAmount']),
       onboardingDone: serializer.fromJson<bool>(json['onboardingDone']),
       seedVersion: serializer.fromJson<int>(json['seedVersion']),
+      componentInputMode: serializer.fromJson<String>(
+        json['componentInputMode'],
+      ),
+      quoteCardDismissedMonth: serializer.fromJson<String?>(
+        json['quoteCardDismissedMonth'],
+      ),
       createdAt: serializer.fromJson<String>(json['createdAt']),
       updatedAt: serializer.fromJson<String>(json['updatedAt']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
@@ -1473,6 +1548,10 @@ class Setting extends DataClass implements Insertable<Setting> {
       'phaseLimitAmount': serializer.toJson<int?>(phaseLimitAmount),
       'onboardingDone': serializer.toJson<bool>(onboardingDone),
       'seedVersion': serializer.toJson<int>(seedVersion),
+      'componentInputMode': serializer.toJson<String>(componentInputMode),
+      'quoteCardDismissedMonth': serializer.toJson<String?>(
+        quoteCardDismissedMonth,
+      ),
       'createdAt': serializer.toJson<String>(createdAt),
       'updatedAt': serializer.toJson<String>(updatedAt),
       'syncStatus': serializer.toJson<String>(syncStatus),
@@ -1492,6 +1571,8 @@ class Setting extends DataClass implements Insertable<Setting> {
     Value<int?> phaseLimitAmount = const Value.absent(),
     bool? onboardingDone,
     int? seedVersion,
+    String? componentInputMode,
+    Value<String?> quoteCardDismissedMonth = const Value.absent(),
     String? createdAt,
     String? updatedAt,
     String? syncStatus,
@@ -1517,6 +1598,10 @@ class Setting extends DataClass implements Insertable<Setting> {
         : this.phaseLimitAmount,
     onboardingDone: onboardingDone ?? this.onboardingDone,
     seedVersion: seedVersion ?? this.seedVersion,
+    componentInputMode: componentInputMode ?? this.componentInputMode,
+    quoteCardDismissedMonth: quoteCardDismissedMonth.present
+        ? quoteCardDismissedMonth.value
+        : this.quoteCardDismissedMonth,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     syncStatus: syncStatus ?? this.syncStatus,
@@ -1551,6 +1636,12 @@ class Setting extends DataClass implements Insertable<Setting> {
       seedVersion: data.seedVersion.present
           ? data.seedVersion.value
           : this.seedVersion,
+      componentInputMode: data.componentInputMode.present
+          ? data.componentInputMode.value
+          : this.componentInputMode,
+      quoteCardDismissedMonth: data.quoteCardDismissedMonth.present
+          ? data.quoteCardDismissedMonth.value
+          : this.quoteCardDismissedMonth,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       syncStatus: data.syncStatus.present
@@ -1574,6 +1665,8 @@ class Setting extends DataClass implements Insertable<Setting> {
           ..write('phaseLimitAmount: $phaseLimitAmount, ')
           ..write('onboardingDone: $onboardingDone, ')
           ..write('seedVersion: $seedVersion, ')
+          ..write('componentInputMode: $componentInputMode, ')
+          ..write('quoteCardDismissedMonth: $quoteCardDismissedMonth, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('syncStatus: $syncStatus, ')
@@ -1595,6 +1688,8 @@ class Setting extends DataClass implements Insertable<Setting> {
     phaseLimitAmount,
     onboardingDone,
     seedVersion,
+    componentInputMode,
+    quoteCardDismissedMonth,
     createdAt,
     updatedAt,
     syncStatus,
@@ -1615,6 +1710,8 @@ class Setting extends DataClass implements Insertable<Setting> {
           other.phaseLimitAmount == this.phaseLimitAmount &&
           other.onboardingDone == this.onboardingDone &&
           other.seedVersion == this.seedVersion &&
+          other.componentInputMode == this.componentInputMode &&
+          other.quoteCardDismissedMonth == this.quoteCardDismissedMonth &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.syncStatus == this.syncStatus &&
@@ -1633,6 +1730,8 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
   final Value<int?> phaseLimitAmount;
   final Value<bool> onboardingDone;
   final Value<int> seedVersion;
+  final Value<String> componentInputMode;
+  final Value<String?> quoteCardDismissedMonth;
   final Value<String> createdAt;
   final Value<String> updatedAt;
   final Value<String> syncStatus;
@@ -1650,6 +1749,8 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     this.phaseLimitAmount = const Value.absent(),
     this.onboardingDone = const Value.absent(),
     this.seedVersion = const Value.absent(),
+    this.componentInputMode = const Value.absent(),
+    this.quoteCardDismissedMonth = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.syncStatus = const Value.absent(),
@@ -1668,6 +1769,8 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     this.phaseLimitAmount = const Value.absent(),
     this.onboardingDone = const Value.absent(),
     this.seedVersion = const Value.absent(),
+    this.componentInputMode = const Value.absent(),
+    this.quoteCardDismissedMonth = const Value.absent(),
     required String createdAt,
     required String updatedAt,
     this.syncStatus = const Value.absent(),
@@ -1689,6 +1792,8 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     Expression<int>? phaseLimitAmount,
     Expression<bool>? onboardingDone,
     Expression<int>? seedVersion,
+    Expression<String>? componentInputMode,
+    Expression<String>? quoteCardDismissedMonth,
     Expression<String>? createdAt,
     Expression<String>? updatedAt,
     Expression<String>? syncStatus,
@@ -1708,6 +1813,10 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
       if (phaseLimitAmount != null) 'phase_limit_amount': phaseLimitAmount,
       if (onboardingDone != null) 'onboarding_done': onboardingDone,
       if (seedVersion != null) 'seed_version': seedVersion,
+      if (componentInputMode != null)
+        'component_input_mode': componentInputMode,
+      if (quoteCardDismissedMonth != null)
+        'quote_card_dismissed_month': quoteCardDismissedMonth,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (syncStatus != null) 'sync_status': syncStatus,
@@ -1728,6 +1837,8 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     Value<int?>? phaseLimitAmount,
     Value<bool>? onboardingDone,
     Value<int>? seedVersion,
+    Value<String>? componentInputMode,
+    Value<String?>? quoteCardDismissedMonth,
     Value<String>? createdAt,
     Value<String>? updatedAt,
     Value<String>? syncStatus,
@@ -1747,6 +1858,9 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
       phaseLimitAmount: phaseLimitAmount ?? this.phaseLimitAmount,
       onboardingDone: onboardingDone ?? this.onboardingDone,
       seedVersion: seedVersion ?? this.seedVersion,
+      componentInputMode: componentInputMode ?? this.componentInputMode,
+      quoteCardDismissedMonth:
+          quoteCardDismissedMonth ?? this.quoteCardDismissedMonth,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       syncStatus: syncStatus ?? this.syncStatus,
@@ -1791,6 +1905,14 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     if (seedVersion.present) {
       map['seed_version'] = Variable<int>(seedVersion.value);
     }
+    if (componentInputMode.present) {
+      map['component_input_mode'] = Variable<String>(componentInputMode.value);
+    }
+    if (quoteCardDismissedMonth.present) {
+      map['quote_card_dismissed_month'] = Variable<String>(
+        quoteCardDismissedMonth.value,
+      );
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<String>(createdAt.value);
     }
@@ -1825,6 +1947,8 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
           ..write('phaseLimitAmount: $phaseLimitAmount, ')
           ..write('onboardingDone: $onboardingDone, ')
           ..write('seedVersion: $seedVersion, ')
+          ..write('componentInputMode: $componentInputMode, ')
+          ..write('quoteCardDismissedMonth: $quoteCardDismissedMonth, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('syncStatus: $syncStatus, ')
@@ -3160,14 +3284,29 @@ class $PortfolioComponentsTable extends PortfolioComponents
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  static const VerificationMeta _targetPercentMeta = const VerificationMeta(
+    'targetPercent',
+  );
   @override
-  late final GeneratedColumn<int> amount = GeneratedColumn<int>(
-    'amount',
+  late final GeneratedColumn<double> targetPercent = GeneratedColumn<double>(
+    'target_percent',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _actualAmountMeta = const VerificationMeta(
+    'actualAmount',
+  );
+  @override
+  late final GeneratedColumn<int> actualAmount = GeneratedColumn<int>(
+    'actual_amount',
     aliasedName,
     false,
     type: DriftSqlType.int,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
   );
   static const VerificationMeta _codeNoteMeta = const VerificationMeta(
     'codeNote',
@@ -3255,7 +3394,8 @@ class $PortfolioComponentsTable extends PortfolioComponents
     ownerId,
     instrumentType,
     name,
-    amount,
+    targetPercent,
+    actualAmount,
     codeNote,
     sortOrder,
     createdAt,
@@ -3317,13 +3457,23 @@ class $PortfolioComponentsTable extends PortfolioComponents
         name.isAcceptableOrUnknown(data['name']!, _nameMeta),
       );
     }
-    if (data.containsKey('amount')) {
+    if (data.containsKey('target_percent')) {
       context.handle(
-        _amountMeta,
-        amount.isAcceptableOrUnknown(data['amount']!, _amountMeta),
+        _targetPercentMeta,
+        targetPercent.isAcceptableOrUnknown(
+          data['target_percent']!,
+          _targetPercentMeta,
+        ),
       );
-    } else if (isInserting) {
-      context.missing(_amountMeta);
+    }
+    if (data.containsKey('actual_amount')) {
+      context.handle(
+        _actualAmountMeta,
+        actualAmount.isAcceptableOrUnknown(
+          data['actual_amount']!,
+          _actualAmountMeta,
+        ),
+      );
     }
     if (data.containsKey('code_note')) {
       context.handle(
@@ -3400,9 +3550,13 @@ class $PortfolioComponentsTable extends PortfolioComponents
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       ),
-      amount: attachedDatabase.typeMapping.read(
+      targetPercent: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}target_percent'],
+      )!,
+      actualAmount: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
-        data['${effectivePrefix}amount'],
+        data['${effectivePrefix}actual_amount'],
       )!,
       codeNote: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -3448,7 +3602,12 @@ class PortfolioComponent extends DataClass
   final String ownerId;
   final String instrumentType;
   final String? name;
-  final int amount;
+
+  /// v2.2: Satu-satunya sumber kebenaran target alokasi komponen (0.00 - 100.00).
+  final double targetPercent;
+
+  /// v2.2: Saldo aktual komponen (integer rupiah) dari setoran teralokasi.
+  final int actualAmount;
   final String? codeNote;
   final int sortOrder;
   final String createdAt;
@@ -3462,7 +3621,8 @@ class PortfolioComponent extends DataClass
     required this.ownerId,
     required this.instrumentType,
     this.name,
-    required this.amount,
+    required this.targetPercent,
+    required this.actualAmount,
     this.codeNote,
     required this.sortOrder,
     required this.createdAt,
@@ -3481,7 +3641,8 @@ class PortfolioComponent extends DataClass
     if (!nullToAbsent || name != null) {
       map['name'] = Variable<String>(name);
     }
-    map['amount'] = Variable<int>(amount);
+    map['target_percent'] = Variable<double>(targetPercent);
+    map['actual_amount'] = Variable<int>(actualAmount);
     if (!nullToAbsent || codeNote != null) {
       map['code_note'] = Variable<String>(codeNote);
     }
@@ -3505,7 +3666,8 @@ class PortfolioComponent extends DataClass
       ownerId: Value(ownerId),
       instrumentType: Value(instrumentType),
       name: name == null && nullToAbsent ? const Value.absent() : Value(name),
-      amount: Value(amount),
+      targetPercent: Value(targetPercent),
+      actualAmount: Value(actualAmount),
       codeNote: codeNote == null && nullToAbsent
           ? const Value.absent()
           : Value(codeNote),
@@ -3533,7 +3695,8 @@ class PortfolioComponent extends DataClass
       ownerId: serializer.fromJson<String>(json['ownerId']),
       instrumentType: serializer.fromJson<String>(json['instrumentType']),
       name: serializer.fromJson<String?>(json['name']),
-      amount: serializer.fromJson<int>(json['amount']),
+      targetPercent: serializer.fromJson<double>(json['targetPercent']),
+      actualAmount: serializer.fromJson<int>(json['actualAmount']),
       codeNote: serializer.fromJson<String?>(json['codeNote']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       createdAt: serializer.fromJson<String>(json['createdAt']),
@@ -3552,7 +3715,8 @@ class PortfolioComponent extends DataClass
       'ownerId': serializer.toJson<String>(ownerId),
       'instrumentType': serializer.toJson<String>(instrumentType),
       'name': serializer.toJson<String?>(name),
-      'amount': serializer.toJson<int>(amount),
+      'targetPercent': serializer.toJson<double>(targetPercent),
+      'actualAmount': serializer.toJson<int>(actualAmount),
       'codeNote': serializer.toJson<String?>(codeNote),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'createdAt': serializer.toJson<String>(createdAt),
@@ -3569,7 +3733,8 @@ class PortfolioComponent extends DataClass
     String? ownerId,
     String? instrumentType,
     Value<String?> name = const Value.absent(),
-    int? amount,
+    double? targetPercent,
+    int? actualAmount,
     Value<String?> codeNote = const Value.absent(),
     int? sortOrder,
     String? createdAt,
@@ -3583,7 +3748,8 @@ class PortfolioComponent extends DataClass
     ownerId: ownerId ?? this.ownerId,
     instrumentType: instrumentType ?? this.instrumentType,
     name: name.present ? name.value : this.name,
-    amount: amount ?? this.amount,
+    targetPercent: targetPercent ?? this.targetPercent,
+    actualAmount: actualAmount ?? this.actualAmount,
     codeNote: codeNote.present ? codeNote.value : this.codeNote,
     sortOrder: sortOrder ?? this.sortOrder,
     createdAt: createdAt ?? this.createdAt,
@@ -3603,7 +3769,12 @@ class PortfolioComponent extends DataClass
           ? data.instrumentType.value
           : this.instrumentType,
       name: data.name.present ? data.name.value : this.name,
-      amount: data.amount.present ? data.amount.value : this.amount,
+      targetPercent: data.targetPercent.present
+          ? data.targetPercent.value
+          : this.targetPercent,
+      actualAmount: data.actualAmount.present
+          ? data.actualAmount.value
+          : this.actualAmount,
       codeNote: data.codeNote.present ? data.codeNote.value : this.codeNote,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -3624,7 +3795,8 @@ class PortfolioComponent extends DataClass
           ..write('ownerId: $ownerId, ')
           ..write('instrumentType: $instrumentType, ')
           ..write('name: $name, ')
-          ..write('amount: $amount, ')
+          ..write('targetPercent: $targetPercent, ')
+          ..write('actualAmount: $actualAmount, ')
           ..write('codeNote: $codeNote, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
@@ -3643,7 +3815,8 @@ class PortfolioComponent extends DataClass
     ownerId,
     instrumentType,
     name,
-    amount,
+    targetPercent,
+    actualAmount,
     codeNote,
     sortOrder,
     createdAt,
@@ -3661,7 +3834,8 @@ class PortfolioComponent extends DataClass
           other.ownerId == this.ownerId &&
           other.instrumentType == this.instrumentType &&
           other.name == this.name &&
-          other.amount == this.amount &&
+          other.targetPercent == this.targetPercent &&
+          other.actualAmount == this.actualAmount &&
           other.codeNote == this.codeNote &&
           other.sortOrder == this.sortOrder &&
           other.createdAt == this.createdAt &&
@@ -3677,7 +3851,8 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
   final Value<String> ownerId;
   final Value<String> instrumentType;
   final Value<String?> name;
-  final Value<int> amount;
+  final Value<double> targetPercent;
+  final Value<int> actualAmount;
   final Value<String?> codeNote;
   final Value<int> sortOrder;
   final Value<String> createdAt;
@@ -3692,7 +3867,8 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
     this.ownerId = const Value.absent(),
     this.instrumentType = const Value.absent(),
     this.name = const Value.absent(),
-    this.amount = const Value.absent(),
+    this.targetPercent = const Value.absent(),
+    this.actualAmount = const Value.absent(),
     this.codeNote = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -3708,7 +3884,8 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
     required String ownerId,
     required String instrumentType,
     this.name = const Value.absent(),
-    required int amount,
+    this.targetPercent = const Value.absent(),
+    this.actualAmount = const Value.absent(),
     this.codeNote = const Value.absent(),
     this.sortOrder = const Value.absent(),
     required String createdAt,
@@ -3721,7 +3898,6 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
        portfolioId = Value(portfolioId),
        ownerId = Value(ownerId),
        instrumentType = Value(instrumentType),
-       amount = Value(amount),
        createdAt = Value(createdAt),
        updatedAt = Value(updatedAt);
   static Insertable<PortfolioComponent> custom({
@@ -3730,7 +3906,8 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
     Expression<String>? ownerId,
     Expression<String>? instrumentType,
     Expression<String>? name,
-    Expression<int>? amount,
+    Expression<double>? targetPercent,
+    Expression<int>? actualAmount,
     Expression<String>? codeNote,
     Expression<int>? sortOrder,
     Expression<String>? createdAt,
@@ -3746,7 +3923,8 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
       if (ownerId != null) 'owner_id': ownerId,
       if (instrumentType != null) 'instrument_type': instrumentType,
       if (name != null) 'name': name,
-      if (amount != null) 'amount': amount,
+      if (targetPercent != null) 'target_percent': targetPercent,
+      if (actualAmount != null) 'actual_amount': actualAmount,
       if (codeNote != null) 'code_note': codeNote,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (createdAt != null) 'created_at': createdAt,
@@ -3764,7 +3942,8 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
     Value<String>? ownerId,
     Value<String>? instrumentType,
     Value<String?>? name,
-    Value<int>? amount,
+    Value<double>? targetPercent,
+    Value<int>? actualAmount,
     Value<String?>? codeNote,
     Value<int>? sortOrder,
     Value<String>? createdAt,
@@ -3780,7 +3959,8 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
       ownerId: ownerId ?? this.ownerId,
       instrumentType: instrumentType ?? this.instrumentType,
       name: name ?? this.name,
-      amount: amount ?? this.amount,
+      targetPercent: targetPercent ?? this.targetPercent,
+      actualAmount: actualAmount ?? this.actualAmount,
       codeNote: codeNote ?? this.codeNote,
       sortOrder: sortOrder ?? this.sortOrder,
       createdAt: createdAt ?? this.createdAt,
@@ -3810,8 +3990,11 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
-    if (amount.present) {
-      map['amount'] = Variable<int>(amount.value);
+    if (targetPercent.present) {
+      map['target_percent'] = Variable<double>(targetPercent.value);
+    }
+    if (actualAmount.present) {
+      map['actual_amount'] = Variable<int>(actualAmount.value);
     }
     if (codeNote.present) {
       map['code_note'] = Variable<String>(codeNote.value);
@@ -3848,7 +4031,8 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
           ..write('ownerId: $ownerId, ')
           ..write('instrumentType: $instrumentType, ')
           ..write('name: $name, ')
-          ..write('amount: $amount, ')
+          ..write('targetPercent: $targetPercent, ')
+          ..write('actualAmount: $actualAmount, ')
           ..write('codeNote: $codeNote, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
@@ -3932,6 +4116,17 @@ class $ContributionsTable extends Contributions
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _componentIdMeta = const VerificationMeta(
+    'componentId',
+  );
+  @override
+  late final GeneratedColumn<String> componentId = GeneratedColumn<String>(
+    'component_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -3996,6 +4191,7 @@ class $ContributionsTable extends Contributions
     amount,
     date,
     note,
+    componentId,
     createdAt,
     updatedAt,
     syncStatus,
@@ -4058,6 +4254,15 @@ class $ContributionsTable extends Contributions
       context.handle(
         _noteMeta,
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('component_id')) {
+      context.handle(
+        _componentIdMeta,
+        componentId.isAcceptableOrUnknown(
+          data['component_id']!,
+          _componentIdMeta,
+        ),
       );
     }
     if (data.containsKey('created_at')) {
@@ -4127,6 +4332,10 @@ class $ContributionsTable extends Contributions
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       ),
+      componentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}component_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}created_at'],
@@ -4163,6 +4372,9 @@ class Contribution extends DataClass implements Insertable<Contribution> {
   final int amount;
   final String date;
   final String? note;
+
+  /// v2.2: Opsional — ID komponen instrumen tujuan setoran ini.
+  final String? componentId;
   final String createdAt;
   final String updatedAt;
   final String syncStatus;
@@ -4175,6 +4387,7 @@ class Contribution extends DataClass implements Insertable<Contribution> {
     required this.amount,
     required this.date,
     this.note,
+    this.componentId,
     required this.createdAt,
     required this.updatedAt,
     required this.syncStatus,
@@ -4191,6 +4404,9 @@ class Contribution extends DataClass implements Insertable<Contribution> {
     map['date'] = Variable<String>(date);
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
+    }
+    if (!nullToAbsent || componentId != null) {
+      map['component_id'] = Variable<String>(componentId);
     }
     map['created_at'] = Variable<String>(createdAt);
     map['updated_at'] = Variable<String>(updatedAt);
@@ -4212,6 +4428,9 @@ class Contribution extends DataClass implements Insertable<Contribution> {
       amount: Value(amount),
       date: Value(date),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      componentId: componentId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(componentId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       syncStatus: Value(syncStatus),
@@ -4236,6 +4455,7 @@ class Contribution extends DataClass implements Insertable<Contribution> {
       amount: serializer.fromJson<int>(json['amount']),
       date: serializer.fromJson<String>(json['date']),
       note: serializer.fromJson<String?>(json['note']),
+      componentId: serializer.fromJson<String?>(json['componentId']),
       createdAt: serializer.fromJson<String>(json['createdAt']),
       updatedAt: serializer.fromJson<String>(json['updatedAt']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
@@ -4253,6 +4473,7 @@ class Contribution extends DataClass implements Insertable<Contribution> {
       'amount': serializer.toJson<int>(amount),
       'date': serializer.toJson<String>(date),
       'note': serializer.toJson<String?>(note),
+      'componentId': serializer.toJson<String?>(componentId),
       'createdAt': serializer.toJson<String>(createdAt),
       'updatedAt': serializer.toJson<String>(updatedAt),
       'syncStatus': serializer.toJson<String>(syncStatus),
@@ -4268,6 +4489,7 @@ class Contribution extends DataClass implements Insertable<Contribution> {
     int? amount,
     String? date,
     Value<String?> note = const Value.absent(),
+    Value<String?> componentId = const Value.absent(),
     String? createdAt,
     String? updatedAt,
     String? syncStatus,
@@ -4280,6 +4502,7 @@ class Contribution extends DataClass implements Insertable<Contribution> {
     amount: amount ?? this.amount,
     date: date ?? this.date,
     note: note.present ? note.value : this.note,
+    componentId: componentId.present ? componentId.value : this.componentId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     syncStatus: syncStatus ?? this.syncStatus,
@@ -4296,6 +4519,9 @@ class Contribution extends DataClass implements Insertable<Contribution> {
       amount: data.amount.present ? data.amount.value : this.amount,
       date: data.date.present ? data.date.value : this.date,
       note: data.note.present ? data.note.value : this.note,
+      componentId: data.componentId.present
+          ? data.componentId.value
+          : this.componentId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       syncStatus: data.syncStatus.present
@@ -4315,6 +4541,7 @@ class Contribution extends DataClass implements Insertable<Contribution> {
           ..write('amount: $amount, ')
           ..write('date: $date, ')
           ..write('note: $note, ')
+          ..write('componentId: $componentId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('syncStatus: $syncStatus, ')
@@ -4332,6 +4559,7 @@ class Contribution extends DataClass implements Insertable<Contribution> {
     amount,
     date,
     note,
+    componentId,
     createdAt,
     updatedAt,
     syncStatus,
@@ -4348,6 +4576,7 @@ class Contribution extends DataClass implements Insertable<Contribution> {
           other.amount == this.amount &&
           other.date == this.date &&
           other.note == this.note &&
+          other.componentId == this.componentId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.syncStatus == this.syncStatus &&
@@ -4362,6 +4591,7 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
   final Value<int> amount;
   final Value<String> date;
   final Value<String?> note;
+  final Value<String?> componentId;
   final Value<String> createdAt;
   final Value<String> updatedAt;
   final Value<String> syncStatus;
@@ -4375,6 +4605,7 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
     this.amount = const Value.absent(),
     this.date = const Value.absent(),
     this.note = const Value.absent(),
+    this.componentId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.syncStatus = const Value.absent(),
@@ -4389,6 +4620,7 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
     required int amount,
     required String date,
     this.note = const Value.absent(),
+    this.componentId = const Value.absent(),
     required String createdAt,
     required String updatedAt,
     this.syncStatus = const Value.absent(),
@@ -4409,6 +4641,7 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
     Expression<int>? amount,
     Expression<String>? date,
     Expression<String>? note,
+    Expression<String>? componentId,
     Expression<String>? createdAt,
     Expression<String>? updatedAt,
     Expression<String>? syncStatus,
@@ -4423,6 +4656,7 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
       if (amount != null) 'amount': amount,
       if (date != null) 'date': date,
       if (note != null) 'note': note,
+      if (componentId != null) 'component_id': componentId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (syncStatus != null) 'sync_status': syncStatus,
@@ -4439,6 +4673,7 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
     Value<int>? amount,
     Value<String>? date,
     Value<String?>? note,
+    Value<String?>? componentId,
     Value<String>? createdAt,
     Value<String>? updatedAt,
     Value<String>? syncStatus,
@@ -4453,6 +4688,7 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
       amount: amount ?? this.amount,
       date: date ?? this.date,
       note: note ?? this.note,
+      componentId: componentId ?? this.componentId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       syncStatus: syncStatus ?? this.syncStatus,
@@ -4482,6 +4718,9 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
     }
     if (note.present) {
       map['note'] = Variable<String>(note.value);
+    }
+    if (componentId.present) {
+      map['component_id'] = Variable<String>(componentId.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<String>(createdAt.value);
@@ -4513,6 +4752,7 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
           ..write('amount: $amount, ')
           ..write('date: $date, ')
           ..write('note: $note, ')
+          ..write('componentId: $componentId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('syncStatus: $syncStatus, ')
@@ -7744,6 +7984,8 @@ typedef $$SettingsTableCreateCompanionBuilder = SettingsCompanion Function({
   Value<int?> phaseLimitAmount,
   Value<bool> onboardingDone,
   Value<int> seedVersion,
+  Value<String> componentInputMode,
+  Value<String?> quoteCardDismissedMonth,
   required String createdAt,
   required String updatedAt,
   Value<String> syncStatus,
@@ -7762,6 +8004,8 @@ typedef $$SettingsTableUpdateCompanionBuilder = SettingsCompanion Function({
   Value<int?> phaseLimitAmount,
   Value<bool> onboardingDone,
   Value<int> seedVersion,
+  Value<String> componentInputMode,
+  Value<String?> quoteCardDismissedMonth,
   Value<String> createdAt,
   Value<String> updatedAt,
   Value<String> syncStatus,
@@ -7843,6 +8087,16 @@ class $$SettingsTableFilterComposer
 
   ColumnFilters<int> get seedVersion => $composableBuilder(
     column: $table.seedVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get componentInputMode => $composableBuilder(
+    column: $table.componentInputMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get quoteCardDismissedMonth => $composableBuilder(
+    column: $table.quoteCardDismissedMonth,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7949,6 +8203,16 @@ class $$SettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get componentInputMode => $composableBuilder(
+    column: $table.componentInputMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get quoteCardDismissedMonth => $composableBuilder(
+    column: $table.quoteCardDismissedMonth,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -8050,6 +8314,16 @@ class $$SettingsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get componentInputMode => $composableBuilder(
+    column: $table.componentInputMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get quoteCardDismissedMonth => $composableBuilder(
+    column: $table.quoteCardDismissedMonth,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -8129,6 +8403,8 @@ class $$SettingsTableTableManager
                 Value<int?> phaseLimitAmount = const Value.absent(),
                 Value<bool> onboardingDone = const Value.absent(),
                 Value<int> seedVersion = const Value.absent(),
+                Value<String> componentInputMode = const Value.absent(),
+                Value<String?> quoteCardDismissedMonth = const Value.absent(),
                 Value<String> createdAt = const Value.absent(),
                 Value<String> updatedAt = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
@@ -8146,6 +8422,8 @@ class $$SettingsTableTableManager
                 phaseLimitAmount: phaseLimitAmount,
                 onboardingDone: onboardingDone,
                 seedVersion: seedVersion,
+                componentInputMode: componentInputMode,
+                quoteCardDismissedMonth: quoteCardDismissedMonth,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 syncStatus: syncStatus,
@@ -8165,6 +8443,8 @@ class $$SettingsTableTableManager
                 Value<int?> phaseLimitAmount = const Value.absent(),
                 Value<bool> onboardingDone = const Value.absent(),
                 Value<int> seedVersion = const Value.absent(),
+                Value<String> componentInputMode = const Value.absent(),
+                Value<String?> quoteCardDismissedMonth = const Value.absent(),
                 required String createdAt,
                 required String updatedAt,
                 Value<String> syncStatus = const Value.absent(),
@@ -8182,6 +8462,8 @@ class $$SettingsTableTableManager
                 phaseLimitAmount: phaseLimitAmount,
                 onboardingDone: onboardingDone,
                 seedVersion: seedVersion,
+                componentInputMode: componentInputMode,
+                quoteCardDismissedMonth: quoteCardDismissedMonth,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 syncStatus: syncStatus,
@@ -9226,7 +9508,8 @@ typedef $$PortfolioComponentsTableCreateCompanionBuilder =
       required String ownerId,
       required String instrumentType,
       Value<String?> name,
-      required int amount,
+      Value<double> targetPercent,
+      Value<int> actualAmount,
       Value<String?> codeNote,
       Value<int> sortOrder,
       required String createdAt,
@@ -9243,7 +9526,8 @@ typedef $$PortfolioComponentsTableUpdateCompanionBuilder =
       Value<String> ownerId,
       Value<String> instrumentType,
       Value<String?> name,
-      Value<int> amount,
+      Value<double> targetPercent,
+      Value<int> actualAmount,
       Value<String?> codeNote,
       Value<int> sortOrder,
       Value<String> createdAt,
@@ -9326,8 +9610,13 @@ class $$PortfolioComponentsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get amount => $composableBuilder(
-    column: $table.amount,
+  ColumnFilters<double> get targetPercent => $composableBuilder(
+    column: $table.targetPercent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get actualAmount => $composableBuilder(
+    column: $table.actualAmount,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9437,8 +9726,13 @@ class $$PortfolioComponentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get amount => $composableBuilder(
-    column: $table.amount,
+  ColumnOrderings<double> get targetPercent => $composableBuilder(
+    column: $table.targetPercent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get actualAmount => $composableBuilder(
+    column: $table.actualAmount,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -9544,8 +9838,15 @@ class $$PortfolioComponentsTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<int> get amount =>
-      $composableBuilder(column: $table.amount, builder: (column) => column);
+  GeneratedColumn<double> get targetPercent => $composableBuilder(
+    column: $table.targetPercent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get actualAmount => $composableBuilder(
+    column: $table.actualAmount,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get codeNote =>
       $composableBuilder(column: $table.codeNote, builder: (column) => column);
@@ -9658,7 +9959,8 @@ class $$PortfolioComponentsTableTableManager
                 Value<String> ownerId = const Value.absent(),
                 Value<String> instrumentType = const Value.absent(),
                 Value<String?> name = const Value.absent(),
-                Value<int> amount = const Value.absent(),
+                Value<double> targetPercent = const Value.absent(),
+                Value<int> actualAmount = const Value.absent(),
                 Value<String?> codeNote = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<String> createdAt = const Value.absent(),
@@ -9673,7 +9975,8 @@ class $$PortfolioComponentsTableTableManager
                 ownerId: ownerId,
                 instrumentType: instrumentType,
                 name: name,
-                amount: amount,
+                targetPercent: targetPercent,
+                actualAmount: actualAmount,
                 codeNote: codeNote,
                 sortOrder: sortOrder,
                 createdAt: createdAt,
@@ -9690,7 +9993,8 @@ class $$PortfolioComponentsTableTableManager
                 required String ownerId,
                 required String instrumentType,
                 Value<String?> name = const Value.absent(),
-                required int amount,
+                Value<double> targetPercent = const Value.absent(),
+                Value<int> actualAmount = const Value.absent(),
                 Value<String?> codeNote = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 required String createdAt,
@@ -9705,7 +10009,8 @@ class $$PortfolioComponentsTableTableManager
                 ownerId: ownerId,
                 instrumentType: instrumentType,
                 name: name,
-                amount: amount,
+                targetPercent: targetPercent,
+                actualAmount: actualAmount,
                 codeNote: codeNote,
                 sortOrder: sortOrder,
                 createdAt: createdAt,
@@ -9801,6 +10106,7 @@ typedef $$ContributionsTableCreateCompanionBuilder =
       required int amount,
       required String date,
       Value<String?> note,
+      Value<String?> componentId,
       required String createdAt,
       required String updatedAt,
       Value<String> syncStatus,
@@ -9816,6 +10122,7 @@ typedef $$ContributionsTableUpdateCompanionBuilder =
       Value<int> amount,
       Value<String> date,
       Value<String?> note,
+      Value<String?> componentId,
       Value<String> createdAt,
       Value<String> updatedAt,
       Value<String> syncStatus,
@@ -9893,6 +10200,11 @@ class $$ContributionsTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get componentId => $composableBuilder(
+    column: $table.componentId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9997,6 +10309,11 @@ class $$ContributionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get componentId => $composableBuilder(
+    column: $table.componentId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -10089,6 +10406,11 @@ class $$ContributionsTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get componentId => $composableBuilder(
+    column: $table.componentId,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -10188,6 +10510,7 @@ class $$ContributionsTableTableManager
                 Value<int> amount = const Value.absent(),
                 Value<String> date = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<String?> componentId = const Value.absent(),
                 Value<String> createdAt = const Value.absent(),
                 Value<String> updatedAt = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
@@ -10201,6 +10524,7 @@ class $$ContributionsTableTableManager
                 amount: amount,
                 date: date,
                 note: note,
+                componentId: componentId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 syncStatus: syncStatus,
@@ -10216,6 +10540,7 @@ class $$ContributionsTableTableManager
                 required int amount,
                 required String date,
                 Value<String?> note = const Value.absent(),
+                Value<String?> componentId = const Value.absent(),
                 required String createdAt,
                 required String updatedAt,
                 Value<String> syncStatus = const Value.absent(),
@@ -10229,6 +10554,7 @@ class $$ContributionsTableTableManager
                 amount: amount,
                 date: date,
                 note: note,
+                componentId: componentId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 syncStatus: syncStatus,

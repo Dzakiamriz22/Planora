@@ -1,6 +1,5 @@
 import 'package:material_ui/material_ui.dart';
 
-/// Logo resmi Planora dari SVG DS-PLN-2026-001 (Bab A.5 & Library Bab 01).
 class PlanoraLogo extends StatelessWidget {
   const PlanoraLogo({
     super.key,
@@ -42,7 +41,6 @@ class _PlanoraLogoPainter extends CustomPainter {
       );
     }
 
-    // Huruf P geometris krem #F7F3E7
     final pPath = Path()
       ..moveTo(40, 90)
       ..lineTo(40, 30)
@@ -64,14 +62,12 @@ class _PlanoraLogoPainter extends CustomPainter {
         ..strokeJoin = StrokeJoin.round,
     );
 
-    // Titik emas (82, 30) r=6
     canvas.drawCircle(
       const Offset(82, 30),
       6,
       Paint()..color = const Color(0xFFC98A1B),
     );
 
-    // Garis tumbuh emas (40, 102) -> (84, 102) stroke 6
     canvas.drawLine(
       const Offset(40, 102),
       const Offset(84, 102),
@@ -89,3 +85,4 @@ class _PlanoraLogoPainter extends CustomPainter {
   bool shouldRepaint(covariant _PlanoraLogoPainter oldDelegate) =>
       oldDelegate.showTile != showTile;
 }
+

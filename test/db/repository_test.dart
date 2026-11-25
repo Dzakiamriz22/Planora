@@ -59,64 +59,77 @@ void main() {
     );
   });
 
-  test('FR-09, FR-10, FR-11, BR-02: Contoh kanonis 3 komponen dan penjaga saldo >= total komponen', () async {
+  test('v2.2 Komponen persen: total wajib 100%, larang duplikat, dan setoran teralokasi memperbarui actualAmount', () async {
     final portoId = await portfolioRepo.createPortfolio(
       name: 'Investasi Rutin',
-      category: 'no_target',
+      category: 'cash',
       platformPreset: 'aperd',
       platformName: 'Aplikasi Pilihan Pengguna',
+      savedTarget: 10000000,
       monthlyPlan: 500000,
       annualReturnPct: 5.0,
       icon: 'trending_up',
       color: 0xFF6D5BD0,
     );
 
+    // Total != 100% ditolak
+    expect(
+      () => portfolioRepo.replacePortfolioComponents(
+        portfolioId: portoId,
+        drafts: const [
+          ComponentDraft(instrumentType: 'RDPU', targetPercent: 60),
+          ComponentDraft(instrumentType: 'RD Obligasi', targetPercent: 25),
+        ],
+      ),
+      throwsA(isA<ComponentLimitException>()),
+    );
+
+    // Instrumen duplikat ditolak
+    expect(
+      () => portfolioRepo.replacePortfolioComponents(
+        portfolioId: portoId,
+        drafts: const [
+          ComponentDraft(instrumentType: 'RDPU', targetPercent: 50),
+          ComponentDraft(instrumentType: 'rdpu', targetPercent: 50),
+        ],
+      ),
+      throwsA(isA<ComponentLimitException>()),
+    );
+
+    // Total tepat 100% berhasil disimpan
+    await portfolioRepo.replacePortfolioComponents(
+      portfolioId: portoId,
+      drafts: const [
+        ComponentDraft(instrumentType: 'RDPU', targetPercent: 20),
+        ComponentDraft(instrumentType: 'RD Obligasi', targetPercent: 70),
+        ComponentDraft(instrumentType: 'Saham langsung', targetPercent: 10),
+      ],
+    );
+
+    final comps = await (db.select(db.portfolioComponents)
+          ..where((t) => t.portfolioId.equals(portoId)))
+        .get();
+    expect(comps.length, 3);
+
+    final rdpuId = comps.firstWhere((c) => c.instrumentType == 'RDPU').id;
     final contribId = await portfolioRepo.addContribution(
       portfolioId: portoId,
-      amount: 5000000,
+      amount: 80000,
       dateIso: '2026-11-25',
+      componentId: rdpuId,
     );
 
-    await portfolioRepo.upsertComponent(
-      portfolioId: portoId,
-      instrumentType: 'RDPU',
-      amount: 2000000,
-    );
-    await portfolioRepo.upsertComponent(
-      portfolioId: portoId,
-      instrumentType: 'RD Obligasi',
-      amount: 1500000,
-    );
-    await portfolioRepo.upsertComponent(
-      portfolioId: portoId,
-      instrumentType: 'Saham langsung',
-      amount: 500000,
-      codeNote: 'Kode pilihan pengguna',
-    );
+    final rdpuAfter = await (db.select(db.portfolioComponents)
+          ..where((t) => t.id.equals(rdpuId)))
+        .getSingle();
+    expect(rdpuAfter.actualAmount, 80000);
 
-    // Komponen baru yang membuat total > saldo (5.000.000) ditolak
-    expect(
-      () => portfolioRepo.upsertComponent(
-        portfolioId: portoId,
-        instrumentType: 'Emas',
-        amount: 1500000,
-      ),
-      throwsA(isA<ComponentLimitException>()),
-    );
-
-    // Mengurangi atau menghapus setoran sehingga saldo < total komponen (4 jt) ditolak
-    expect(
-      () => portfolioRepo.updateContribution(
-        id: contribId,
-        amount: 3000000,
-        dateIso: '2026-11-25',
-      ),
-      throwsA(isA<ComponentLimitException>()),
-    );
-    expect(
-      () => portfolioRepo.deleteContribution(contribId),
-      throwsA(isA<ComponentLimitException>()),
-    );
+    // Hapus setoran mengurangi actualAmount komponen kembali ke 0
+    await portfolioRepo.deleteContribution(contribId);
+    final rdpuDeleted = await (db.select(db.portfolioComponents)
+          ..where((t) => t.id.equals(rdpuId)))
+        .getSingle();
+    expect(rdpuDeleted.actualAmount, 0);
   });
 
   test('FR-21 & FR-23: Buat fase seimbang, batas per porto opsional, duplikat, dan hapus fase aktif ditolak', () async {
@@ -202,10 +215,15 @@ void main() {
       amount: 2000000,
       dateIso: '2026-11-25',
     );
-    await portfolioRepo.upsertComponent(
+    await portfolioRepo.replacePortfolioComponents(
       portfolioId: pid,
-      instrumentType: 'Kas/Tunai',
-      amount: 2000000,
+      drafts: const [
+        ComponentDraft(
+          instrumentType: 'Kas/Tunai',
+          targetPercent: 100.0,
+          actualAmount: 2000000,
+        ),
+      ],
     );
     await settingsRepo.upsertPriceReference(
       name: 'Rumah Contoh',

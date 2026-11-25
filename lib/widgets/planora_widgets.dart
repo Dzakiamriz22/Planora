@@ -2,7 +2,6 @@ import 'package:material_ui/material_ui.dart';
 import 'package:planora/core/theme/app_theme.dart';
 import 'package:planora/core/theme/planora_colors.dart';
 
-/// Kartu standar Planora: radius 18, border 1px `#E4EAE2`, padding 14.
 class PlanoraCard extends StatelessWidget {
   const PlanoraCard({
     super.key,
@@ -63,7 +62,6 @@ class PlanoraCard extends StatelessWidget {
   }
 }
 
-/// Chip pill Planora: radius 999, padding 3x8, teks 10,5px bold.
 class PlanoraPill extends StatelessWidget {
   const PlanoraPill({
     super.key,
@@ -149,7 +147,6 @@ class PlanoraPill extends StatelessWidget {
   }
 }
 
-/// Titik warna porto: 9x9px, radius 3px.
 class PortfolioDot extends StatelessWidget {
   const PortfolioDot({super.key, required this.color, this.size = 9});
 
@@ -169,7 +166,6 @@ class PortfolioDot extends StatelessWidget {
   }
 }
 
-/// Bar progres Planora: tinggi default 7px (Detail Porto 9px), rel `#E7EDE5`, isi warna porto.
 class PlanoraProgressBar extends StatelessWidget {
   const PlanoraProgressBar({
     super.key,
@@ -214,7 +210,6 @@ class PlanoraProgressBar extends StatelessWidget {
   }
 }
 
-/// Segmen untuk bar alokasi bertumpuk.
 class AllocationBarSegment {
   const AllocationBarSegment({required this.amount, required this.color});
 
@@ -222,7 +217,6 @@ class AllocationBarSegment {
   final Color color;
 }
 
-/// Bar alokasi bertumpuk: tinggi 12px (Form Fase 10px), pill, jarak antar segmen 2px.
 class StackedAllocationBar extends StatelessWidget {
   const StackedAllocationBar({
     super.key,
@@ -274,7 +268,6 @@ class StackedAllocationBar extends StatelessWidget {
   }
 }
 
-/// Kotak catatan hijau (`#F2F7F1`) atau kuning (`#FBF4E0`).
 class PlanoraNoteBox extends StatelessWidget {
   const PlanoraNoteBox({
     super.key,
@@ -316,7 +309,6 @@ class PlanoraNoteBox extends StatelessWidget {
   }
 }
 
-/// Tombol ikon app bar 36x36 visual dengan target sentuh 48x48, radius 12.
 class PlanoraAppBarIconButton extends StatelessWidget {
   const PlanoraAppBarIconButton({
     super.key,
@@ -370,7 +362,6 @@ class PlanoraAppBarIconButton extends StatelessWidget {
   }
 }
 
-/// Baris kunci–nilai standar (label redup kiri, nilai bold tabular kanan).
 class PlanoraKeyValueRow extends StatelessWidget {
   const PlanoraKeyValueRow({
     super.key,
@@ -432,7 +423,6 @@ class PlanoraKeyValueRow extends StatelessWidget {
   }
 }
 
-/// Garis pemisah putus-putus untuk daftar checklist Beranda.
 class DashedDivider extends StatelessWidget {
   const DashedDivider({super.key});
 
@@ -459,7 +449,6 @@ class DashedDivider extends StatelessWidget {
   }
 }
 
-/// Bottom navigation bar kustom Planora sesuai desain layar (4 tab tetap).
 class PlanoraBottomNavBar extends StatelessWidget {
   const PlanoraBottomNavBar({
     super.key,
@@ -551,3 +540,4 @@ class PlanoraBottomNavBar extends StatelessWidget {
     );
   }
 }
+

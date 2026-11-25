@@ -4,7 +4,6 @@ import 'package:planora/core/theme/planora_colors.dart';
 class AppTheme {
   AppTheme._();
 
-  // Alias kompatibilitas untuk layar yang masih merujuk AppTheme.*
   static const Color bankGreen = PlanoraColors.primary;
   static const Color bankGreenLight = PlanoraColors.greenBright;
   static const Color surfaceBg = PlanoraColors.screenBg;
@@ -282,3 +281,4 @@ class AppTheme {
     );
   }
 }
+

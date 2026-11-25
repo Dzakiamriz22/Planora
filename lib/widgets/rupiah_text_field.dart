@@ -2,7 +2,6 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:planora/core/format/formatters.dart';
 
-/// InputFormatter yang memformat angka bulat dengan pemisah ribuan titik (`id_ID`).
 class RupiahInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
@@ -72,3 +71,4 @@ class RupiahTextField extends StatelessWidget {
     );
   }
 }
+

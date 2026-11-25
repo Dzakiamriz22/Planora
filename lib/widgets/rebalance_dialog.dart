@@ -3,8 +3,6 @@ import 'package:planora/core/calc/planora_calc.dart';
 import 'package:planora/core/format/formatters.dart';
 import 'package:planora/core/theme/app_theme.dart';
 
-/// Dialog pratinjau penyeimbangan plafon.
-/// Mengembalikan `true` hanya jika pengguna menyetujui secara eksplisit.
 Future<bool> showRebalancePreviewDialog(
   BuildContext context, {
   required RebalanceResult result,
@@ -111,3 +109,4 @@ Future<bool> showRebalancePreviewDialog(
 
   return approved == true;
 }
+

@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:planora/core/calc/planora_v22_calc.dart';
 import 'package:planora/data/db/seed_data.dart';
 import 'package:planora/data/db/tables.dart';
 import 'package:uuid/uuid.dart';
@@ -26,7 +27,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -34,8 +35,6 @@ class AppDatabase extends _$AppDatabase {
           await m.createAll();
         },
         onUpgrade: (m, from, to) async {
-          // Migrasi aman v1 -> v2.1: pertahankan data pengguna yang sudah ada
-          // sambil menambahkan user_profiles, portfolio_components, dan kolom cloud-ready.
           if (from < 2) {
             await customStatement('PRAGMA foreign_keys = OFF');
             try {
@@ -54,7 +53,6 @@ class AppDatabase extends _$AppDatabase {
                 ),
               );
 
-              // Backup data lama v1 jika ada
               final oldSettings =
                   await customSelect('SELECT * FROM settings').get();
               final oldPortfolios =
@@ -210,6 +208,95 @@ class AppDatabase extends _$AppDatabase {
               await customStatement('PRAGMA foreign_keys = ON');
             }
           }
+
+          if (from < 3) {
+            await customStatement('PRAGMA foreign_keys = OFF');
+            try {
+              if (from >= 2) {
+                await customStatement(
+                  "ALTER TABLE settings ADD COLUMN component_input_mode TEXT NOT NULL DEFAULT 'percent'",
+                );
+                await customStatement(
+                  'ALTER TABLE settings ADD COLUMN quote_card_dismissed_month TEXT',
+                );
+                await customStatement(
+                  'ALTER TABLE contributions ADD COLUMN component_id TEXT',
+                );
+              }
+
+              final oldComponents = await customSelect(
+                'SELECT * FROM portfolio_components',
+              ).get();
+              final allPortfolios = await customSelect(
+                'SELECT id, saved_target FROM portfolios',
+              ).get();
+              final targetByPortfolio = <String, int>{
+                for (final r in allPortfolios)
+                  r.data['id'] as String:
+                      (r.data['saved_target'] as num?)?.toInt() ?? 0,
+              };
+
+              final byPortfolio = <String, List<Map<String, dynamic>>>{};
+              for (final row in oldComponents) {
+                final pid = row.data['portfolio_id'] as String;
+                byPortfolio.putIfAbsent(pid, () => []).add(row.data);
+              }
+
+              final migratedRows = <PortfolioComponentsCompanion>[];
+              for (final entry in byPortfolio.entries) {
+                final pid = entry.key;
+                final rows = entry.value;
+                final amounts = rows
+                    .map((r) => (r['amount'] as num?)?.toInt() ?? 0)
+                    .toList();
+                final sumAmt = amounts.fold<int>(0, (s, a) => s + a);
+                final savedTarget = targetByPortfolio[pid] ?? 0;
+                final totalTargetForMigration =
+                    savedTarget > 0 ? savedTarget : sumAmt;
+
+                final percents = PlanoraV22Calc.migrateAmountsToPercents(
+                  amounts: amounts,
+                  portfolioTotalTarget: totalTargetForMigration,
+                );
+
+                if (!PlanoraV22Calc.isExact100(percents)) {
+                  throw MigrationValidationException(
+                    'Migrasi dibatalkan: total persen porto $pid tidak tepat 100%.',
+                  );
+                }
+
+                for (var i = 0; i < rows.length; i++) {
+                  final d = rows[i];
+                  migratedRows.add(
+                    PortfolioComponentsCompanion.insert(
+                      id: d['id'] as String,
+                      portfolioId: pid,
+                      ownerId: d['owner_id'] as String,
+                      instrumentType: d['instrument_type'] as String,
+                      name: Value(d['name'] as String?),
+                      targetPercent: Value(percents[i]),
+                      actualAmount: Value(amounts[i]),
+                      codeNote: Value(d['code_note'] as String?),
+                      sortOrder: Value((d['sort_order'] as num?)?.toInt() ?? i),
+                      createdAt: d['created_at'] as String,
+                      updatedAt: d['updated_at'] as String,
+                      syncStatus: Value((d['sync_status'] as String?) ?? 'local'),
+                      remoteId: Value(d['remote_id'] as String?),
+                      deletedAt: Value(d['deleted_at'] as String?),
+                    ),
+                  );
+                }
+              }
+
+              await customStatement('DROP TABLE IF EXISTS portfolio_components');
+              await m.createTable(portfolioComponents);
+              for (final comp in migratedRows) {
+                await into(portfolioComponents).insert(comp);
+              }
+            } finally {
+              await customStatement('PRAGMA foreign_keys = ON');
+            }
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
@@ -220,7 +307,6 @@ class AppDatabase extends _$AppDatabase {
     await ensureEmptyInitialState(this, now: now);
   }
 
-  /// Reset total ke keadaan kosong Bab A.4 (FR-31), termasuk menghapus file foto profil lokal.
   Future<void> resetToEmpty({DateTime? now}) async {
     final profiles = await select(userProfiles).get();
     for (final prof in profiles) {
@@ -253,3 +339,4 @@ LazyDatabase _openConnection() {
     return NativeDatabase.createInBackground(file);
   });
 }
+

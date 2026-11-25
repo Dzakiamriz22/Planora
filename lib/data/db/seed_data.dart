@@ -2,12 +2,6 @@ import 'package:drift/drift.dart';
 import 'package:planora/data/db/app_database.dart';
 import 'package:uuid/uuid.dart';
 
-/// Seed kosong v3 (DS-PLN-2026-001 FR-01 / Bab A.4).
-///
-/// Instal baru menghasilkan:
-/// - 1 baris `user_profiles` kosong (UUID lokal baru, semua identitas NULL)
-/// - 1 baris `settings` kosong (gaji & biaya hidup NULL, return 5%, batas fase nonaktif, seed_version = 3)
-/// - 0 porto, 0 komponen, 0 setoran, 0 fase, 0 alokasi, 0 referensi harga.
 Future<void> ensureEmptyInitialState(AppDatabase db, {DateTime? now}) async {
   const uuid = Uuid();
   final isoNow = (now ?? DateTime.now()).toUtc().toIso8601String();
@@ -57,3 +51,4 @@ Future<void> ensureEmptyInitialState(AppDatabase db, {DateTime? now}) async {
         );
   });
 }
+

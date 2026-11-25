@@ -3,14 +3,17 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planora/core/calc/planora_calc.dart';
+import 'package:planora/core/calc/planora_v22_calc.dart';
 import 'package:planora/core/constants/portfolio_palette.dart';
 import 'package:planora/core/format/formatters.dart';
 import 'package:planora/core/theme/app_theme.dart';
+import 'package:planora/core/theme/chart_tokens.dart';
 import 'package:planora/core/theme/planora_colors.dart';
 import 'package:planora/data/db/app_database.dart';
 import 'package:planora/data/repositories/portfolio_repository.dart';
 import 'package:planora/features/portfolios/contribution_sheet.dart';
 import 'package:planora/features/shared/planora_providers.dart';
+import 'package:planora/widgets/planora_charts.dart';
 import 'package:planora/widgets/planora_widgets.dart';
 import 'package:planora/widgets/rebalance_dialog.dart';
 import 'package:planora/widgets/rupiah_text_field.dart';
@@ -28,167 +31,84 @@ class PortfolioDetailScreen extends ConsumerStatefulWidget {
 class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
   int _tenorMonths = 240;
   double _illustrativeRatePct = 6.75;
+  String _donutMode = 'actual'; // 'actual' | 'target'
 
-  Future<void> _showComponentSheet(
-    PortfolioSnapshot snap, {
-    PortfolioComponent? existing,
-  }) async {
+  Future<void> _showComponentActualSheet(
+    PortfolioSnapshot snap,
+    PortfolioComponent comp,
+  ) async {
     final formKey = GlobalKey<FormState>();
-    String selectedPreset = PortfolioPalette.instrumentPresets.contains(
-      existing?.instrumentType,
-    )
-        ? existing!.instrumentType
-        : (existing == null ? 'RDPU' : 'Lainnya');
-    final customInstrumentCtrl = TextEditingController(
-      text: selectedPreset == 'Lainnya' && existing != null
-          ? existing.instrumentType
-          : '',
-    );
-    final nameCtrl = TextEditingController(text: existing?.name ?? '');
     final amountCtrl = TextEditingController(
-      text: existing != null ? AppFormatters.number(existing.amount) : '',
+      text: comp.actualAmount > 0 ? AppFormatters.number(comp.actualAmount) : '',
     );
-    final codeNoteCtrl = TextEditingController(text: existing?.codeNote ?? '');
-    String? errorMsg;
+    final targetDerived = PlanoraV22Calc.targetAmountFromPercent(
+      targetPercent: comp.targetPercent,
+      portfolioTargetTotal: snap.portfolio.savedTarget ?? 0,
+    );
 
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) {
-          final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
-          return Padding(
-            padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomInset),
-            child: Form(
-              key: formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      existing == null
-                          ? 'Tambah Komponen Instrumen'
-                          : 'Edit Komponen Instrumen',
-                      style: AppTheme.sora(size: 17, weight: FontWeight.w700),
+      builder: (ctx) {
+        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+        return Padding(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomInset),
+          child: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    comp.instrumentType,
+                    style: AppTheme.sora(size: 17, weight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Target alokasi: ${PlanoraV22Calc.formatPercent(comp.targetPercent)}'
+                    '${targetDerived > 0 ? ' (${AppFormatters.rupiah(targetDerived)})' : ''}',
+                    style: AppTheme.manrope(
+                      size: 12.5,
+                      color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                      tabular: true,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Saldo porto: ${AppFormatters.rupiah(snap.balance)} • Belum dirinci: ${AppFormatters.rupiah(snap.unallocatedBalance)}',
-                      style: AppTheme.manrope(
-                        size: 12,
-                        color: PlanoraColors.inkMuted,
-                        tabular: true,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    DropdownButtonFormField<String>(
-                      initialValue: selectedPreset,
-                      decoration:
-                          const InputDecoration(labelText: 'Jenis instrumen'),
-                      items: PortfolioPalette.instrumentPresets
-                          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                          .toList(),
-                      onChanged: (v) {
-                        if (v != null) {
-                          setSheetState(() => selectedPreset = v);
-                        }
-                      },
-                    ),
-                    if (selectedPreset == 'Lainnya') ...[
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: customInstrumentCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Nama jenis instrumen lainnya',
-                        ),
-                        validator: (v) => (v == null || v.trim().isEmpty)
-                            ? 'Wajib diisi'
-                            : null,
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    RupiahTextField(
-                      controller: amountCtrl,
-                      label: 'Nominal komponen',
-                      validator: (v) => parseRupiahInput(v ?? '') <= 0
-                          ? 'Nominal harus lebih dari Rp 0.'
-                          : null,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: nameCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Nama produk (opsional)',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: codeNoteCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Kode / catatan (opsional)',
-                      ),
-                    ),
-                    if (errorMsg != null) ...[
-                      const SizedBox(height: 10),
-                      Text(
-                        errorMsg!,
-                        style: AppTheme.manrope(
-                          size: 12,
-                          weight: FontWeight.w700,
-                          color: PlanoraColors.danger,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: () async {
-                        if (!formKey.currentState!.validate()) return;
-                        final inst = selectedPreset == 'Lainnya'
-                            ? customInstrumentCtrl.text.trim()
-                            : selectedPreset;
-                        try {
-                          await ref
-                              .read(portfolioRepositoryProvider)
-                              .upsertComponent(
-                                id: existing?.id,
-                                portfolioId: snap.portfolio.id,
-                                instrumentType: inst,
-                                name: nameCtrl.text,
-                                amount: parseRupiahInput(amountCtrl.text),
-                                codeNote: codeNoteCtrl.text,
-                              );
-                          if (ctx.mounted) Navigator.of(ctx).pop();
-                        } catch (e) {
-                          setSheetState(() => errorMsg = e.toString());
-                        }
-                      },
-                      child: const Text('Simpan Komponen'),
-                    ),
-                    if (existing != null) ...[
-                      const SizedBox(height: 6),
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          foregroundColor: PlanoraColors.danger,
-                        ),
-                        onPressed: () async {
-                          await ref
-                              .read(portfolioRepositoryProvider)
-                              .deleteComponent(existing.id);
-                          if (ctx.mounted) Navigator.of(ctx).pop();
-                        },
-                        child: const Text('Hapus Komponen'),
-                      ),
-                    ],
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 14),
+                  RupiahTextField(
+                    controller: amountCtrl,
+                    label: 'Saldo aktual komponen',
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: () async {
+                      await ref
+                          .read(portfolioRepositoryProvider)
+                          .updateComponentActualAmount(
+                            componentId: comp.id,
+                            actualAmount: parseRupiahInput(amountCtrl.text),
+                          );
+                      if (ctx.mounted) Navigator.of(ctx).pop();
+                    },
+                    child: const Text('Simpan Saldo Aktual'),
+                  ),
+                  const SizedBox(height: 6),
+                  OutlinedButton(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      context.push('/portfolios/${snap.portfolio.id}/edit');
+                    },
+                    child: const Text('Ubah Persentase Target di Form Porto'),
+                  ),
+                ],
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
+    amountCtrl.dispose();
   }
 
   Future<void> _confirmDeleteContribution(Contribution contribution) async {
@@ -789,7 +709,6 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 6, 16, 20),
                 children: [
-                  // Kepala porto
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -832,6 +751,16 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                                   PlanoraPill.gray('Mode DP + Biaya')
                                 else if (p.category == 'no_target')
                                   PlanoraPill.gray('Tanpa Target'),
+                                switch (snap.projectionV22.status) {
+                                  PortfolioTrackStatusV22.achieved =>
+                                    PlanoraPill.green('Tercapai'),
+                                  PortfolioTrackStatusV22.notStarted =>
+                                    PlanoraPill.gray('Belum Mulai'),
+                                  PortfolioTrackStatusV22.onTrack =>
+                                    PlanoraPill.green('On Track'),
+                                  PortfolioTrackStatusV22.offTrack =>
+                                    PlanoraPill.danger('Off Track'),
+                                },
                               ],
                             ),
                           ],
@@ -862,15 +791,19 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          isDpCategory
-                              ? 'Target simpan (DP + biaya)'
-                              : 'Target simpan',
-                          style: AppTheme.manrope(
-                            size: 12,
-                            color: cs.onSurfaceVariant,
+                        Expanded(
+                          child: Text(
+                            isDpCategory
+                                ? 'Target simpan (DP + biaya)'
+                                : 'Target simpan',
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTheme.manrope(
+                              size: 12,
+                              color: cs.onSurfaceVariant,
+                            ),
                           ),
                         ),
+                        const SizedBox(width: 8),
                         Text(
                           '${AppFormatters.rupiah(p.savedTarget!)} · ${AppFormatters.percent(snap.progressPct)}',
                           style: AppTheme.manrope(
@@ -892,7 +825,6 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
 
                   const SizedBox(height: 14),
 
-                  // Kartu angka kunci
                   PlanoraCard(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
@@ -932,137 +864,299 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
 
                   const SizedBox(height: 12),
 
-                  // Kartu Komponen Instrumen terstruktur (FR-09, FR-10, BR-02)
+                  if (snap.components.isNotEmpty) ...[
+                    Builder(
+                      builder: (context) {
+                        final isDark =
+                            Theme.of(context).brightness == Brightness.dark;
+                        final summary = ref.watch(financialSummaryProvider);
+                        final isTargetView = _donutMode == 'target';
+                        final totalActualComp = snap.totalComponentsActual;
+                        final donutSlices = snap.components.map((c) {
+                          final pct = isTargetView
+                              ? c.targetPercent
+                              : PlanoraV22Calc.actualPercent(
+                                  actualAmount: c.actualAmount,
+                                  totalActualPortfolio: totalActualComp,
+                                );
+                          final amt = isTargetView
+                              ? PlanoraV22Calc.targetAmountFromPercent(
+                                  targetPercent: c.targetPercent,
+                                  portfolioTargetTotal: p.savedTarget ?? 0,
+                                )
+                              : c.actualAmount;
+                          return DonutSliceData(
+                            label: c.instrumentType,
+                            percent: pct,
+                            amount: amt,
+                            color: PlanoraChartTokens.colorForInstrument(
+                              c.instrumentType,
+                              isDark: isDark,
+                            ),
+                          );
+                        }).toList();
+
+                        return Column(
+                          children: [
+                            PlanoraCard(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'Alokasi Instrumen',
+                                          style: AppTheme.manrope(
+                                            size: 13.5,
+                                            weight: FontWeight.w800,
+                                            color: cs.onSurface,
+                                          ),
+                                        ),
+                                      ),
+                                      SegmentedButton<String>(
+                                        segments: const [
+                                          ButtonSegment(
+                                            value: 'actual',
+                                            label: Text('Aktual'),
+                                          ),
+                                          ButtonSegment(
+                                            value: 'target',
+                                            label: Text('Target'),
+                                          ),
+                                        ],
+                                        selected: {_donutMode},
+                                        onSelectionChanged: (s) {
+                                          if (s.isNotEmpty) {
+                                            setState(() => _donutMode = s.first);
+                                          }
+                                        },
+                                        showSelectedIcon: false,
+                                        style: ButtonStyle(
+                                          visualDensity: VisualDensity.compact,
+                                          textStyle: WidgetStatePropertyAll(
+                                            AppTheme.manrope(
+                                              size: 11.5,
+                                              weight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  PlanoraAllocationDonutChart(
+                                    slices: donutSlices,
+                                    centerLabel:
+                                        isTargetView ? 'Target' : 'Aktual',
+                                    centerValue: PlanoraChartTokens.compactRupiah(
+                                      isTargetView
+                                          ? (p.savedTarget ?? 0)
+                                          : totalActualComp,
+                                    ),
+                                    emptyMessage: isTargetView
+                                        ? 'Belum ada target komponen'
+                                        : 'Belum ada setoran teralokasi — catat setoran pertama',
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+
+                            PlanoraCard(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Alokasi vs Target',
+                                        style: AppTheme.manrope(
+                                          size: 13.5,
+                                          weight: FontWeight.w800,
+                                          color: cs.onSurface,
+                                        ),
+                                      ),
+                                      InkWell(
+                                        onTap: () => context
+                                            .push('/portfolios/${p.id}/edit'),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 4,
+                                            vertical: 2,
+                                          ),
+                                          child: Text(
+                                            'Atur %',
+                                            style: AppTheme.manrope(
+                                              size: 12.5,
+                                              weight: FontWeight.w800,
+                                              color: cs.primary,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  for (var i = 0;
+                                      i < snap.components.length;
+                                      i++) ...[
+                                    if (i > 0) const Divider(),
+                                    PlanoraAllocationComparisonRow(
+                                      instrument:
+                                          snap.components[i].instrumentType,
+                                      actualAmount:
+                                          snap.components[i].actualAmount,
+                                      targetAmount:
+                                          PlanoraV22Calc.targetAmountFromPercent(
+                                        targetPercent:
+                                            snap.components[i].targetPercent,
+                                        portfolioTargetTotal:
+                                            p.savedTarget ?? 0,
+                                      ),
+                                      actualPercent:
+                                          PlanoraV22Calc.actualPercent(
+                                        actualAmount:
+                                            snap.components[i].actualAmount,
+                                        totalActualPortfolio: totalActualComp,
+                                      ),
+                                      targetPercent:
+                                          snap.components[i].targetPercent,
+                                      highlightNominal:
+                                          summary.componentInputMode ==
+                                              'nominal',
+                                      onTap: () => _showComponentActualSheet(
+                                        snap,
+                                        snap.components[i],
+                                      ),
+                                    ),
+                                  ],
+                                  if (snap.unallocatedBalance > 0) ...[
+                                    const Divider(),
+                                    PlanoraKeyValueRow(
+                                      label: 'Saldo belum dialokasikan ke komponen',
+                                      value: AppFormatters.rupiah(
+                                        snap.unallocatedBalance,
+                                      ),
+                                      valueColor: cs.onSurfaceVariant,
+                                      verticalPadding: 4,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ] else
+                    PlanoraCard(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Belum ada komponen instrumen. Atur persentase instrumen melalui Edit Porto.',
+                              style: AppTheme.manrope(
+                                size: 12,
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: () =>
+                                context.push('/portfolios/${p.id}/edit'),
+                            child: const Text('Atur'),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  const SizedBox(height: 12),
+
                   PlanoraCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Komponen Instrumen',
-                              style: AppTheme.manrope(
-                                size: 13.5,
-                                weight: FontWeight.w800,
-                                color: cs.onSurface,
-                              ),
-                            ),
-                            InkWell(
-                              onTap: () => _showComponentSheet(snap),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                  vertical: 2,
-                                ),
-                                child: Text(
-                                  '+ Tambah',
-                                  style: AppTheme.manrope(
-                                    size: 12.5,
-                                    weight: FontWeight.w800,
-                                    color: cs.primary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        if (snap.components.isEmpty)
-                          Text(
-                            'Belum ada rincian komponen. Saldo porto tetap dihitung dari catatan setoran.',
-                            style: AppTheme.manrope(
-                              size: 12,
-                              color: cs.onSurfaceVariant,
-                            ),
-                          )
-                        else ...[
-                          for (var i = 0; i < snap.components.length; i++) ...[
-                            if (i > 0) const Divider(),
-                            InkWell(
-                              onTap: () => _showComponentSheet(
-                                snap,
-                                existing: snap.components[i],
-                              ),
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 8),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            snap.components[i].instrumentType,
-                                            style: AppTheme.manrope(
-                                              size: 13,
-                                              weight: FontWeight.w700,
-                                              color: cs.onSurface,
-                                            ),
-                                          ),
-                                          if ((snap.components[i].name ?? '')
-                                                  .isNotEmpty ||
-                                              (snap.components[i].codeNote ??
-                                                      '')
-                                                  .isNotEmpty)
-                                            Text(
-                                              [
-                                                if ((snap.components[i].name ??
-                                                        '')
-                                                    .isNotEmpty)
-                                                  snap.components[i].name!,
-                                                if ((snap.components[i]
-                                                            .codeNote ??
-                                                        '')
-                                                    .isNotEmpty)
-                                                  snap.components[i].codeNote!,
-                                              ].join(' · '),
-                                              style: AppTheme.manrope(
-                                                size: 11.5,
-                                                color: cs.onSurfaceVariant,
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                    Text(
-                                      AppFormatters.rupiah(
-                                        snap.components[i].amount,
-                                      ),
-                                      style: AppTheme.manrope(
-                                        size: 13,
-                                        weight: FontWeight.w800,
-                                        color: cs.onSurface,
-                                        tabular: true,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                          const Divider(),
-                          PlanoraKeyValueRow(
-                            label: 'Total komponen',
-                            value: AppFormatters.rupiah(snap.totalComponents),
-                            verticalPadding: 6,
+                        Text(
+                          'Riwayat Saldo Porto (6 Bulan)',
+                          style: AppTheme.manrope(
+                            size: 13.5,
+                            weight: FontWeight.w800,
+                            color: cs.onSurface,
                           ),
-                          if (snap.unallocatedBalance > 0)
-                            PlanoraKeyValueRow(
-                              label: 'Belum dirinci',
-                              value:
-                                  AppFormatters.rupiah(snap.unallocatedBalance),
-                              valueColor: cs.onSurfaceVariant,
-                              verticalPadding: 4,
-                            ),
-                        ],
+                        ),
+                        const SizedBox(height: 12),
+                        PlanoraBalanceAreaChart(
+                          points: snap.balanceSeries6m,
+                          lineColor: color,
+                          height: 156,
+                        ),
                       ],
                     ),
                   ),
 
                   const SizedBox(height: 12),
+
+                  if (snap.hasTarget) ...[
+                    PlanoraCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Proyeksi Capaian (Laju 3 Bulan Terakhir)',
+                            style: AppTheme.manrope(
+                              size: 13.5,
+                              weight: FontWeight.w800,
+                              color: cs.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          PlanoraKeyValueRow(
+                            label: 'Rata-rata setoran 3 bln',
+                            value:
+                                '${AppFormatters.rupiah(snap.projectionV22.averageRate3m)}/bln',
+                            verticalPadding: 6,
+                          ),
+                          const Divider(),
+                          PlanoraKeyValueRow(
+                            label: 'Perkiraan tercapai',
+                            value: snap.projectionV22.projectedDate != null
+                                ? AppFormatters.shortMonthYear(
+                                    snap.projectionV22.projectedDate!,
+                                  )
+                                : '—',
+                            valueColor: cs.primary,
+                            verticalPadding: 6,
+                          ),
+                          if (snap.projectionV22.requiredMonthly != null &&
+                              snap.projectionV22.requiredMonthly! > 0) ...[
+                            const Divider(),
+                            PlanoraKeyValueRow(
+                              label: 'Butuh per bulan sesuai tanggal target',
+                              value:
+                                  '${AppFormatters.rupiah(snap.projectionV22.requiredMonthly!)}/bln',
+                              verticalPadding: 6,
+                            ),
+                          ],
+                          if (snap.projectionV22.rateEmptyMessage != null) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              snap.projectionV22.rateEmptyMessage!,
+                              style: AppTheme.manrope(
+                                size: 11.5,
+                                color: PlanoraColors.gold,
+                                weight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
 
                   if (p.category != 'no_target') ...[
                     PlanoraCard(
@@ -1098,7 +1192,6 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                     const SizedBox(height: 12),
                   ],
 
-                  // Kotak kuning ilustrasi cicilan + pintu referensi harga (FR-26, FR-27)
                   if (isDpCategory && loanPrincipal > 0) ...[
                     PlanoraNoteBox(
                       isWarning: true,
@@ -1196,7 +1289,6 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                     const SizedBox(height: 4),
                   ],
 
-                  // Setoran Terakhir
                   PlanoraCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1432,3 +1524,4 @@ class _TargetModeRadioCard extends StatelessWidget {
     );
   }
 }
+

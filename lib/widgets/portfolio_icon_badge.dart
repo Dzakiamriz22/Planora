@@ -31,3 +31,4 @@ class PortfolioIconBadge extends StatelessWidget {
     );
   }
 }
+

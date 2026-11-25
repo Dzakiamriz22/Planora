@@ -12,7 +12,6 @@ import 'package:planora/data/repositories/profile_repository.dart';
 import 'package:planora/features/shared/planora_providers.dart';
 import 'package:planora/widgets/planora_widgets.dart';
 
-/// Layar Profil Pengguna Lokal — bukan akun online (FR-03, Bab A.4).
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -151,7 +150,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Avatar lokal
                       Center(
                         child: Column(
                           children: [
@@ -304,3 +302,4 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 }
+

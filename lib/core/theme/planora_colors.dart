@@ -1,10 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 
-/// Token warna resmi desain layar Planora — sumber kebenaran tunggal UI.
 class PlanoraColors {
   PlanoraColors._();
 
-  // Warna utama
   static const Color primary = Color(0xFF0B4A34);
   static const Color greenBright = Color(0xFF0E5F43);
   static const Color greenSoft = Color(0xFFDCEBE2);
@@ -15,14 +13,12 @@ class PlanoraColors {
   static const Color hairlineDivider = Color(0xFFEEF2EC);
   static const Color iconButtonBorder = Color(0xFFE2E8E0);
 
-  // Tinta teks
   static const Color inkPrimary = Color(0xFF17211A);
   static const Color inkSecondary = Color(0xFF43524A);
   static const Color inkMuted = Color(0xFF68776C);
   static const Color inkFaded = Color(0xFF75857B);
   static const Color navInactive = Color(0xFF8A978C);
 
-  // Aksen & status
   static const Color gold = Color(0xFFC98A1B);
   static const Color danger = Color(0xFFB3372A);
   static const Color dangerSoft = Color(0xFFF6E3DE);
@@ -30,7 +26,6 @@ class PlanoraColors {
   static const Color trackBg = Color(0xFFE7EDE5);
   static const Color checkBorder = Color(0xFFC8D4C6);
 
-  // Kotak catatan & chip
   static const Color noteGreenBg = Color(0xFFF2F7F1);
   static const Color noteYellowBg = Color(0xFFFBF4E0);
   static const Color noteYellowBorder = Color(0xFFEFDFAE);
@@ -40,11 +35,9 @@ class PlanoraColors {
   static const Color chipSekuritasText = Color(0xFF8F3120);
   static const Color rumahIconBg = Color(0xFFDCEBF7);
 
-  // Kartu saldo hijau
   static const Color balanceText = Color(0xFFEAF4EE);
   static const Color balanceLabel = Color(0xFFA9CBB8);
 
-  // Palet 6 warna porto bebas (Bab A.5)
   static const List<int> sixPortfolioColors = [
     0xFF0E7C66,
     0xFFC4557A,
@@ -54,10 +47,10 @@ class PlanoraColors {
     0xFFB3402A,
   ];
 
-  // Mode gelap sistem (R-11)
   static const Color darkBg = Color(0xFF0F1413);
   static const Color darkCard = Color(0xFF18201E);
   static const Color darkBorder = Color(0xFF2B3835);
   static const Color darkInkPrimary = Color(0xFFF3F4F6);
   static const Color darkInkSecondary = Color(0xFF9CA3AF);
 }
+

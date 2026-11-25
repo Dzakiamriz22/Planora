@@ -1,11 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:planora/core/calc/planora_calc.dart';
+import 'package:planora/core/calc/planora_v22_calc.dart';
 import 'package:planora/core/format/formatters.dart';
 import 'package:planora/data/db/app_database.dart';
 import 'package:planora/data/repositories/phase_repository.dart';
 import 'package:planora/data/repositories/portfolio_repository.dart';
 import 'package:planora/data/repositories/profile_repository.dart';
 import 'package:planora/data/repositories/settings_repository.dart';
+import 'package:planora/widgets/planora_charts.dart';
 
 final userProfileStreamProvider = StreamProvider<UserProfile>((ref) {
   return ref.watch(profileRepositoryProvider).watchProfile();
@@ -61,25 +64,34 @@ class PortfolioSnapshot {
     required this.portfolio,
     required this.balance,
     required this.components,
-    required this.totalComponents,
+    required this.totalComponentsActual,
     required this.unallocatedBalance,
     required this.remaining,
     required this.progressPct,
     required this.requiredMonthly,
     required this.estimatedDate,
     required this.status,
+    required this.projectionV22,
+    required this.sparkline6m,
+    required this.balanceSeries6m,
   });
 
   final Portfolio portfolio;
   final int balance;
   final List<PortfolioComponent> components;
-  final int totalComponents;
+  final int totalComponentsActual;
   final int unallocatedBalance;
   final int remaining;
   final double progressPct;
   final RequiredMonthlyResult? requiredMonthly;
   final TargetDateEstimate? estimatedDate;
   final GoalTrackStatus status;
+
+  final PortfolioProjectionV22 projectionV22;
+
+  final List<int> sparkline6m;
+
+  final List<MonthlyBalancePoint> balanceSeries6m;
 
   DateTime? get targetDate => AppFormatters.parseIsoDate(portfolio.targetDate);
   bool get hasTarget =>
@@ -94,9 +106,16 @@ final portfolioSnapshotsProvider = Provider<List<PortfolioSnapshot>>((ref) {
   final now = DateTime.now();
 
   final balanceByPortfolio = <String, int>{};
+  final depositsByPortfolio = <String, List<({DateTime date, int amount})>>{};
   for (final c in contributions) {
     balanceByPortfolio[c.portfolioId] =
         (balanceByPortfolio[c.portfolioId] ?? 0) + c.amount;
+    final dt = AppFormatters.parseIsoDate(c.date);
+    if (dt != null) {
+      depositsByPortfolio
+          .putIfAbsent(c.portfolioId, () => [])
+          .add((date: dt, amount: c.amount));
+    }
   }
 
   final compsByPortfolio = <String, List<PortfolioComponent>>{};
@@ -106,10 +125,11 @@ final portfolioSnapshotsProvider = Provider<List<PortfolioSnapshot>>((ref) {
 
   return portfolios.map((p) {
     final balance = balanceByPortfolio[p.id] ?? 0;
+    final pDeps = depositsByPortfolio[p.id] ?? const [];
     final pComps = compsByPortfolio[p.id] ?? const <PortfolioComponent>[];
     final compSummary = PlanoraCalc.componentsSummary(
       balance: balance,
-      componentAmounts: pComps.map((c) => c.amount),
+      componentAmounts: pComps.map((c) => c.actualAmount),
     );
     final targetDate = AppFormatters.parseIsoDate(p.targetDate);
     final savedTarget = p.savedTarget;
@@ -151,17 +171,39 @@ final portfolioSnapshotsProvider = Provider<List<PortfolioSnapshot>>((ref) {
       now: now,
     );
 
+    final avgRate3m = PlanoraV22Calc.averageMonthlyDeposit3m(
+      deposits: pDeps,
+      now: now,
+    );
+    final projV22 = PlanoraV22Calc.evaluateStatusAndProjection(
+      targetTotal: savedTarget,
+      actualBalance: balance,
+      hasAnyDeposit: pDeps.isNotEmpty,
+      targetDate: targetDate,
+      averageRate3m: avgRate3m,
+      now: now,
+    );
+
+    final series6m = PlanoraV22Calc.buildMonthlyBalanceSeries(
+      deposits: pDeps,
+      months: 6,
+      now: now,
+    );
+
     return PortfolioSnapshot(
       portfolio: p,
       balance: balance,
       components: pComps,
-      totalComponents: compSummary.totalComponents,
+      totalComponentsActual: compSummary.totalComponents,
       unallocatedBalance: compSummary.unallocated,
       remaining: remaining,
       progressPct: progressPct,
       requiredMonthly: req,
       estimatedDate: est,
       status: status,
+      projectionV22: projV22,
+      sparkline6m: series6m.map((e) => e.cumulativeBalance).toList(),
+      balanceSeries6m: series6m,
     );
   }).toList();
 });
@@ -169,6 +211,8 @@ final portfolioSnapshotsProvider = Provider<List<PortfolioSnapshot>>((ref) {
 class FinancialSummary {
   const FinancialSummary({
     required this.totalBalance,
+    required this.totalTarget,
+    required this.combinedProgressPct,
     required this.instrumentSubtotals,
     required this.monthlySalary,
     required this.minimumLivingCost,
@@ -178,11 +222,14 @@ class FinancialSummary {
     required this.defaultAnnualReturnPct,
     required this.phaseLimitEnabled,
     required this.phaseLimitAmount,
+    required this.componentInputMode,
+    required this.quoteCardDismissedMonth,
   });
 
   final int totalBalance;
+  final int totalTarget;
+  final double combinedProgressPct;
 
-  /// Subtotal dinamis per jenis instrumen yang benar-benar dipakai (FR-28).
   final Map<String, int> instrumentSubtotals;
   final int? monthlySalary;
   final int? minimumLivingCost;
@@ -192,6 +239,8 @@ class FinancialSummary {
   final double defaultAnnualReturnPct;
   final bool phaseLimitEnabled;
   final int? phaseLimitAmount;
+  final String componentInputMode;
+  final String? quoteCardDismissedMonth;
 
   bool get hasCeiling => ceiling != null;
   int? get remainingCeiling =>
@@ -217,23 +266,31 @@ final financialSummaryProvider = Provider<FinancialSummary>((ref) {
   );
 
   var totalBalance = 0;
+  var totalTarget = 0;
   var totalPlan = 0;
   for (final snap in snapshots) {
     totalBalance += snap.balance;
     totalPlan += snap.portfolio.monthlyPlan;
+    if (snap.hasTarget) {
+      totalTarget += snap.portfolio.savedTarget!;
+    }
   }
+  final combinedPct = totalTarget > 0
+      ? ((totalBalance / totalTarget) * 100.0).clamp(0.0, 100.0)
+      : 0.0;
 
-  // Subtotal dinamis per jenis instrumen saja (FR-28: tanpa subtotal bernama platform)
   final subtotals = <String, int>{};
   for (final comp in components) {
-    if (comp.amount <= 0) continue;
+    if (comp.actualAmount <= 0) continue;
     final key = comp.instrumentType.trim();
     if (key.isEmpty) continue;
-    subtotals[key] = (subtotals[key] ?? 0) + comp.amount;
+    subtotals[key] = (subtotals[key] ?? 0) + comp.actualAmount;
   }
 
   return FinancialSummary(
     totalBalance: totalBalance,
+    totalTarget: totalTarget,
+    combinedProgressPct: combinedPct,
     instrumentSubtotals: subtotals,
     monthlySalary: salary,
     minimumLivingCost: minLiving,
@@ -243,6 +300,189 @@ final financialSummaryProvider = Provider<FinancialSummary>((ref) {
     defaultAnnualReturnPct: defaultReturn,
     phaseLimitEnabled: settings?.phaseLimitEnabled ?? false,
     phaseLimitAmount: settings?.phaseLimitAmount,
+    componentInputMode: settings?.componentInputMode ?? 'percent',
+    quoteCardDismissedMonth: settings?.quoteCardDismissedMonth,
+  );
+});
+
+class DashboardDataV22 {
+  const DashboardDataV22({
+    required this.thisMonthDeposit,
+    required this.lastMonthDeposit,
+    required this.momDeltaAmount,
+    required this.momDeltaPercent,
+    required this.avg3MonthsDeposit,
+    required this.streakMonths,
+    required this.daysRemainingInMonth,
+    required this.activePhaseName,
+    required this.activePhaseTotal,
+    required this.balanceSeries6m,
+    required this.balanceSeries12m,
+    required this.stackedBars6m,
+    required this.insights,
+    required this.recentActivities,
+    required this.dailyQuote,
+    required this.isQuoteDismissedThisMonth,
+  });
+
+  final int thisMonthDeposit;
+  final int lastMonthDeposit;
+  final int momDeltaAmount;
+  final double? momDeltaPercent;
+  final int avg3MonthsDeposit;
+  final int streakMonths;
+  final int daysRemainingInMonth;
+  final String? activePhaseName;
+  final int activePhaseTotal;
+  final List<MonthlyBalancePoint> balanceSeries6m;
+  final List<MonthlyBalancePoint> balanceSeries12m;
+  final List<MonthlyStackedBarData> stackedBars6m;
+  final List<DashboardInsight> insights;
+  final List<({Contribution contribution, Portfolio? portfolio})>
+      recentActivities;
+  final String dailyQuote;
+  final bool isQuoteDismissedThisMonth;
+}
+
+final dashboardDataProvider = Provider<DashboardDataV22>((ref) {
+  final snapshots = ref.watch(portfolioSnapshotsProvider);
+  final contributions =
+      ref.watch(contributionsStreamProvider).value ?? const [];
+  final phases = ref.watch(phasesWithAllocationsProvider);
+  final summary = ref.watch(financialSummaryProvider);
+  final now = DateTime.now();
+
+  final portoById = {for (final s in snapshots) s.portfolio.id: s.portfolio};
+  final parsedDeposits = <({DateTime date, int amount, String portfolioId})>[];
+  for (final c in contributions) {
+    final dt = AppFormatters.parseIsoDate(c.date);
+    if (dt != null) {
+      parsedDeposits.add((date: dt, amount: c.amount, portfolioId: c.portfolioId));
+    }
+  }
+
+  final thisMonthStart = DateTime(now.year, now.month, 1);
+  final lastMonthStart = DateTime(now.year, now.month - 1, 1);
+  var thisMonthDeposit = 0;
+  var lastMonthDeposit = 0;
+  for (final d in parsedDeposits) {
+    if (d.date.year == thisMonthStart.year &&
+        d.date.month == thisMonthStart.month) {
+      thisMonthDeposit += d.amount;
+    } else if (d.date.year == lastMonthStart.year &&
+        d.date.month == lastMonthStart.month) {
+      lastMonthDeposit += d.amount;
+    }
+  }
+
+  final momDeltaAmount = thisMonthDeposit - lastMonthDeposit;
+  final momDeltaPercent = lastMonthDeposit > 0
+      ? PlanoraV22Calc.round2((momDeltaAmount / lastMonthDeposit) * 100.0)
+      : null;
+
+  final avg3m = PlanoraV22Calc.averageMonthlyDeposit3m(
+    deposits: parsedDeposits.map((e) => (date: e.date, amount: e.amount)),
+    now: now,
+  );
+  final streak = PlanoraV22Calc.calculateMonthlyStreak(
+    depositDates: parsedDeposits.map((e) => e.date),
+    now: now,
+  );
+
+  final lastDayOfMonth = DateTime(now.year, now.month + 1, 0).day;
+  final daysRemaining = (lastDayOfMonth - now.day).clamp(0, 31);
+
+  final activePhase = phases.where((p) => p.phase.isActive).firstOrNull;
+  final activePhaseTotal = activePhase != null
+      ? activePhase.allocations.values.fold<int>(0, (s, v) => s + v)
+      : summary.totalMonthlyPlan;
+
+  final series6m = PlanoraV22Calc.buildMonthlyBalanceSeries(
+    deposits: parsedDeposits.map((e) => (date: e.date, amount: e.amount)),
+    months: 6,
+    now: now,
+  );
+  final series12m = PlanoraV22Calc.buildMonthlyBalanceSeries(
+    deposits: parsedDeposits.map((e) => (date: e.date, amount: e.amount)),
+    months: 12,
+    now: now,
+  );
+
+  final stackedBars = <MonthlyStackedBarData>[];
+  for (var i = 5; i >= 0; i--) {
+    final m = DateTime(now.year, now.month - i, 1);
+    final byPorto = <String, int>{};
+    for (final d in parsedDeposits) {
+      if (d.date.year == m.year && d.date.month == m.month) {
+        byPorto[d.portfolioId] = (byPorto[d.portfolioId] ?? 0) + d.amount;
+      }
+    }
+    final segs = byPorto.entries.map((e) {
+      final p = portoById[e.key];
+      return (
+        label: p?.name ?? 'Porto',
+        amount: e.value,
+        color: Color(p?.color ?? 0xFF0E7C66),
+      );
+    }).toList();
+    stackedBars.add(MonthlyStackedBarData(month: m, segments: segs));
+  }
+
+  final insights = PlanoraV22Calc.generateInsights(
+    portfolios: snapshots
+        .map(
+          (s) => (
+            id: s.portfolio.id,
+            name: s.portfolio.name,
+            balance: s.balance,
+            targetTotal: s.portfolio.savedTarget,
+            progressPct: s.progressPct,
+            projection: s.projectionV22,
+            components: s.components
+                .map(
+                  (c) => (
+                    instrument: c.instrumentType,
+                    targetPct: c.targetPercent,
+                    actualAmount: c.actualAmount,
+                  ),
+                )
+                .toList(),
+          ),
+        )
+        .toList(),
+    hasDepositThisMonth: thisMonthDeposit > 0,
+    activePhaseName: activePhase?.phase.name,
+    activePhaseTotal: activePhaseTotal,
+    streakMonths: streak,
+    now: now,
+    formatRupiah: AppFormatters.rupiah,
+  );
+
+  final recent = contributions
+      .take(5)
+      .map((c) => (contribution: c, portfolio: portoById[c.portfolioId]))
+      .toList();
+
+  final currentYm = AppFormatters.toYearMonth(now);
+  final quoteDismissed = summary.quoteCardDismissedMonth == currentYm;
+
+  return DashboardDataV22(
+    thisMonthDeposit: thisMonthDeposit,
+    lastMonthDeposit: lastMonthDeposit,
+    momDeltaAmount: momDeltaAmount,
+    momDeltaPercent: momDeltaPercent,
+    avg3MonthsDeposit: avg3m,
+    streakMonths: streak,
+    daysRemainingInMonth: daysRemaining,
+    activePhaseName: activePhase?.phase.name,
+    activePhaseTotal: activePhaseTotal,
+    balanceSeries6m: series6m,
+    balanceSeries12m: series12m,
+    stackedBars6m: stackedBars,
+    insights: insights,
+    recentActivities: recent,
+    dailyQuote: PlanoraV22Calc.dailyQuote(now),
+    isQuoteDismissedThisMonth: quoteDismissed,
   );
 });
 
@@ -310,3 +550,4 @@ final phasesWithAllocationsProvider =
       )
       .toList();
 });
+

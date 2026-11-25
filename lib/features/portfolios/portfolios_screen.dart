@@ -1,11 +1,13 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planora/core/calc/planora_v22_calc.dart';
 import 'package:planora/core/constants/portfolio_palette.dart';
 import 'package:planora/core/format/formatters.dart';
 import 'package:planora/core/theme/app_theme.dart';
 import 'package:planora/data/repositories/portfolio_repository.dart';
 import 'package:planora/features/shared/planora_providers.dart';
+import 'package:planora/widgets/planora_charts.dart';
 import 'package:planora/widgets/planora_widgets.dart';
 
 class PortfoliosScreen extends ConsumerStatefulWidget {
@@ -243,6 +245,13 @@ class _PortfolioCard extends StatelessWidget {
       rightFooter = 'Fleksibel';
     }
 
+    final statusPill = switch (snapshot.projectionV22.status) {
+      PortfolioTrackStatusV22.achieved => PlanoraPill.green('Tercapai'),
+      PortfolioTrackStatusV22.notStarted => PlanoraPill.gray('Belum Mulai'),
+      PortfolioTrackStatusV22.onTrack => PlanoraPill.green('On Track'),
+      PortfolioTrackStatusV22.offTrack => PlanoraPill.danger('Off Track'),
+    };
+
     return PlanoraCard(
       onTap: () => context.push('/portfolios/${p.id}'),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
@@ -251,28 +260,54 @@ class _PortfolioCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              PortfolioDot(color: color),
-              const SizedBox(width: 8),
+              if (!isNoTarget) ...[
+                PlanoraProgressRing(
+                  progressPercent: snapshot.progressPct,
+                  size: 38,
+                  strokeWidth: 4,
+                  color: color,
+                ),
+                const SizedBox(width: 10),
+              ] else ...[
+                PortfolioDot(color: color),
+                const SizedBox(width: 8),
+              ],
               Expanded(
-                child: Text(
-                  p.name,
-                  style: AppTheme.manrope(
-                    size: 13.5,
-                    weight: FontWeight.w800,
-                    color: cs.onSurface,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      p.name,
+                      style: AppTheme.manrope(
+                        size: 13.5,
+                        weight: FontWeight.w800,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Wrap(
+                      spacing: 5,
+                      runSpacing: 4,
+                      children: [
+                        if (p.platformPreset != null ||
+                            (p.platformName != null &&
+                                p.platformName!.isNotEmpty))
+                          PlanoraPill.platform(platformLabel),
+                        if (isDpMode)
+                          PlanoraPill.gray('DP + Biaya')
+                        else if (isNoTarget)
+                          PlanoraPill.gray('Tanpa target'),
+                        statusPill,
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              if (p.platformPreset != null ||
-                  (p.platformName != null && p.platformName!.isNotEmpty))
-                PlanoraPill.platform(platformLabel),
-              if (isDpMode) ...[
-                const SizedBox(width: 6),
-                PlanoraPill.gray('DP + Biaya'),
-              ] else if (isNoTarget) ...[
-                const SizedBox(width: 6),
-                PlanoraPill.gray('Tanpa target'),
-              ],
+              const SizedBox(width: 6),
+              PlanoraSparkline(
+                values: snapshot.sparkline6m,
+                color: color,
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -340,3 +375,4 @@ class _PortfolioCard extends StatelessWidget {
     );
   }
 }
+

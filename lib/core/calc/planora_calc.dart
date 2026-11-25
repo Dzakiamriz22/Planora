@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-/// Status pelacakan tujuan keuangan.
 enum GoalTrackStatus {
   achieved,
   overdue,
@@ -118,13 +117,11 @@ class ComponentsSummary {
   final bool isValid;
 }
 
-/// Mesin perhitungan murni Planora v2.1 — tanpa dependensi Flutter/UI (NFR-08).
 class PlanoraCalc {
   PlanoraCalc._();
 
   static const int maxSimulationMonths = 600;
 
-  /// Plafon menabung = gaji − biaya hidup minimum; NULL bila salah satu NULL (FR-05).
   static int? ceiling({
     required int? monthlySalary,
     required int? minimumLivingCost,
@@ -135,7 +132,6 @@ class PlanoraCalc {
     return math.max(0, monthlySalary - minimumLivingCost);
   }
 
-  /// Total rencana setoran bulanan seluruh porto.
   static int totalMonthlyPlan(Iterable<int> plans) {
     var sum = 0;
     for (final p in plans) {
@@ -144,7 +140,6 @@ class PlanoraCalc {
     return sum;
   }
 
-  /// Apakah total rencana masih dalam batas plafon (selalu true bila plafon NULL).
   static bool isWithinCeiling({
     required int totalPlan,
     required int? ceilingAmount,
@@ -153,7 +148,6 @@ class PlanoraCalc {
     return totalPlan <= ceilingAmount;
   }
 
-  /// Sisa kebutuhan = maks(0, T − S).
   static int remainingNeed({
     required int savedTarget,
     required int balance,
@@ -161,7 +155,6 @@ class PlanoraCalc {
     return math.max(0, savedTarget - balance);
   }
 
-  /// Persentase progres 0..100.
   static double progressPercent({
     required int? savedTarget,
     required int balance,
@@ -172,7 +165,6 @@ class PlanoraCalc {
     return (balance / savedTarget) * 100.0;
   }
 
-  /// Jumlah bulan dari tanggal berjalan ke tanggal target.
   static int monthsRemaining(DateTime from, DateTime target) {
     final fromDay = DateTime(from.year, from.month, from.day);
     final targetDay = DateTime(target.year, target.month, target.day);
@@ -183,7 +175,6 @@ class PlanoraCalc {
     return diff <= 0 ? 1 : diff;
   }
 
-  /// Perlu per bulan agar tepat waktu dengan pertumbuhan majemuk bulanan (Bab B.3).
   static RequiredMonthlyResult requiredMonthlyDeposit({
     required int savedTarget,
     required int balance,
@@ -238,7 +229,6 @@ class PlanoraCalc {
     );
   }
 
-  /// Estimasi tanggal tercapai lewat simulasi bulanan hingga maksimal 600 bulan.
   static TargetDateEstimate estimateTargetDate({
     required int savedTarget,
     required int balance,
@@ -289,7 +279,6 @@ class PlanoraCalc {
     );
   }
 
-  /// Status pelacakan tujuan.
   static GoalTrackStatus trackStatus({
     required int? savedTarget,
     required int balance,
@@ -322,7 +311,6 @@ class PlanoraCalc {
         : GoalTrackStatus.behind;
   }
 
-  /// Ringkasan komponen instrumen terhadap saldo porto (BR-02 / FR-10).
   static ComponentsSummary componentsSummary({
     required int balance,
     required Iterable<int> componentAmounts,
@@ -339,8 +327,6 @@ class PlanoraCalc {
     );
   }
 
-  /// Ilustrasi cicilan anuitas (Bab B.3, FR-27, Lampiran L.2 #10).
-  /// Bunga 0% = pembagian linear `sisa_kredit / tenorMonths`.
   static int annuityInstallment({
     required int principal,
     required int tenorMonths,
@@ -356,9 +342,6 @@ class PlanoraCalc {
     return (principal * i / denom).round();
   }
 
-  /// Buat fase seimbang (Bab B.3, FR-23, Lampiran L.2 #9):
-  /// `bagi = plafon / jumlah porto` (ribuan ke bawah), sisa ke porto pertama;
-  /// bila batas per porto aktif dan `bagi` melampauinya, setiap alokasi = batas.
   static Map<String, int> balancedPhaseAllocations({
     required List<String> portfolioIds,
     required int ceilingAmount,
@@ -399,8 +382,6 @@ class PlanoraCalc {
     return result;
   }
 
-  /// Penyeimbangan proporsional saat satu porto dinaikkan melewati plafon (FR-17).
-  /// Bila `ceilingAmount == null` (profil belum diisi), tidak perlu penyeimbangan.
   static RebalanceResult rebalanceProportionally({
     required List<RebalanceItem> items,
     required String editedId,
@@ -540,7 +521,6 @@ class PlanoraCalc {
     );
   }
 
-  /// Skalakan seluruh porto turun proporsional agar total <= plafon (FR-18).
   static RebalanceResult scaleAllToCeiling({
     required List<RebalanceItem> items,
     required int ceilingAmount,
@@ -624,10 +604,6 @@ class PlanoraCalc {
     );
   }
 
-  /// Validasi fase v2.1 (FR-20 & FR-21):
-  /// - Total alokasi <= plafon (bila plafon diatur).
-  /// - Batas per porto opsional (`phaseLimitEnabled`), berlaku untuk SEMUA porto
-  ///   tanpa memandang platform/instrumen.
   static PhaseValidationResult validatePhaseAllocations({
     required List<PhaseAllocationInput> allocations,
     required int? ceilingAmount,
@@ -682,3 +658,4 @@ class PlanoraCalc {
     return value < 0 ? '-Rp $buf' : 'Rp $buf';
   }
 }
+

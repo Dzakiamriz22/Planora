@@ -1,8 +1,5 @@
 import 'package:drift/drift.dart';
 
-/// 8 entitas cloud-ready Planora v2.1 FINAL (DS-PLN-2026-001 Bab D.1–D.3).
-/// Seluruh uang disimpan sebagai INTEGER rupiah; semua PK adalah UUID teks.
-
 class UserProfiles extends Table {
   TextColumn get id => text()();
   TextColumn get displayNameFull => text().nullable()();
@@ -12,14 +9,12 @@ class UserProfiles extends Table {
   TextColumn get birthDate => text().nullable()();
   TextColumn get avatarPath => text().nullable()();
 
-  /// `ikut_sistem` | `terang` | `gelap`
   TextColumn get themePref =>
       text().withDefault(const Constant('ikut_sistem'))();
   TextColumn get currency => text().withDefault(const Constant('IDR'))();
   TextColumn get locale => text().withDefault(const Constant('id_ID'))();
   BoolColumn get isLocalOnly => boolean().withDefault(const Constant(true))();
 
-  // Kolom standar cloud-ready (Bab D.2)
   TextColumn get createdAt => text()();
   TextColumn get updatedAt => text()();
   TextColumn get syncStatus => text().withDefault(const Constant('local'))();
@@ -45,6 +40,11 @@ class Settings extends Table {
       boolean().withDefault(const Constant(false))();
   IntColumn get seedVersion => integer().withDefault(const Constant(3))();
 
+  TextColumn get componentInputMode =>
+      text().withDefault(const Constant('percent'))();
+
+  TextColumn get quoteCardDismissedMonth => text().nullable()();
+
   TextColumn get createdAt => text()();
   TextColumn get updatedAt => text()();
   TextColumn get syncStatus => text().withDefault(const Constant('local'))();
@@ -60,13 +60,10 @@ class Portfolios extends Table {
   TextColumn get ownerId => text().references(UserProfiles, #id)();
   TextColumn get name => text()();
 
-  /// `cash`, `down_payment`, atau `no_target`
   TextColumn get category => text()();
 
-  /// Enum generik: `aperd` | `broker` | `bank` | `ewallet` | `self_storage` | `other`
   TextColumn get platformPreset => text().nullable()();
 
-  /// Nama platform teks bebas tulisan pengguna sendiri
   TextColumn get platformName => text().nullable()();
 
   IntColumn get fullPrice => integer().nullable()();
@@ -77,7 +74,6 @@ class Portfolios extends Table {
   IntColumn get monthlyPlan => integer().withDefault(const Constant(0))();
   RealColumn get annualReturnPct => real().withDefault(const Constant(5.0))();
 
-  /// `target_driven` atau `deposit_driven`
   TextColumn get calcMode =>
       text().withDefault(const Constant('deposit_driven'))();
   TextColumn get icon => text().withDefault(const Constant('savings'))();
@@ -105,7 +101,12 @@ class PortfolioComponents extends Table {
   TextColumn get ownerId => text().references(UserProfiles, #id)();
   TextColumn get instrumentType => text()();
   TextColumn get name => text().nullable()();
-  IntColumn get amount => integer()();
+
+  RealColumn get targetPercent =>
+      real().withDefault(const Constant(0.0))();
+
+  IntColumn get actualAmount => integer().withDefault(const Constant(0))();
+
   TextColumn get codeNote => text().nullable()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
 
@@ -130,6 +131,8 @@ class Contributions extends Table {
   IntColumn get amount => integer()();
   TextColumn get date => text()();
   TextColumn get note => text().nullable()();
+
+  TextColumn get componentId => text().nullable()();
 
   TextColumn get createdAt => text()();
   TextColumn get updatedAt => text()();
@@ -208,3 +211,4 @@ class PriceReferences extends Table {
   @override
   Set<Column<Object>> get primaryKey => {id};
 }
+

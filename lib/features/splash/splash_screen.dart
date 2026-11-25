@@ -6,7 +6,6 @@ import 'package:planora/core/theme/planora_colors.dart';
 import 'package:planora/data/repositories/settings_repository.dart';
 import 'package:planora/widgets/planora_logo.dart';
 
-/// Splash animasi Planora v2.1 — total 2,4 detik sesuai Bab A.5 & Library Bab 02.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -65,7 +64,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           builder: (context, _) {
             final t = _controller.value;
 
-            // Tahap 1 (0,0 - 0,8 dtk): Logo masuk (fade + scale)
             final logoOpacity = (t / 0.25).clamp(0.0, 1.0);
             final logoScale = t < 0.25
                 ? 0.72 + Curves.easeOutCubic.transform(t / 0.25) * 0.30
@@ -73,16 +71,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     ? 1.02 - ((t - 0.25) / 0.09) * 0.02
                     : 1.0);
 
-            // Tahap 2 (0,6 - 1,6 dtk): Garis emas menyapu kiri ke kanan
             final lineProgress = ((t - 0.25) / 0.40).clamp(0.0, 1.0);
             final lineWidth =
                 Curves.easeInOut.transform(lineProgress) * 118.0;
 
-            // Tahap 4 (2,0 - 2,4 dtk): Cross-fade keluar
             final exitOpacity =
                 t > 0.84 ? (1.0 - ((t - 0.84) / 0.16)).clamp(0.0, 1.0) : 1.0;
 
-            // Tagline fade-in (1,7 - 2,0 dtk)
             final tagOpacity = ((t - 0.70) / 0.14).clamp(0.0, 1.0);
 
             return Opacity(
@@ -117,7 +112,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: List.generate(_word.length, (i) {
-                      // Tahap 3 (1,2 - 2,0 dtk): huruf demi huruf
                       final start = 0.50 + i * 0.035;
                       final p = ((t - start) / 0.12).clamp(0.0, 1.0);
                       return Opacity(
@@ -159,3 +153,4 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     );
   }
 }
+

@@ -100,8 +100,6 @@ class PhaseRepository {
     });
   }
 
-  /// Menyimpan fase baru (`id == null`) atau menimpa fase yang sudah ada (`id != null`).
-  /// Validasi plafon + batas per porto opsional (FR-20 & FR-21) ditegakkan di sini.
   Future<String> savePhase({
     String? id,
     required String name,
@@ -201,7 +199,6 @@ class PhaseRepository {
     return targetId;
   }
 
-  /// Buat fase seimbang dari plafon pengguna saat ini (FR-23).
   Future<String> createBalancedPhase({String name = 'Fase Seimbang'}) async {
     final s = await _db.select(_db.settings).getSingle();
     final ceiling = PlanoraCalc.ceiling(
@@ -335,3 +332,4 @@ class PhaseRepository {
 final phaseRepositoryProvider = Provider<PhaseRepository>((ref) {
   return PhaseRepository(ref.watch(appDatabaseProvider));
 });
+

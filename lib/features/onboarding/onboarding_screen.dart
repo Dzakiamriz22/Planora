@@ -13,7 +13,6 @@ import 'package:planora/widgets/planora_logo.dart';
 import 'package:planora/widgets/planora_widgets.dart';
 import 'package:planora/widgets/rupiah_text_field.dart';
 
-/// Onboarding 4 langkah yang dapat dilewati seluruhnya (FR-02, Bab A.4).
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -25,15 +24,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _step = 0;
   bool _saving = false;
 
-  // Langkah 2: Profil lokal
   final _fullNameCtrl = TextEditingController();
   final _nickNameCtrl = TextEditingController();
 
-  // Langkah 3: Profil keuangan
   final _salaryCtrl = TextEditingController();
   final _minLivingCtrl = TextEditingController();
 
-  // Langkah 4: Porto pertama (contoh netral hanya mengisi nama & kategori)
   final _portoNameCtrl = TextEditingController();
   String _portoCategory = 'cash';
   String _portoIcon = 'savings';
@@ -119,7 +115,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header progres + tombol Lewati dulu
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -160,7 +155,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            'Rencanakan beberapa tujuan keuangan sekaligus sesuai batas nabung bulanan Anda. Semua data tersimpan lokal di HP, 100% offline, tanpa pendaftaran akun.',
+                            'Atur beberapa tujuan keuangan sekaligus sesuai batas nabung bulananmu. Semua data tersimpan di HP, 100% offline, dan tanpa akun.',
                             style: AppTheme.manrope(
                               size: 14,
                               color: cs.onSurfaceVariant,
@@ -170,7 +165,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           const SizedBox(height: 20),
                           PlanoraNoteBox(
                             child: Text(
-                              'Aplikasi mulai dalam keadaan kosong total — Anda bebas mengatur tujuan, nominal, platform, dan instrumen milik Anda sendiri.',
+                              'Planora mulai dari nol — kamu bebas menentukan tujuan, nominal, tempat simpan, dan porsi instrumen sesuai kebutuhan sendiri.',
                               style: AppTheme.manrope(
                                 size: 12.5,
                                 color: cs.onSurfaceVariant,
@@ -377,3 +372,4 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 }
+

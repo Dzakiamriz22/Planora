@@ -3,13 +3,16 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planora/core/calc/planora_calc.dart';
+import 'package:planora/core/calc/planora_v22_calc.dart';
 import 'package:planora/core/constants/portfolio_palette.dart';
 import 'package:planora/core/format/formatters.dart';
 import 'package:planora/core/theme/app_theme.dart';
 import 'package:planora/core/theme/planora_colors.dart';
 import 'package:planora/data/db/app_database.dart';
 import 'package:planora/data/repositories/portfolio_repository.dart';
+import 'package:planora/data/repositories/settings_repository.dart';
 import 'package:planora/features/shared/planora_providers.dart';
+import 'package:planora/widgets/component_allocation_editor.dart';
 import 'package:planora/widgets/planora_widgets.dart';
 import 'package:planora/widgets/rebalance_dialog.dart';
 import 'package:planora/widgets/rupiah_text_field.dart';
@@ -41,8 +44,11 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
   String _iconKey = 'savings';
   int _colorValue = PlanoraColors.sixPortfolioColors.first;
   bool _initialized = false;
+  bool _componentsInitialized = false;
   bool _saving = false;
   Portfolio? _editingPortfolio;
+  String _componentInputMode = 'percent';
+  List<EditableComponentRow> _componentRows = [];
 
   @override
   void initState() {
@@ -70,37 +76,81 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
 
   void _initFromProviders(
     List<Portfolio> allPortfolios,
+    List<PortfolioComponent> allComponents,
     FinancialSummary summary,
   ) {
-    if (_initialized) return;
-    _initialized = true;
+    if (!_initialized) {
+      _initialized = true;
+      _componentInputMode = summary.componentInputMode;
 
-    if (widget.portfolioId != null) {
-      final found =
-          allPortfolios.where((p) => p.id == widget.portfolioId).firstOrNull;
-      if (found != null) {
-        _editingPortfolio = found;
-        _nameCtrl.text = found.name;
-        _platformPreset = found.platformPreset ?? 'other';
-        _platformNameCtrl.text = found.platformName ?? '';
-        _category = found.category;
-        if (found.fullPrice != null) {
-          _fullPriceCtrl.text = AppFormatters.number(found.fullPrice!);
+      if (widget.portfolioId != null) {
+        final found =
+            allPortfolios.where((p) => p.id == widget.portfolioId).firstOrNull;
+        if (found != null) {
+          _editingPortfolio = found;
+          _nameCtrl.text = found.name;
+          _platformPreset = found.platformPreset ?? 'other';
+          _platformNameCtrl.text = found.platformName ?? '';
+          _category = found.category;
+          if (found.fullPrice != null) {
+            _fullPriceCtrl.text = AppFormatters.number(found.fullPrice!);
+          }
+          if (found.savedTarget != null) {
+            _savedTargetCtrl.text = AppFormatters.number(found.savedTarget!);
+          }
+          _targetDate = AppFormatters.parseIsoDate(found.targetDate);
+          _monthlyPlanCtrl.text = AppFormatters.number(found.monthlyPlan);
+          _returnCtrl.text = found.annualReturnPct.toString();
+          _noteCtrl.text = found.note ?? '';
+          _iconKey = found.icon;
+          _colorValue = found.color;
         }
-        if (found.savedTarget != null) {
-          _savedTargetCtrl.text = AppFormatters.number(found.savedTarget!);
-        }
-        _targetDate = AppFormatters.parseIsoDate(found.targetDate);
-        _monthlyPlanCtrl.text = AppFormatters.number(found.monthlyPlan);
-        _returnCtrl.text = found.annualReturnPct.toString();
-        _noteCtrl.text = found.note ?? '';
-        _iconKey = found.icon;
-        _colorValue = found.color;
-        return;
+      } else {
+        _returnCtrl.text = summary.defaultAnnualReturnPct.toString();
       }
     }
 
-    _returnCtrl.text = summary.defaultAnnualReturnPct.toString();
+    if (!_componentsInitialized) {
+      if (widget.portfolioId != null) {
+        final existing = allComponents
+            .where((c) => c.portfolioId == widget.portfolioId)
+            .toList();
+        if (existing.isNotEmpty) {
+          _componentsInitialized = true;
+          _componentRows = existing
+              .map(
+                (c) => EditableComponentRow(
+                  key: c.id,
+                  id: c.id,
+                  instrumentType: c.instrumentType,
+                  targetPercent: PlanoraV22Calc.round2(c.targetPercent),
+                  actualAmount: c.actualAmount,
+                  name: c.name,
+                  codeNote: c.codeNote,
+                ),
+              )
+              .toList();
+        } else if (allPortfolios.any((p) => p.id == widget.portfolioId)) {
+          _componentsInitialized = true;
+          _componentRows = [
+            EditableComponentRow(
+              key: 'init_comp_0',
+              instrumentType: 'RDPU',
+              targetPercent: 0.0,
+            ),
+          ];
+        }
+      } else {
+        _componentsInitialized = true;
+        _componentRows = [
+          EditableComponentRow(
+            key: 'init_comp_0',
+            instrumentType: 'RDPU',
+            targetPercent: 0.0,
+          ),
+        ];
+      }
+    }
   }
 
   Future<void> _pickDate() async {
@@ -221,6 +271,19 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
       final targetDateIso =
           _targetDate != null ? AppFormatters.toIsoDate(_targetDate!) : null;
 
+      final componentDrafts = _componentRows
+          .map(
+            (r) => ComponentDraft(
+              id: r.id,
+              instrumentType: r.instrumentType,
+              name: r.name,
+              targetPercent: PlanoraV22Calc.round2(r.targetPercent),
+              actualAmount: r.actualAmount,
+              codeNote: r.codeNote,
+            ),
+          )
+          .toList();
+
       if (_editingPortfolio == null) {
         await repo.createPortfolio(
           name: _nameCtrl.text.trim(),
@@ -238,6 +301,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
           color: _colorValue,
           note: _noteCtrl.text.trim(),
           rebalancedPlans: rebalancedPlans,
+          initialComponents: componentDrafts,
         );
       } else {
         await repo.updatePortfolio(
@@ -265,6 +329,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
             ),
           ),
           rebalancedPlans: rebalancedPlans,
+          components: componentDrafts,
         );
       }
 
@@ -283,11 +348,18 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
   @override
   Widget build(BuildContext context) {
     final allPortfolios = ref.watch(portfoliosStreamProvider).value ?? const [];
+    final allComponents =
+        ref.watch(allComponentsStreamProvider).value ?? const [];
     final summary = ref.watch(financialSummaryProvider);
-    _initFromProviders(allPortfolios, summary);
+    _initFromProviders(allPortfolios, allComponents, summary);
 
     final isEdit = _editingPortfolio != null;
     final cs = Theme.of(context).colorScheme;
+    final currentTargetTotal = _category == 'no_target'
+        ? 0
+        : parseRupiahInput(_savedTargetCtrl.text);
+    final componentsValid = _componentRows.isEmpty ||
+        PlanoraV22Calc.isExact100(_componentRows.map((r) => r.targetPercent));
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final fullVal = parseRupiahInput(_fullPriceCtrl.text);
@@ -364,7 +436,6 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                     ],
                     const SizedBox(height: 14),
 
-                    // Platform: 2 bagian (FR-07) — preset generik tanpa merek + teks bebas
                     _FieldLabel('JENIS TEMPAT / PLATFORM'),
                     DropdownButtonFormField<String>(
                       initialValue: _platformPreset,
@@ -587,6 +658,22 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                       }).toList(),
                     ),
 
+                    const SizedBox(height: 18),
+                    ComponentAllocationEditor(
+                      rows: _componentRows,
+                      portfolioTargetTotal: currentTargetTotal,
+                      inputMode: _componentInputMode,
+                      onRowsChanged: (next) {
+                        setState(() => _componentRows = next);
+                      },
+                      onInputModeChanged: (mode) {
+                        setState(() => _componentInputMode = mode);
+                        ref
+                            .read(settingsRepositoryProvider)
+                            .updateComponentInputMode(mode);
+                      },
+                    ),
+
                     const SizedBox(height: 14),
                     Theme(
                       data: Theme.of(context)
@@ -671,7 +758,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                     const SizedBox(height: 8),
                     PlanoraNoteBox(
                       child: Text(
-                        'Porto baru otomatis muncul di semua fase dengan alokasi Rp 0 — atur pembagiannya dari Form Fase. Rincian komponen instrumen dikelola di Detail Porto.',
+                        'Porto baru otomatis muncul di semua fase dengan alokasi Rp 0 — atur pembagiannya dari Form Fase. Total target komponen harus tepat 100% agar bisa disimpan.',
                         style: AppTheme.manrope(
                           size: 12,
                           color: cs.onSurfaceVariant,
@@ -700,7 +787,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   FilledButton(
-                    onPressed: _saving ? null : _submit,
+                    onPressed: (_saving || !componentsValid) ? null : _submit,
                     child: Text(isEdit ? 'Simpan Perubahan' : 'Tambah Porto'),
                   ),
                   if (isEdit) ...[
@@ -792,3 +879,4 @@ class _ModeSegmentItem extends StatelessWidget {
     );
   }
 }
+

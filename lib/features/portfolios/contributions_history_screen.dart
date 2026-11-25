@@ -8,7 +8,6 @@ import 'package:planora/features/portfolios/contribution_sheet.dart';
 import 'package:planora/features/shared/planora_providers.dart';
 import 'package:planora/widgets/portfolio_icon_badge.dart';
 
-/// Riwayat setoran global dikelompokkan per bulan dan dapat disaring per porto (R-08).
 class ContributionsHistoryScreen extends ConsumerStatefulWidget {
   const ContributionsHistoryScreen({super.key});
 
@@ -70,7 +69,6 @@ class _ContributionsHistoryScreenState
                   .where((c) => c.portfolioId == _selectedPortfolioId)
                   .toList();
 
-          // Kelompokkan per bulan (YYYY-MM), urut terbaru di atas
           final grouped = <String, List<Contribution>>{};
           for (final c in filtered) {
             final dt = AppFormatters.parseIsoDate(c.date);
@@ -84,7 +82,6 @@ class _ContributionsHistoryScreenState
 
           return Column(
             children: [
-              // Filter chip per porto
               SizedBox(
                 height: 52,
                 child: ListView(
@@ -294,3 +291,4 @@ class _HistoryRowTile extends StatelessWidget {
     );
   }
 }
+

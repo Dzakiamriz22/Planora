@@ -7,7 +7,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:planora/data/db/app_database.dart';
 import 'package:planora/data/db/database_provider.dart';
 
-/// Repository Profil Pengguna lokal (FR-03, Bab D.3, cloud-ready via owner_id).
 class ProfileRepository {
   ProfileRepository(this._db);
 
@@ -62,7 +61,6 @@ class ProfileRepository {
     );
   }
 
-  /// Menyalin file foto profil yang dipilih pengguna ke folder lokal aplikasi (bukan BLOB DB).
   Future<String> saveLocalAvatarFile(String sourcePath) async {
     final appDir = await getApplicationDocumentsDirectory();
     final ext = p.extension(sourcePath).isEmpty ? '.jpg' : p.extension(sourcePath);
@@ -84,3 +82,4 @@ class ProfileRepository {
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return ProfileRepository(ref.watch(appDatabaseProvider));
 });
+

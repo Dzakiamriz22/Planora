@@ -584,3 +584,4 @@ class _AllocationEditableRow extends StatelessWidget {
     );
   }
 }
+

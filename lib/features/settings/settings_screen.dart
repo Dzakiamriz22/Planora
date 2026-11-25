@@ -679,7 +679,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
 
-                // Kartu Profil Pengguna Lokal (Bab A.4)
                 PlanoraCard(
                   onTap: () => context.push('/profile'),
                   child: Row(
@@ -738,7 +737,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 const SizedBox(height: 12),
 
-                // 1. Profil Keuangan
                 PlanoraCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -818,7 +816,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 const SizedBox(height: 12),
 
-                // Batas Per Porto dalam Fase (FR-21)
                 PlanoraCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -847,7 +844,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 const SizedBox(height: 12),
 
-                // 2. Referensi Harga
                 PlanoraCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -873,7 +869,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 const SizedBox(height: 12),
 
-                // 3. Data
                 PlanoraCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -922,7 +917,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 const SizedBox(height: 12),
 
-                // Penyimpanan & Masa Depan (Bab E.2)
                 PlanoraCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -950,7 +944,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 const SizedBox(height: 12),
 
-                // 4. Tentang
                 PlanoraCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -994,3 +987,4 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 }
+

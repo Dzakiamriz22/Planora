@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planora/core/calc/planora_v22_calc.dart';
 import 'package:planora/data/db/app_database.dart';
 import 'package:planora/data/db/database_provider.dart';
 import 'package:uuid/uuid.dart';
@@ -130,7 +131,29 @@ class SettingsRepository {
     await (_db.delete(_db.priceReferences)..where((t) => t.id.equals(id))).go();
   }
 
-  /// Ekspor seluruh data lokal Planora dalam format JSON schema_version 2 (FR-29, Bab D.3).
+  Future<void> updateComponentInputMode(String mode) async {
+    final normalized = mode == 'nominal' ? 'nominal' : 'percent';
+    final current = await getSettings();
+    await (_db.update(_db.settings)..where((t) => t.id.equals(current.id)))
+        .write(
+      SettingsCompanion(
+        componentInputMode: Value(normalized),
+        updatedAt: Value(DateTime.now().toUtc().toIso8601String()),
+      ),
+    );
+  }
+
+  Future<void> dismissQuoteForMonth(String yearMonth) async {
+    final current = await getSettings();
+    await (_db.update(_db.settings)..where((t) => t.id.equals(current.id)))
+        .write(
+      SettingsCompanion(
+        quoteCardDismissedMonth: Value(yearMonth),
+        updatedAt: Value(DateTime.now().toUtc().toIso8601String()),
+      ),
+    );
+  }
+
   Future<String> exportAllToJson() async {
     final profile = await _db.select(_db.userProfiles).getSingle();
     final settingsRow = await getSettings();
@@ -152,7 +175,7 @@ class SettingsRepository {
 
     final payload = {
       'app': 'planora',
-      'schema_version': 2,
+      'schema_version': 4,
       'exported_at': DateTime.now().toUtc().toIso8601String(),
       'profile': {
         'id': profile.id,
@@ -173,6 +196,8 @@ class SettingsRepository {
         'phase_limit_enabled': settingsRow.phaseLimitEnabled,
         'phase_limit_amount': settingsRow.phaseLimitAmount,
         'onboarding_done': settingsRow.onboardingDone,
+        'component_input_mode': settingsRow.componentInputMode,
+        'quote_card_dismissed_month': settingsRow.quoteCardDismissedMonth,
       },
       'portfolios': portfolios
           .map(
@@ -202,7 +227,13 @@ class SettingsRepository {
                       'id': comp.id,
                       'instrument_type': comp.instrumentType,
                       'name': comp.name,
-                      'amount': comp.amount,
+                      'target_percent': PlanoraV22Calc.round2(comp.targetPercent),
+                      'actual_amount': comp.actualAmount,
+                      'target_amount_calculated':
+                          PlanoraV22Calc.targetAmountFromPercent(
+                        targetPercent: comp.targetPercent,
+                        portfolioTargetTotal: p.savedTarget ?? 0,
+                      ),
                       'code_note': comp.codeNote,
                       'sort_order': comp.sortOrder,
                     },
@@ -215,6 +246,7 @@ class SettingsRepository {
                       'amount': c.amount,
                       'date': c.date,
                       'note': c.note,
+                      'component_id': c.componentId,
                       'created_at': c.createdAt,
                       'updated_at': c.updatedAt,
                     },
@@ -264,7 +296,6 @@ class SettingsRepository {
     return const JsonEncoder.withIndent('  ').convert(payload);
   }
 
-  /// Impor JSON format v2 dan kompatibel mundur format v1 dalam satu transaksi (FR-30, Bab D.3).
   Future<void> importAllFromJson(String jsonString) async {
     final decoded = jsonDecode(jsonString);
     if (decoded is! Map<String, dynamic>) {
@@ -366,6 +397,14 @@ class SettingsRepository {
               onboardingDone: Value(
                 (settingsJson['onboarding_done'] as bool?) ?? true,
               ),
+              componentInputMode: Value(
+                (settingsJson['component_input_mode'] as String?) == 'nominal'
+                    ? 'nominal'
+                    : 'percent',
+              ),
+              quoteCardDismissedMonth: Value(
+                settingsJson['quote_card_dismissed_month'] as String?,
+              ),
               seedVersion: const Value(3),
               createdAt: nowIso,
               updatedAt: nowIso,
@@ -375,7 +414,6 @@ class SettingsRepository {
       for (final p in portfoliosJson) {
         final pid = (p['id'] as String?) ?? _uuid.v4();
 
-        // Pemetaan platform v1 -> v2 (Bab D.3): field platform teks v1 -> preset 'other' + platformName
         final String? preset;
         final String? customPlatform;
         if (schemaVersion <= 1 && p.containsKey('platform')) {
@@ -433,28 +471,75 @@ class SettingsRepository {
               ),
             );
 
-        // Nested components (v2)
         final nestedComps = ((p['components'] as List?) ?? const [])
             .cast<Map<String, dynamic>>();
-        for (var i = 0; i < nestedComps.length; i++) {
-          final comp = nestedComps[i];
-          await _db.into(_db.portfolioComponents).insert(
-                PortfolioComponentsCompanion.insert(
-                  id: (comp['id'] as String?) ?? _uuid.v4(),
-                  portfolioId: pid,
-                  ownerId: ownerId,
-                  instrumentType: comp['instrument_type'] as String,
-                  name: Value(comp['name'] as String?),
-                  amount: (comp['amount'] as num).toInt(),
-                  codeNote: Value(comp['code_note'] as String?),
-                  sortOrder: Value((comp['sort_order'] as num?)?.toInt() ?? i),
-                  createdAt: nowIso,
-                  updatedAt: nowIso,
-                ),
+        if (nestedComps.isNotEmpty) {
+          final hasTargetPercent =
+              schemaVersion >= 4 ||
+              nestedComps.every((c) => c.containsKey('target_percent'));
+          final List<double> percents;
+          final List<int> actuals;
+
+          if (hasTargetPercent) {
+            percents = nestedComps
+                .map(
+                  (c) => PlanoraV22Calc.round2(
+                    (c['target_percent'] as num).toDouble(),
+                  ),
+                )
+                .toList();
+            actuals = nestedComps
+                .map(
+                  (c) =>
+                      ((c['actual_amount'] ?? c['amount']) as num?)?.toInt() ??
+                      0,
+                )
+                .toList();
+            if (!PlanoraV22Calc.isExact100(percents)) {
+              throw MigrationValidationException(
+                'Impor dibatalkan: total persen komponen porto "${p['name']}" tidak tepat 100%.',
               );
+            }
+          } else {
+            actuals = nestedComps
+                .map(
+                  (c) =>
+                      ((c['target_amount'] ?? c['amount']) as num?)?.toInt() ??
+                      0,
+                )
+                .toList();
+            final savedTargetVal =
+                ((p['saved_target'] ?? p['savedTarget']) as num?)?.toInt() ?? 0;
+            final sumActual = actuals.fold<int>(0, (s, a) => s + a);
+            final totalTargetForMig =
+                savedTargetVal > 0 ? savedTargetVal : sumActual;
+            percents = PlanoraV22Calc.migrateAmountsToPercents(
+              amounts: actuals,
+              portfolioTotalTarget: totalTargetForMig,
+            );
+          }
+
+          for (var i = 0; i < nestedComps.length; i++) {
+            final comp = nestedComps[i];
+            await _db.into(_db.portfolioComponents).insert(
+                  PortfolioComponentsCompanion.insert(
+                    id: (comp['id'] as String?) ?? _uuid.v4(),
+                    portfolioId: pid,
+                    ownerId: ownerId,
+                    instrumentType: comp['instrument_type'] as String,
+                    name: Value(comp['name'] as String?),
+                    targetPercent: Value(percents[i]),
+                    actualAmount: Value(actuals[i]),
+                    codeNote: Value(comp['code_note'] as String?),
+                    sortOrder:
+                        Value((comp['sort_order'] as num?)?.toInt() ?? i),
+                    createdAt: nowIso,
+                    updatedAt: nowIso,
+                  ),
+                );
+          }
         }
 
-        // Nested contributions (v2)
         final nestedContribs = ((p['contributions'] as List?) ?? const [])
             .cast<Map<String, dynamic>>();
         for (final c in nestedContribs) {
@@ -466,6 +551,7 @@ class SettingsRepository {
                   amount: (c['amount'] as num).toInt(),
                   date: c['date'] as String,
                   note: Value(c['note'] as String?),
+                  componentId: Value(c['component_id'] as String?),
                   createdAt:
                       ((c['created_at'] ?? c['createdAt']) as String?) ?? nowIso,
                   updatedAt:
@@ -475,7 +561,6 @@ class SettingsRepository {
         }
       }
 
-      // Top-level contributions (kompatibilitas v1)
       for (final c in topContributionsJson) {
         await _db.into(_db.contributions).insert(
               ContributionsCompanion.insert(
@@ -536,7 +621,6 @@ class SettingsRepository {
       }
 
       for (final r in refsJson) {
-        // Pemetaan v1 (groupName + label) -> v2 (name)
         final String refName;
         if (r['name'] != null) {
           refName = r['name'] as String;
@@ -576,3 +660,4 @@ class SettingsRepository {
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
   return SettingsRepository(ref.watch(appDatabaseProvider));
 });
+

@@ -24,7 +24,6 @@ class NeutralPortfolioExample {
 class PortfolioPalette {
   PortfolioPalette._();
 
-  /// Preset Platform generik tanpa merek (Bab A.3 & p.6).
   static const List<PlatformPresetOption> platformPresets = [
     PlatformPresetOption('aperd', 'Aplikasi investasi / APERD'),
     PlatformPresetOption('broker', 'Broker sekuritas'),
@@ -42,8 +41,6 @@ class PortfolioPalette {
     return 'Lainnya';
   }
 
-  /// Label tampil Platform: memakai `platformName` teks bebas pengguna bila diisi,
-  /// atau label preset generik bila kosong (FR-07).
   static String displayPlatform(String? preset, String? customName) {
     if (customName != null && customName.trim().isNotEmpty) {
       return customName.trim();
@@ -54,7 +51,6 @@ class PortfolioPalette {
     return 'Belum diatur';
   }
 
-  /// Preset Instrumen / Komponen generik tanpa merek (Bab A.3 & p.6).
   static const List<String> instrumentPresets = [
     'Kas/Tunai',
     'RDPU',
@@ -67,7 +63,6 @@ class PortfolioPalette {
     'Lainnya',
   ];
 
-  /// Contoh netral onboarding — hanya mengisi nama & kategori, tanpa nominal/platform/tanggal (p.7).
   static const List<NeutralPortfolioExample> onboardingExamples = [
     NeutralPortfolioExample(
       name: 'Dana Darurat',
@@ -128,3 +123,4 @@ class PortfolioPalette {
     return icons[key] ?? Icons.savings_outlined;
   }
 }
+
