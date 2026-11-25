@@ -1,9 +1,13 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:planora/core/calc/planora_v22_calc.dart';
 import 'package:planora/core/format/formatters.dart';
+import 'package:planora/core/theme/app_theme.dart';
+import 'package:planora/core/theme/chart_tokens.dart';
 import 'package:planora/data/db/app_database.dart';
 import 'package:planora/data/repositories/portfolio_repository.dart';
 import 'package:planora/features/shared/planora_providers.dart';
+import 'package:planora/widgets/planora_widgets.dart';
 import 'package:planora/widgets/rupiah_text_field.dart';
 
 Future<void> showContributionSheet(
@@ -50,6 +54,7 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
   late final TextEditingController _noteCtrl;
   late DateTime _selectedDate;
   String? _selectedComponentId;
+  bool _componentSelectionInitialized = false;
   bool _saving = false;
 
   @override
@@ -62,7 +67,10 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
     _noteCtrl = TextEditingController(text: widget.existing?.note ?? '');
     _selectedDate =
         AppFormatters.parseIsoDate(widget.existing?.date) ?? DateTime.now();
-    _selectedComponentId = widget.existing?.componentId;
+    if (widget.existing != null) {
+      _selectedComponentId = widget.existing!.componentId;
+      _componentSelectionInitialized = true;
+    }
   }
 
   @override
@@ -84,7 +92,7 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
     }
   }
 
-  Future<void> _submit() async {
+  Future<void> _submit(List<PortfolioComponent> components) async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
 
@@ -93,6 +101,8 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
       final amount = parseRupiahInput(_amountCtrl.text);
       final dateIso = AppFormatters.toIsoDate(_selectedDate);
       final note = _noteCtrl.text.trim();
+      final effectiveComponentId =
+          components.isEmpty ? null : _selectedComponentId;
 
       if (widget.existing == null) {
         await repo.addContribution(
@@ -100,7 +110,7 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
           amount: amount,
           dateIso: dateIso,
           note: note,
-          componentId: _selectedComponentId,
+          componentId: effectiveComponentId,
         );
       } else {
         await repo.updateContribution(
@@ -108,7 +118,8 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
           amount: amount,
           dateIso: dateIso,
           note: note,
-          componentId: _selectedComponentId,
+          componentId: effectiveComponentId,
+          updateComponentId: true,
         );
       }
 
@@ -124,13 +135,38 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final isEdit = widget.existing != null;
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final components =
         ref.watch(portfolioComponentsProvider(widget.portfolioId)).value ??
             const <PortfolioComponent>[];
 
-    final validSelected = components.any((c) => c.id == _selectedComponentId)
+    final hasPercentComponents = components.isNotEmpty &&
+        components.any((c) => c.targetPercent > 0);
+
+    if (!_componentSelectionInitialized && hasPercentComponents) {
+      _componentSelectionInitialized = true;
+      _selectedComponentId = PortfolioRepository.autoSplitComponentId;
+    }
+
+    final validSelected = (_selectedComponentId ==
+                PortfolioRepository.autoSplitComponentId &&
+            hasPercentComponents) ||
+        components.any((c) => c.id == _selectedComponentId)
         ? _selectedComponentId
         : null;
+
+    final currentAmount = parseRupiahInput(_amountCtrl.text);
+    final isAutoSplit =
+        validSelected == PortfolioRepository.autoSplitComponentId;
+    final autoSplits = (isAutoSplit && currentAmount > 0)
+        ? PlanoraV22Calc.splitDepositByTargetPercent(
+            depositAmount: currentAmount,
+            components: components
+                .map((c) => (id: c.id, targetPercent: c.targetPercent))
+                .toList(),
+          )
+        : const <String, int>{};
 
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomInset),
@@ -145,13 +181,13 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
                 isEdit
                     ? 'Edit Setoran — ${widget.portfolioName}'
                     : 'Catat Setoran — ${widget.portfolioName}',
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                style: AppTheme.sora(size: 17, weight: FontWeight.w700),
               ),
               const SizedBox(height: 16),
               RupiahTextField(
                 controller: _amountCtrl,
                 label: 'Jumlah setoran',
+                onChanged: (_) => setState(() {}),
                 validator: (value) {
                   final amount = parseRupiahInput(value ?? '');
                   if (amount <= 0) {
@@ -165,22 +201,87 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
                 DropdownButtonFormField<String?>(
                   initialValue: validSelected,
                   decoration: const InputDecoration(
-                    labelText: 'Alokasikan ke instrumen (opsional)',
+                    labelText: 'Pembagian ke instrumen',
                   ),
                   items: [
-                    const DropdownMenuItem<String?>(
-                      value: null,
-                      child: Text('Umum (tidak dialokasikan ke instrumen)'),
-                    ),
+                    if (hasPercentComponents)
+                      const DropdownMenuItem<String?>(
+                        value: PortfolioRepository.autoSplitComponentId,
+                        child: Text('Otomatis sesuai persentase target'),
+                      ),
                     ...components.map(
                       (c) => DropdownMenuItem<String?>(
                         value: c.id,
-                        child: Text(c.instrumentType),
+                        child: Text(
+                          'Hanya ke ${c.instrumentType} (${PlanoraV22Calc.formatPercent(c.targetPercent)})',
+                        ),
                       ),
+                    ),
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('Umum (tanpa pembagian instrumen)'),
                     ),
                   ],
                   onChanged: (v) => setState(() => _selectedComponentId = v),
                 ),
+                if (isAutoSplit && currentAmount > 0) ...[
+                  const SizedBox(height: 10),
+                  PlanoraNoteBox(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Pembagian otomatis setoran ini:',
+                          style: AppTheme.manrope(
+                            size: 11.5,
+                            weight: FontWeight.w700,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        for (final c in components)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color:
+                                        PlanoraChartTokens.colorForInstrument(
+                                      c.instrumentType,
+                                      isDark: isDark,
+                                    ),
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                                const SizedBox(width: 7),
+                                Expanded(
+                                  child: Text(
+                                    '${c.instrumentType} (${PlanoraV22Calc.formatPercent(c.targetPercent)})',
+                                    style: AppTheme.manrope(
+                                      size: 12,
+                                      color: cs.onSurface,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  AppFormatters.rupiah(autoSplits[c.id] ?? 0),
+                                  style: AppTheme.manrope(
+                                    size: 12,
+                                    weight: FontWeight.w800,
+                                    color: cs.onSurface,
+                                    tabular: true,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
               const SizedBox(height: 12),
               OutlinedButton.icon(
@@ -195,12 +296,12 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
                 controller: _noteCtrl,
                 decoration: const InputDecoration(
                   labelText: 'Keterangan (opsional)',
-                  hintText: 'Contoh: Setoran rutin November',
+                  hintText: 'Contoh: Setoran rutin bulan ini',
                 ),
               ),
               const SizedBox(height: 18),
               FilledButton(
-                onPressed: _saving ? null : _submit,
+                onPressed: _saving ? null : () => _submit(components),
                 child: Text(isEdit ? 'Simpan Perubahan' : 'Simpan Setoran'),
               ),
             ],
@@ -210,4 +311,3 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
     );
   }
 }
-

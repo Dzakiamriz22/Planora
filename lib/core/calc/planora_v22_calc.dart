@@ -122,6 +122,40 @@ class PlanoraV22Calc {
     return ((targetPercent / 100.0) * portfolioTargetTotal).round();
   }
 
+  static Map<String, int> splitDepositByTargetPercent({
+    required int depositAmount,
+    required List<({String id, double targetPercent})> components,
+  }) {
+    if (depositAmount == 0 || components.isEmpty) return const {};
+    final totalPct = components.fold<double>(
+      0.0,
+      (sum, c) => sum + math.max(0.0, c.targetPercent),
+    );
+    if (totalPct <= 0) return const {};
+
+    final result = <String, int>{};
+    var allocated = 0;
+    var largestId = components.first.id;
+    var largestPct = -1.0;
+
+    for (final c in components) {
+      final pct = math.max(0.0, c.targetPercent);
+      if (pct > largestPct) {
+        largestPct = pct;
+        largestId = c.id;
+      }
+      final share = (depositAmount * (pct / totalPct)).round();
+      result[c.id] = share;
+      allocated += share;
+    }
+
+    final diff = depositAmount - allocated;
+    if (diff != 0) {
+      result[largestId] = (result[largestId] ?? 0) + diff;
+    }
+    return result;
+  }
+
   static double actualPercent({
     required int actualAmount,
     required int totalActualPortfolio,

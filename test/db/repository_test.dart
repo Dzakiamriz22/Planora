@@ -130,6 +130,27 @@ void main() {
           ..where((t) => t.id.equals(rdpuId)))
         .getSingle();
     expect(rdpuDeleted.actualAmount, 0);
+
+    // Auto-split: setoran 500k pada 20/70/10 langsung terbagi 100k / 350k / 50k
+    final autoContribId = await portfolioRepo.addContribution(
+      portfolioId: portoId,
+      amount: 500000,
+      dateIso: '2026-11-25',
+      componentId: PortfolioRepository.autoSplitComponentId,
+    );
+    final afterAuto = await (db.select(db.portfolioComponents)
+          ..where((t) => t.portfolioId.equals(portoId)))
+        .get();
+    expect(afterAuto.firstWhere((c) => c.instrumentType == 'RDPU').actualAmount, 100000);
+    expect(afterAuto.firstWhere((c) => c.instrumentType == 'RD Obligasi').actualAmount, 350000);
+    expect(afterAuto.firstWhere((c) => c.instrumentType == 'Saham langsung').actualAmount, 50000);
+
+    // Hapus setoran auto-split mengembalikan semua actualAmount ke 0
+    await portfolioRepo.deleteContribution(autoContribId);
+    final afterAutoDel = await (db.select(db.portfolioComponents)
+          ..where((t) => t.portfolioId.equals(portoId)))
+        .get();
+    expect(afterAutoDel.every((c) => c.actualAmount == 0), isTrue);
   });
 
   test('FR-21 & FR-23: Buat fase seimbang, batas per porto opsional, duplikat, dan hapus fase aktif ditolak', () async {

@@ -44,6 +44,8 @@ class ComponentLimitException implements Exception {
 class PortfolioRepository {
   PortfolioRepository(this._db);
 
+  static const String autoSplitComponentId = '__auto__';
+
   final AppDatabase _db;
   static const _uuid = Uuid();
 
@@ -487,6 +489,57 @@ class PortfolioRepository {
         .go();
   }
 
+  Future<void> _applyComponentAllocationDelta({
+    required String portfolioId,
+    required String? componentId,
+    required int deltaAmount,
+    required String nowIso,
+  }) async {
+    if (componentId == null || deltaAmount == 0) return;
+
+    if (componentId == autoSplitComponentId) {
+      final comps = await (_db.select(_db.portfolioComponents)
+            ..where((t) => t.portfolioId.equals(portfolioId)))
+          .get();
+      if (comps.isEmpty) return;
+
+      final splits = PlanoraV22Calc.splitDepositByTargetPercent(
+        depositAmount: deltaAmount,
+        components: comps
+            .map((c) => (id: c.id, targetPercent: c.targetPercent))
+            .toList(),
+      );
+      for (final comp in comps) {
+        final share = splits[comp.id] ?? 0;
+        if (share == 0) continue;
+        await (_db.update(_db.portfolioComponents)
+              ..where((t) => t.id.equals(comp.id)))
+            .write(
+          PortfolioComponentsCompanion(
+            actualAmount: Value((comp.actualAmount + share).clamp(0, 1 << 60)),
+            updatedAt: Value(nowIso),
+          ),
+        );
+      }
+      return;
+    }
+
+    final comp = await (_db.select(_db.portfolioComponents)
+          ..where((t) => t.id.equals(componentId)))
+        .getSingleOrNull();
+    if (comp != null) {
+      await (_db.update(_db.portfolioComponents)
+            ..where((t) => t.id.equals(componentId)))
+          .write(
+        PortfolioComponentsCompanion(
+          actualAmount:
+              Value((comp.actualAmount + deltaAmount).clamp(0, 1 << 60)),
+          updatedAt: Value(nowIso),
+        ),
+      );
+    }
+  }
+
   Future<String> addContribution({
     required String portfolioId,
     required int amount,
@@ -515,21 +568,12 @@ class PortfolioRepository {
             ),
           );
 
-      if (componentId != null) {
-        final comp = await (_db.select(_db.portfolioComponents)
-              ..where((t) => t.id.equals(componentId)))
-            .getSingleOrNull();
-        if (comp != null) {
-          await (_db.update(_db.portfolioComponents)
-                ..where((t) => t.id.equals(componentId)))
-              .write(
-            PortfolioComponentsCompanion(
-              actualAmount: Value(comp.actualAmount + amount),
-              updatedAt: Value(nowIso),
-            ),
-          );
-        }
-      }
+      await _applyComponentAllocationDelta(
+        portfolioId: portfolioId,
+        componentId: componentId,
+        deltaAmount: amount,
+        nowIso: nowIso,
+      );
     });
     return id;
   }
@@ -540,6 +584,7 @@ class PortfolioRepository {
     required String dateIso,
     String? note,
     String? componentId,
+    bool updateComponentId = false,
   }) async {
     if (amount <= 0) {
       throw ArgumentError('Jumlah setoran harus lebih dari Rp 0.');
@@ -552,58 +597,28 @@ class PortfolioRepository {
           .getSingle();
 
       final oldCompId = existing.componentId;
-      final nextCompId = componentId ?? oldCompId;
+      final nextCompId = updateComponentId ? componentId : (componentId ?? oldCompId);
 
-      if (oldCompId != null && oldCompId == nextCompId) {
-        final delta = amount - existing.amount;
-        if (delta != 0) {
-          final comp = await (_db.select(_db.portfolioComponents)
-                ..where((t) => t.id.equals(oldCompId)))
-              .getSingleOrNull();
-          if (comp != null) {
-            await (_db.update(_db.portfolioComponents)
-                  ..where((t) => t.id.equals(oldCompId)))
-                .write(
-              PortfolioComponentsCompanion(
-                actualAmount: Value((comp.actualAmount + delta).clamp(0, 1 << 60)),
-                updatedAt: Value(nowIso),
-              ),
-            );
-          }
-        }
+      if (oldCompId == nextCompId) {
+        await _applyComponentAllocationDelta(
+          portfolioId: existing.portfolioId,
+          componentId: oldCompId,
+          deltaAmount: amount - existing.amount,
+          nowIso: nowIso,
+        );
       } else {
-        if (oldCompId != null) {
-          final oldComp = await (_db.select(_db.portfolioComponents)
-                ..where((t) => t.id.equals(oldCompId)))
-              .getSingleOrNull();
-          if (oldComp != null) {
-            await (_db.update(_db.portfolioComponents)
-                  ..where((t) => t.id.equals(oldCompId)))
-                .write(
-              PortfolioComponentsCompanion(
-                actualAmount: Value(
-                  (oldComp.actualAmount - existing.amount).clamp(0, 1 << 60),
-                ),
-                updatedAt: Value(nowIso),
-              ),
-            );
-          }
-        }
-        if (nextCompId != null) {
-          final nextComp = await (_db.select(_db.portfolioComponents)
-                ..where((t) => t.id.equals(nextCompId)))
-              .getSingleOrNull();
-          if (nextComp != null) {
-            await (_db.update(_db.portfolioComponents)
-                  ..where((t) => t.id.equals(nextCompId)))
-                .write(
-              PortfolioComponentsCompanion(
-                actualAmount: Value(nextComp.actualAmount + amount),
-                updatedAt: Value(nowIso),
-              ),
-            );
-          }
-        }
+        await _applyComponentAllocationDelta(
+          portfolioId: existing.portfolioId,
+          componentId: oldCompId,
+          deltaAmount: -existing.amount,
+          nowIso: nowIso,
+        );
+        await _applyComponentAllocationDelta(
+          portfolioId: existing.portfolioId,
+          componentId: nextCompId,
+          deltaAmount: amount,
+          nowIso: nowIso,
+        );
       }
 
       await (_db.update(_db.contributions)..where((t) => t.id.equals(id)))
@@ -627,23 +642,12 @@ class PortfolioRepository {
           .getSingleOrNull();
       if (existing == null) return;
 
-      if (existing.componentId != null) {
-        final comp = await (_db.select(_db.portfolioComponents)
-              ..where((t) => t.id.equals(existing.componentId!)))
-            .getSingleOrNull();
-        if (comp != null) {
-          await (_db.update(_db.portfolioComponents)
-                ..where((t) => t.id.equals(comp.id)))
-              .write(
-            PortfolioComponentsCompanion(
-              actualAmount: Value(
-                (comp.actualAmount - existing.amount).clamp(0, 1 << 60),
-              ),
-              updatedAt: Value(nowIso),
-            ),
-          );
-        }
-      }
+      await _applyComponentAllocationDelta(
+        portfolioId: existing.portfolioId,
+        componentId: existing.componentId,
+        deltaAmount: -existing.amount,
+        nowIso: nowIso,
+      );
 
       await (_db.delete(_db.contributions)..where((t) => t.id.equals(id))).go();
     });

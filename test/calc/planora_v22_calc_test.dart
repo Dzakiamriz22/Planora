@@ -192,6 +192,28 @@ void main() {
       );
       expect(streak, 3);
     });
+
+    test('U-15: Auto-split setoran Rp 500.000 pada 50/50 -> 250.000 & 250.000; ganjil tetap tepat', () {
+      final even = PlanoraV22Calc.splitDepositByTargetPercent(
+        depositAmount: 500000,
+        components: const [
+          (id: 'rdpu', targetPercent: 50.0),
+          (id: 'obli', targetPercent: 50.0),
+        ],
+      );
+      expect(even['rdpu'], 250000);
+      expect(even['obli'], 250000);
+
+      final odd = PlanoraV22Calc.splitDepositByTargetPercent(
+        depositAmount: 100000,
+        components: const [
+          (id: 'a', targetPercent: 33.33),
+          (id: 'b', targetPercent: 33.33),
+          (id: 'c', targetPercent: 33.34),
+        ],
+      );
+      expect(odd.values.fold<int>(0, (s, v) => s + v), 100000);
+    });
   });
 
   group('Bab 11.4 — Skenario Angka Ujung ke Ujung', () {
