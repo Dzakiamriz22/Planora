@@ -364,15 +364,15 @@ class _PhaseFormScreenState extends ConsumerState<PhaseFormScreen> {
                       runSpacing: 6,
                       children: [
                         if (ceiling == null)
-                          PlanoraPill.gray('Plafon belum diatur')
+                          PlanoraPill.gray('Batas belum diatur')
                         else if (overCeiling)
                           PlanoraPill.danger(
-                            'Melebihi plafon (${AppFormatters.rupiah(liveValidation.totalAmount - ceiling)})',
+                            'Melebihi batas (${AppFormatters.rupiah(liveValidation.totalAmount - ceiling)})',
                             icon: Icons.error_outline,
                           )
                         else
                           PlanoraPill.green(
-                            exactCeiling ? 'Pas plafon' : 'Dalam plafon',
+                            exactCeiling ? 'Pas batas' : 'Dalam batas',
                             icon: Icons.check,
                           ),
                         if (summary.phaseLimitEnabled &&

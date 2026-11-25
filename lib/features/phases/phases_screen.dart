@@ -74,7 +74,7 @@ class PhasesScreen extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Fase seimbang berhasil dibuat dari plafon Anda.'),
+            content: Text('Fase seimbang berhasil dibuat dari batas nabung Anda.'),
           ),
         );
         context.push('/phases/$id/edit');
@@ -201,7 +201,7 @@ class PhasesScreen extends ConsumerWidget {
                       ),
                       TextSpan(
                         text: summary.ceiling != null
-                            ? 'Menerapkan fase mengganti setoran bulanan semua porto sekaligus, tetap di dalam plafon ${AppFormatters.rupiah(summary.ceiling!)}/bln.'
+                            ? 'Menerapkan fase mengganti setoran bulanan semua porto sekaligus, tetap dalam batas nabung ${AppFormatters.rupiah(summary.ceiling!)}/bln.'
                             : 'Menerapkan fase mengganti setoran bulanan semua porto sekaligus.',
                         style: AppTheme.manrope(
                           size: 12.5,
@@ -384,7 +384,7 @@ class _PhaseCard extends StatelessWidget {
                   child: Text(
                     p.isActive
                         ? 'Edit Fase'
-                        : (overCeiling ? 'Melebihi plafon' : 'Terapkan'),
+                        : (overCeiling ? 'Melebihi batas' : 'Terapkan'),
                     style: AppTheme.manrope(
                       size: 13,
                       weight: FontWeight.w800,

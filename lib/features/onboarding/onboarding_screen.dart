@@ -160,7 +160,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            'Rencanakan beberapa tujuan keuangan sekaligus di dalam plafon menabung Anda sendiri. Semua data tersimpan lokal di HP, 100% offline, tanpa pendaftaran akun.',
+                            'Rencanakan beberapa tujuan keuangan sekaligus sesuai batas nabung bulanan Anda. Semua data tersimpan lokal di HP, 100% offline, tanpa pendaftaran akun.',
                             style: AppTheme.manrope(
                               size: 14,
                               color: cs.onSurfaceVariant,
@@ -229,7 +229,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Plafon menabung dihitung otomatis dari gaji dikurangi biaya hidup minimum.',
+                            'Batas nabung bulanan dihitung otomatis dari gaji dikurangi biaya hidup minimum.',
                             style: AppTheme.manrope(
                               size: 13,
                               color: cs.onSurfaceVariant,
@@ -253,7 +253,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Plafon nabung terhitung',
+                                  'Batas nabung bulanan',
                                   style: AppTheme.manrope(size: 12.5),
                                 ),
                                 Text(

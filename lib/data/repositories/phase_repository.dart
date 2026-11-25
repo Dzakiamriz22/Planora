@@ -73,7 +73,7 @@ class PhaseRepository {
       }
       if (ceiling != null && total > ceiling) {
         throw PhaseValidationException(
-          'Total fase (${AppFormatters.rupiah(total)}) melebihi plafon menabung saat ini (${AppFormatters.rupiah(ceiling)}).',
+          'Total fase (${AppFormatters.rupiah(total)}) melebihi batas nabung saat ini (${AppFormatters.rupiah(ceiling)}).',
         );
       }
 
@@ -235,7 +235,7 @@ class PhaseRepository {
 
     return savePhase(
       name: name,
-      description: 'Pembagian plafon merata ke seluruh porto sebagai titik mulai.',
+      description: 'Pembagian batas nabung merata ke seluruh porto sebagai titik mulai.',
       allocationsByPortfolioId: allocs,
     );
   }

@@ -1143,7 +1143,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                                 ),
                                 TextSpan(
                                   text:
-                                      'Ilustrasi berdasarkan asumsi tenor & bunga Anda, bukan penawaran kredit dan tidak masuk plafon.',
+                                      'Ilustrasi berdasarkan asumsi tenor & bunga Anda, bukan penawaran kredit dan tidak mengurangi batas nabung.',
                                   style: AppTheme.manrope(
                                     size: 11.5,
                                     color: PlanoraColors.inkMuted,

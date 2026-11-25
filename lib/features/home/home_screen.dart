@@ -73,9 +73,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context,
       result: result,
       ceilingAmount: ceiling,
-      title: 'Skalakan Rencana ke Plafon',
+      title: 'Sesuaikan Rencana ke Batas Nabung',
       subtitle:
-          'Total rencana saat ini melebihi plafon sebesar ${AppFormatters.rupiah(summary.overCeilingBy)}. Seluruh porto akan diturunkan secara proporsional agar sesuai plafon ${AppFormatters.rupiah(ceiling)}.',
+          'Total rencana saat ini melebihi batas nabung sebesar ${AppFormatters.rupiah(summary.overCeilingBy)}. Seluruh porto akan diturunkan secara proporsional agar sesuai batas ${AppFormatters.rupiah(ceiling)}.',
     );
     if (!approved) return;
 
@@ -86,7 +86,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Rencana setoran berhasil diskalakan sesuai plafon.'),
+          content: Text('Rencana setoran berhasil disesuaikan ke batas nabung.'),
         ),
       );
     }
@@ -129,10 +129,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final plafonChip = ceiling == null
         ? PlanoraPill.gray('Belum diatur')
         : (summary.isOverCeiling
-            ? PlanoraPill.danger('Melebihi plafon')
+            ? PlanoraPill.danger('Melebihi batas')
             : (summary.remainingCeiling == 0
-                ? PlanoraPill.green('Pas plafon')
-                : PlanoraPill.green('Dalam plafon')));
+                ? PlanoraPill.green('Pas batas')
+                : PlanoraPill.green('Dalam batas')));
 
     return Scaffold(
       body: SafeArea(
@@ -302,7 +302,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          'Plafon Nabung — ${AppFormatters.monthYear(_selectedMonth)}',
+                          'Batas Nabung — ${AppFormatters.monthYear(_selectedMonth)}',
                           style: AppTheme.manrope(
                             size: 13,
                             weight: FontWeight.w800,
@@ -317,7 +317,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 10),
                   if (ceiling == null) ...[
                     Text(
-                      'Atur gaji bulanan dan biaya hidup minimum untuk mengaktifkan plafon menabung otomatis.',
+                      'Atur gaji bulanan dan biaya hidup minimum untuk menghitung batas nabung otomatis.',
                       style: AppTheme.manrope(
                         size: 12,
                         color: cs.onSurfaceVariant,
@@ -346,7 +346,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            'Rencana ${AppFormatters.rupiah(summary.totalMonthlyPlan)} dari plafon',
+                            'Rencana ${AppFormatters.rupiah(summary.totalMonthlyPlan)} dari batas',
                             style: AppTheme.manrope(
                               size: 11.5,
                               color: cs.onSurfaceVariant,

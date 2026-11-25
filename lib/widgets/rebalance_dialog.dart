@@ -9,17 +9,17 @@ Future<bool> showRebalancePreviewDialog(
   BuildContext context, {
   required RebalanceResult result,
   required int ceilingAmount,
-  String title = 'Pratinjau Penyeimbangan Plafon',
+  String title = 'Pratinjau Penyesuaian Batas',
   String? subtitle,
 }) async {
   if (!result.success) {
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Melebihi Plafon Menabung'),
+        title: const Text('Melebihi Batas Nabung'),
         content: Text(
           result.errorMessage ??
-              'Perubahan tidak dapat disimpan karena melebihi plafon ${AppFormatters.rupiah(ceilingAmount)}.',
+              'Perubahan tidak dapat disimpan karena melebihi batas nabung ${AppFormatters.rupiah(ceilingAmount)}.',
         ),
         actions: [
           FilledButton(
@@ -46,7 +46,7 @@ Future<bool> showRebalancePreviewDialog(
             children: [
               Text(
                 subtitle ??
-                    'Perubahan melebihi plafon sebesar ${AppFormatters.rupiah(result.excess)}. Porto lain akan diturunkan secara proporsional agar total tetap dalam batas plafon ${AppFormatters.rupiah(ceilingAmount)}.',
+                    'Perubahan melebihi batas nabung sebesar ${AppFormatters.rupiah(result.excess)}. Porto lain akan diturunkan secara proporsional agar total tetap dalam batas ${AppFormatters.rupiah(ceilingAmount)}.',
                 style: const TextStyle(
                   fontSize: 13,
                   color: AppTheme.textSecondary,

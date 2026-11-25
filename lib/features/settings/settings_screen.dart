@@ -118,7 +118,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Plafon nabung (otomatis)',
+                            'Batas nabung (otomatis)',
                             style: AppTheme.manrope(size: 12.5),
                           ),
                           Text(
@@ -158,7 +158,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
-                                'Profil keuangan diperbarui. Plafon dan seluruh layar dihitung ulang.',
+                                'Profil keuangan diperbarui. Batas nabung dan seluruh layar dihitung ulang.',
                               ),
                             ),
                           );
@@ -797,7 +797,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       const Divider(),
                       PlanoraKeyValueRow(
-                        label: 'Plafon nabung (otomatis)',
+                        label: 'Batas nabung (otomatis)',
                         value: ceiling != null
                             ? '${AppFormatters.rupiah(ceiling)}/bln'
                             : 'Belum diatur',
@@ -805,7 +805,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Mengubah gaji atau biaya hidup langsung menghitung ulang plafon dan seluruh layar.',
+                        'Mengubah gaji atau biaya hidup langsung menghitung ulang batas nabung dan seluruh layar.',
                         style: AppTheme.manrope(
                           size: 11.5,
                           color: cs.onSurfaceVariant,

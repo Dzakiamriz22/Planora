@@ -447,7 +447,7 @@ class PlanoraCalc {
         excess: excess,
         changes: const [],
         errorMessage:
-            'Rencana setoran (${_rupiah(newEditedAmount)}) melebihi plafon (${_rupiah(ceilingAmount)}) meskipun seluruh porto lain diturunkan ke Rp 0.',
+            'Rencana setoran (${_rupiah(newEditedAmount)}) melebihi batas nabung (${_rupiah(ceilingAmount)}) meskipun seluruh porto lain diturunkan ke Rp 0.',
       );
     }
 
@@ -500,7 +500,7 @@ class PlanoraCalc {
         needsRebalance: true,
         excess: excess,
         changes: const [],
-        errorMessage: 'Sisa plafon tidak mencukupi setelah penyeimbangan.',
+        errorMessage: 'Sisa batas nabung tidak mencukupi setelah penyesuaian.',
       );
     }
 
@@ -662,7 +662,7 @@ class PlanoraCalc {
         isValid: false,
         totalAmount: total,
         errorMessage:
-            'Total alokasi fase (${_rupiah(total)}) melebihi plafon menabung (${_rupiah(ceilingAmount)}).',
+            'Total alokasi fase (${_rupiah(total)}) melebihi batas nabung (${_rupiah(ceilingAmount)}).',
       );
     }
 

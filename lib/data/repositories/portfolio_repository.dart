@@ -164,7 +164,7 @@ class PortfolioRepository {
       }
       if (ceiling != null && projectedTotal > ceiling) {
         throw CeilingExceededException(
-          'Total rencana setoran (${AppFormatters.rupiah(projectedTotal)}) melebihi plafon menabung (${AppFormatters.rupiah(ceiling)}).',
+          'Total rencana setoran (${AppFormatters.rupiah(projectedTotal)}) melebihi batas nabung (${AppFormatters.rupiah(ceiling)}).',
         );
       }
 
@@ -273,7 +273,7 @@ class PortfolioRepository {
 
       if (ceiling != null && projectedTotal > ceiling) {
         throw CeilingExceededException(
-          'Total rencana setoran (${AppFormatters.rupiah(projectedTotal)}) melebihi plafon menabung (${AppFormatters.rupiah(ceiling)}).',
+          'Total rencana setoran (${AppFormatters.rupiah(projectedTotal)}) melebihi batas nabung (${AppFormatters.rupiah(ceiling)}).',
         );
       }
 
@@ -312,7 +312,7 @@ class PortfolioRepository {
       }
       if (ceiling != null && total > ceiling) {
         throw CeilingExceededException(
-          'Total rencana setoran (${AppFormatters.rupiah(total)}) melebihi plafon menabung (${AppFormatters.rupiah(ceiling)}).',
+          'Total rencana setoran (${AppFormatters.rupiah(total)}) melebihi batas nabung (${AppFormatters.rupiah(ceiling)}).',
         );
       }
       for (final entry in plansById.entries) {
