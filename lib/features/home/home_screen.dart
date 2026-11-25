@@ -121,7 +121,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const PlanoraLogo(size: 72),
                     const SizedBox(height: 16),
                     Text(
-                      'Mulai atur tujuan keuanganmu',
+                      'Belum ada portofolio',
                       textAlign: TextAlign.center,
                       style: AppTheme.sora(
                         size: 16.5,
@@ -129,9 +129,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         color: cs.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Text(
-                      'Catat target, porsi instrumen, dan setoran bulanan langsung di HP — tanpa akun dan tanpa internet.',
+                      'Buat portofolio pertama untuk mulai mencatat target dan setoran.',
                       textAlign: TextAlign.center,
                       style: AppTheme.manrope(
                         size: 12.5,
@@ -195,6 +195,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final momPctText = dashboard.momDeltaPercent != null
         ? ' (${dashboard.momDeltaPercent! >= 0 ? '+' : ''}${PlanoraV22Calc.formatPercent(dashboard.momDeltaPercent!)})'
         : '';
+    final momSummary = dashboard.momDeltaAmount == 0
+        ? 'Sama seperti bulan lalu'
+        : '$momText$momPctText vs bulan lalu';
 
     return Scaffold(
       body: SafeArea(
@@ -218,7 +221,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               totalTarget: summary.totalTarget,
               combinedPct: summary.combinedProgressPct,
               thisMonthDeposit: dashboard.thisMonthDeposit,
-              momLabel: '$momText$momPctText vs bulan lalu',
+              momLabel: momSummary,
               instrumentSubtotals: sortedInstruments,
             ),
 
@@ -302,7 +305,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          'Pengingat Bulan Ini',
+                          'Progres Bulan Ini',
                           style: AppTheme.manrope(
                             size: 13.5,
                             weight: FontWeight.w800,
@@ -321,15 +324,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          dashboard.activePhaseName != null
-                              ? 'Fase aktif: ${dashboard.activePhaseName}'
-                              : 'Rencana bulanan aktif',
+                          dashboard.activePhaseName ?? 'Target setoran bulanan',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: AppTheme.manrope(
                             size: 12,
                             color: cs.onSurfaceVariant,
                           ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Text(
                         '${AppFormatters.rupiah(dashboard.thisMonthDeposit)} / ${AppFormatters.rupiah(dashboard.activePhaseTotal)}',
                         style: AppTheme.manrope(
@@ -355,12 +359,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         : PlanoraColors.primary,
                     height: 7,
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
                         child: Text(
-                          'Batas Nabung — ${AppFormatters.monthYear(_selectedMonth)}',
+                          'Batas Nabung',
                           style: AppTheme.manrope(
                             size: 12,
                             weight: FontWeight.w700,
