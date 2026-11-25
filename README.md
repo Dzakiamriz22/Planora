@@ -5,6 +5,12 @@
   <p>Aplikasi Android untuk merencanakan banyak tujuan keuangan sekaligus — simpel, otomatis hitung ulang, dan 100% offline di HP kamu.</p>
 
   <p>
+    <a href="https://github.com/Dzakiamriz22/Planora/releases/latest">
+      <img src="https://img.shields.io/badge/Download_APK-v2.1.0-0B4A34?style=for-the-badge&logo=android&logoColor=white" alt="Download APK Planora v2.1.0" />
+    </a>
+  </p>
+
+  <p>
     <img src="https://img.shields.io/badge/Versi-2.1.0-0B4A34?style=flat-square" alt="Versi 2.1.0" />
     <img src="https://img.shields.io/badge/Flutter-3.50+-02569B?style=flat-square&logo=flutter&logoColor=white" alt="Flutter" />
     <img src="https://img.shields.io/badge/Android-Offline--First-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android Offline-First" />
