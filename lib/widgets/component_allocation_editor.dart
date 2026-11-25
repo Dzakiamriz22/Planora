@@ -114,13 +114,17 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
     return r.toStringAsFixed(2);
   }
 
-  void _syncControllersFromRows({String? skipKey}) {
-    final validKeys = widget.rows.map((e) => e.key).toSet();
+  void _syncControllersFromRows({
+    List<EditableComponentRow>? rows,
+    String? skipKey,
+  }) {
+    final source = rows ?? widget.rows;
+    final validKeys = source.map((e) => e.key).toSet();
     final stale = _controllers.keys.where((k) => !validKeys.contains(k)).toList();
     for (final k in stale) {
       _controllers.remove(k)?.dispose();
     }
-    for (final r in widget.rows) {
+    for (final r in source) {
       final ctrl = _controllers.putIfAbsent(
         r.key,
         () => TextEditingController(text: _formatControllerText(r)),
@@ -138,8 +142,8 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
   }
 
   void _emit(List<EditableComponentRow> next, {String? skipControllerKey}) {
+    _syncControllersFromRows(rows: next, skipKey: skipControllerKey);
     widget.onRowsChanged(next);
-    _syncControllersFromRows(skipKey: skipControllerKey);
   }
 
   void _updateRowPercent(
@@ -171,30 +175,6 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
       lastEditedKey: _lastEditedKey,
     );
     final map = {for (final b in balanced) b.key: b.targetPercent};
-    final next = widget.rows
-        .map((r) => r.copyWith(targetPercent: map[r.key] ?? r.targetPercent))
-        .toList();
-    _emit(next);
-  }
-
-  void _applyPreset(double primaryPercent) {
-    if (widget.rows.isEmpty) return;
-    final items = widget.rows
-        .map(
-          (r) => ComponentPercentItem(
-            key: r.key,
-            instrumentType: r.instrumentType,
-            targetPercent: r.targetPercent,
-            actualAmount: r.actualAmount,
-          ),
-        )
-        .toList();
-    final applied = PlanoraV22Calc.applyQuickPreset(
-      items,
-      primaryPercent: primaryPercent,
-      activeKey: _lastEditedKey ?? widget.rows.first.key,
-    );
-    final map = {for (final a in applied) a.key: a.targetPercent};
     final next = widget.rows
         .map((r) => r.copyWith(targetPercent: map[r.key] ?? r.targetPercent))
         .toList();
@@ -462,23 +442,10 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
           centerLabel: 'Target',
           centerValue: PlanoraV22Calc.formatPercent(totalPct),
           mini: true,
-          emptyMessage: 'Geser slider atau pilih preset untuk mengatur alokasi',
+          emptyMessage: 'Geser slider atau ketik angka untuk mengatur alokasi',
         ),
 
         const SizedBox(height: 12),
-
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            _QuickPresetChip(label: '100%', onTap: () => _applyPreset(100)),
-            _QuickPresetChip(label: '80/20', onTap: () => _applyPreset(80)),
-            _QuickPresetChip(label: '70/30', onTap: () => _applyPreset(70)),
-            _QuickPresetChip(label: '60/40', onTap: () => _applyPreset(60)),
-            _QuickPresetChip(label: '50/50', onTap: () => _applyPreset(50)),
-          ],
-        ),
-        const SizedBox(height: 10),
 
         for (final row in widget.rows) _buildRow(context, row, isDark),
 
@@ -739,39 +706,6 @@ class _ModeToggleChip extends StatelessWidget {
               weight: selected ? FontWeight.w800 : FontWeight.w600,
               color: selected ? cs.primary : cs.onSurfaceVariant,
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _QuickPresetChip extends StatelessWidget {
-  const _QuickPresetChip({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 34),
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest.withValues(alpha: 0.7),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: cs.outlineVariant),
-        ),
-        child: Text(
-          label,
-          style: AppTheme.manrope(
-            size: 11.5,
-            weight: FontWeight.w700,
-            color: cs.onSurface,
           ),
         ),
       ),
