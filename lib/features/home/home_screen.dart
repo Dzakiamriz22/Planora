@@ -108,7 +108,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 profile: profile,
                 progressPercent: null,
                 onTapProfile: () => context.push('/profile'),
-                onTapHistory: () => context.push('/contributions'),
+                onTapHistory: () => context.push('/history'),
               ),
               const SizedBox(height: 36),
               PlanoraCard(
@@ -208,7 +208,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               progressPercent:
                   summary.totalTarget > 0 ? summary.combinedProgressPct : null,
               onTapProfile: () => context.push('/profile'),
-              onTapHistory: () => context.push('/contributions'),
+              onTapHistory: () => context.push('/history'),
             ),
 
             const SizedBox(height: 14),
@@ -278,7 +278,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     PlanoraMonthlyStackedBarChart(
                       bars: dashboard.stackedBars6m,
                       height: 168,
-                      onMonthTap: (_) => context.push('/contributions'),
+                      onMonthTap: (_) => context.push('/history'),
                     ),
                 ],
               ),
@@ -610,7 +610,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                         ),
                         InkWell(
-                          onTap: () => context.push('/contributions'),
+                          onTap: () => context.push('/history'),
                           child: Text(
                             'Semua',
                             style: AppTheme.manrope(

@@ -19,7 +19,26 @@ import 'package:planora/widgets/planora_widgets.dart';
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/splash',
+    errorBuilder: (context, state) => Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Halaman tidak ditemukan.'),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: () => context.go('/home'),
+              child: const Text('Kembali ke Beranda'),
+            ),
+          ],
+        ),
+      ),
+    ),
     routes: [
+      GoRoute(
+        path: '/',
+        redirect: (_, _) => '/home',
+      ),
       GoRoute(
         path: '/splash',
         builder: (context, state) => const SplashScreen(),
