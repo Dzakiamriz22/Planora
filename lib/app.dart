@@ -1,0 +1,153 @@
+import 'package:material_ui/material_ui.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:planora/core/theme/app_theme.dart';
+import 'package:planora/features/home/home_screen.dart';
+import 'package:planora/features/onboarding/onboarding_screen.dart';
+import 'package:planora/features/phases/phase_form_screen.dart';
+import 'package:planora/features/phases/phases_screen.dart';
+import 'package:planora/features/portfolios/contributions_history_screen.dart';
+import 'package:planora/features/portfolios/portfolio_detail_screen.dart';
+import 'package:planora/features/portfolios/portfolio_form_screen.dart';
+import 'package:planora/features/portfolios/portfolios_screen.dart';
+import 'package:planora/features/profile/profile_screen.dart';
+import 'package:planora/features/settings/settings_screen.dart';
+import 'package:planora/features/shared/planora_providers.dart';
+import 'package:planora/features/splash/splash_screen.dart';
+import 'package:planora/widgets/planora_widgets.dart';
+
+final appRouterProvider = Provider<GoRouter>((ref) {
+  return GoRouter(
+    initialLocation: '/splash',
+    routes: [
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return _AppShell(navigationShell: navigationShell);
+        },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/home',
+                builder: (context, state) => const HomeScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/portfolios',
+                builder: (context, state) => const PortfoliosScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/phases',
+                builder: (context, state) => const PhasesScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/settings',
+                builder: (context, state) => const SettingsScreen(),
+              ),
+            ],
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/history',
+        builder: (context, state) => const ContributionsHistoryScreen(),
+      ),
+      GoRoute(
+        path: '/portfolios/new',
+        builder: (context, state) => const PortfolioFormScreen(),
+      ),
+      GoRoute(
+        path: '/portfolios/:id',
+        builder: (context, state) => PortfolioDetailScreen(
+          portfolioId: state.pathParameters['id']!,
+        ),
+      ),
+      GoRoute(
+        path: '/portfolios/:id/edit',
+        builder: (context, state) => PortfolioFormScreen(
+          portfolioId: state.pathParameters['id']!,
+        ),
+      ),
+      GoRoute(
+        path: '/phases/new',
+        builder: (context, state) => const PhaseFormScreen(),
+      ),
+      GoRoute(
+        path: '/phases/:id/edit',
+        builder: (context, state) => PhaseFormScreen(
+          phaseId: state.pathParameters['id']!,
+        ),
+      ),
+    ],
+  );
+});
+
+class _AppShell extends StatelessWidget {
+  const _AppShell({required this.navigationShell});
+
+  final StatefulNavigationShell navigationShell;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: navigationShell,
+      bottomNavigationBar: PlanoraBottomNavBar(
+        currentIndex: navigationShell.currentIndex,
+        onTap: (index) {
+          navigationShell.goBranch(
+            index,
+            initialLocation: index == navigationShell.currentIndex,
+          );
+        },
+      ),
+    );
+  }
+}
+
+class PlanoraApp extends ConsumerWidget {
+  const PlanoraApp({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+    final profile = ref.watch(userProfileStreamProvider).value;
+
+    final themeMode = switch (profile?.themePref) {
+      'terang' => ThemeMode.light,
+      'gelap' => ThemeMode.dark,
+      _ => ThemeMode.system,
+    };
+
+    return MaterialApp.router(
+      title: 'Planora',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: themeMode,
+      routerConfig: router,
+    );
+  }
+}
