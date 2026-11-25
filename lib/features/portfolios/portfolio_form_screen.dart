@@ -397,6 +397,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                         labelText: 'Nama platform (opsional, teks bebas)',
                         helperText:
                             'Hanya label tempat — tidak terhubung ke akun mana pun.',
+                        helperMaxLines: 2,
                       ),
                     ),
 

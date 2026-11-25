@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:material_ui/material_ui.dart';
@@ -426,12 +428,94 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _exportJson() async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      useSafeArea: true,
+      builder: (ctx) {
+        final mutedColor = Theme.of(ctx).colorScheme.onSurfaceVariant;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Ekspor Cadangan (JSON)',
+                style: AppTheme.sora(size: 16, weight: FontWeight.w700),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Pilih cara menyimpan file cadangan data Planora Anda.',
+                style: AppTheme.manrope(
+                  size: 12.5,
+                  color: mutedColor,
+                ),
+              ),
+              const SizedBox(height: 14),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                leading: const Icon(Icons.save_alt_rounded,
+                    color: PlanoraColors.primary),
+                title: Text(
+                  'Simpan ke Perangkat',
+                  style: AppTheme.manrope(size: 14, weight: FontWeight.w700),
+                ),
+                subtitle: Text(
+                  'Pilih folder lokal (misalnya Download) langsung di HP.',
+                  style: AppTheme.manrope(
+                    size: 12,
+                    color: mutedColor,
+                  ),
+                ),
+                onTap: () => Navigator.of(ctx).pop('save'),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                leading: const Icon(Icons.share_outlined,
+                    color: PlanoraColors.primary),
+                title: Text(
+                  'Bagikan File',
+                  style: AppTheme.manrope(size: 14, weight: FontWeight.w700),
+                ),
+                subtitle: Text(
+                  'Kirim file cadangan lewat aplikasi lain (Drive, chat, email).',
+                  style: AppTheme.manrope(
+                    size: 12,
+                    color: mutedColor,
+                  ),
+                ),
+                onTap: () => Navigator.of(ctx).pop('share'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (choice == null || !mounted) return;
+
     try {
       final jsonStr =
           await ref.read(settingsRepositoryProvider).exportAllToJson();
-      final tempDir = await getTemporaryDirectory();
       final fileName =
           'planora_backup_${AppFormatters.toIsoDate(DateTime.now())}.json';
+
+      if (choice == 'save') {
+        final bytes = Uint8List.fromList(utf8.encode(jsonStr));
+        final savedPath = await FilePicker.saveFile(
+          dialogTitle: 'Simpan Cadangan Planora',
+          fileName: fileName,
+          bytes: bytes,
+        );
+        if (savedPath != null && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Cadangan disimpan: $fileName')),
+          );
+        }
+        return;
+      }
+
+      final tempDir = await getTemporaryDirectory();
       final file = File(p.join(tempDir.path, fileName));
       await file.writeAsString(jsonStr);
 
