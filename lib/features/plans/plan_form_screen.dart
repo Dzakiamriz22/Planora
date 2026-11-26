@@ -234,7 +234,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
           : _currentTotal;
       final isDraft = !PlanPercentCalc.isExact100(shareSnapshot.values);
 
-      await ref.read(planRepositoryProvider).savePlan(
+      final savedId = await ref.read(planRepositoryProvider).savePlan(
             id: saveAsNew ? null : widget.planId,
             name: _nameCtrl.text.trim(),
             description: _descCtrl.text.trim(),
@@ -243,13 +243,19 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
             fixedAmountsByPortfolioId: exactSnapshot,
           );
 
-      if (_isEditingActivePlan && !saveAsNew) {
+      final allPlansNow =
+          await ref.read(planRepositoryProvider).watchPlans().first;
+      final savedNow =
+          allPlansNow.where((e) => e.id == savedId).firstOrNull;
+      final isNowActive = savedNow?.isActive ?? false;
+
+      if (isNowActive || (_isEditingActivePlan && !saveAsNew)) {
         final setting =
             await ref.read(settingsRepositoryProvider).getSettings();
         await ref.read(reminderServiceProvider).syncSchedules(
               setting: setting,
-              activePlanName: _nameCtrl.text.trim(),
-              activePlanTotal: _currentTotal,
+              activePlanName: isNowActive ? _nameCtrl.text.trim() : null,
+              activePlanTotal: isNowActive ? effectiveTotal : 0,
             );
       }
 
@@ -259,16 +265,20 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
             content: Text(
               isDraft
                   ? 'Plan "${_nameCtrl.text.trim()}" disimpan sebagai draf (belum 100%).'
-                  : (saveAsNew
-                      ? 'Disimpan sebagai Plan baru "${_nameCtrl.text.trim()}".'
-                      : 'Perubahan Plan berhasil disimpan.'),
+                  : isNowActive
+                      ? 'Plan "${_nameCtrl.text.trim()}" aktif — setoran bulanan tiap portofolio otomatis diperbarui.'
+                      : (saveAsNew
+                          ? 'Disimpan sebagai Plan baru "${_nameCtrl.text.trim()}".'
+                          : 'Perubahan Plan berhasil disimpan.'),
             ),
           ),
         );
         context.pop();
       }
     } catch (e) {
-      setState(() => _validationError = e.toString());
+      if (mounted) {
+        setState(() => _validationError = e.toString());
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }

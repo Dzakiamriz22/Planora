@@ -244,6 +244,78 @@ class PlanRepository {
               ),
             );
       }
+
+      // Sinkronisasi otomatis ke monthlyPlan tiap portofolio:
+      // 1) Jika sedang mengedit Plan aktif -> langsung perbarui monthlyPlan (atau nonaktifkan jika jadi draf/lewat batas)
+      // 2) Jika membuat Plan baru & belum ada Plan aktif sama sekali -> otomatis aktifkan jika valid 100% & dalam batas
+      final existingAllPlans = await _db.select(_db.plans).get();
+      final savedPlan = existingAllPlans.firstWhere((e) => e.id == targetId);
+      final hasOtherActive = existingAllPlans.any(
+        (e) => e.isActive && e.id != targetId,
+      );
+      final shouldTrySync = savedPlan.isActive || (id == null && !hasOtherActive);
+
+      if (shouldTrySync && portfolios.isNotEmpty) {
+        final s = await _db.select(_db.settings).getSingle();
+        final ceiling = PlanoraCalc.ceiling(
+          monthlySalary: s.monthlySalary,
+          minimumLivingCost: s.minimumLivingCost,
+        );
+        final fullShareMap = <String, int>{
+          for (final p in portfolios) p.id: sharePercentX100ByPortfolioId[p.id] ?? 0,
+        };
+        final namesById = {for (final p in portfolios) p.id: p.name};
+        final validation = PlanPercentCalc.validateForApply(
+          totalAmount: totalAmount,
+          sharePercentX100ById: fullShareMap,
+          portfolioNamesById: namesById,
+          ceilingAmount: ceiling,
+          planLimitEnabled: s.planLimitEnabled,
+          planLimitAmount: s.planLimitAmount,
+        );
+
+        if (validation.isValid && totalAmount > 0) {
+          final fixedSum = fixedAmountsByPortfolioId == null
+              ? -1
+              : portfolios.fold<int>(
+                  0,
+                  (acc, p) => acc + (fixedAmountsByPortfolioId[p.id] ?? 0),
+                );
+          final useExact = fixedAmountsByPortfolioId != null &&
+              fixedSum == totalAmount;
+          final effectiveAmounts =
+              useExact ? fixedAmountsByPortfolioId : validation.derivedAmountsById;
+
+          if (!savedPlan.isActive) {
+            await (_db.update(_db.plans)..where((t) => t.id.equals(targetId)))
+                .write(
+              PlansCompanion(
+                isActive: const Value(true),
+                updatedAt: Value(nowIso),
+              ),
+            );
+          }
+
+          for (final p in portfolios) {
+            await (_db.update(_db.portfolios)..where((t) => t.id.equals(p.id)))
+                .write(
+              PortfoliosCompanion(
+                monthlyPlan: Value(effectiveAmounts[p.id] ?? 0),
+                updatedAt: Value(nowIso),
+              ),
+            );
+          }
+        } else if (savedPlan.isActive) {
+          // Plan aktif yang diedit jadi draf / melewati batas -> nonaktifkan otomatis
+          await (_db.update(_db.plans)..where((t) => t.id.equals(targetId)))
+              .write(
+            PlansCompanion(
+              isActive: const Value(false),
+              updatedAt: Value(nowIso),
+            ),
+          );
+        }
+      }
     });
 
     return targetId;

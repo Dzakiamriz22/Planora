@@ -362,21 +362,46 @@ void main() {
           await tester.pump();
         }
 
-        // Simpan Plan
+        // Simpan Plan (karena belum ada Plan aktif, otomatis aktif & langsung update monthlyPlan semua porto!)
         await tester.tap(find.byKey(const Key('plan_save_button')));
         await tester.pumpAndSettle();
 
         final savedPlan = (await db.select(db.plans).get()).single;
         expect(savedPlan.totalAmount, 2100000);
+        expect(savedPlan.isActive, isTrue);
 
-        // Terapkan Plan & cek monthlyPlan tiap porto harus EXACT 0 rupiah meleset!
-        await planRepo.applyPlan(savedPlan.id);
+        // Tanpa perlu klik applyPlan manual, monthlyPlan tiap porto harus SUDAH EXACT!
         final allPortos = await db.select(db.portfolios).get();
         final byId = {for (final p in allPortos) p.id: p.monthlyPlan};
         expect(byId[pSaham], 1000000);
         expect(byId[pRumah], 400000);
         expect(byId[pNikah], 500000);
         expect(byId[pKendaraan], 200000);
+
+        // Edit Plan aktif -> ubah Rumah jadi 600k (total 2.3jt) -> monthlyPlan Rumah otomatis ikut 600k!
+        await planRepo.savePlan(
+          id: savedPlan.id,
+          name: 'Plan Bulanan',
+          totalAmount: 2300000,
+          sharePercentX100ByPortfolioId: {
+            pSaham: 4348,
+            pRumah: 2609,
+            pNikah: 2174,
+            pKendaraan: 869,
+          },
+          fixedAmountsByPortfolioId: {
+            pSaham: 1000000,
+            pRumah: 600000,
+            pNikah: 500000,
+            pKendaraan: 200000,
+          },
+        );
+        final updatedPortos = await db.select(db.portfolios).get();
+        final updatedById = {for (final p in updatedPortos) p.id: p.monthlyPlan};
+        expect(updatedById[pRumah], 600000);
+        expect(updatedById[pSaham], 1000000);
+        expect(updatedById[pNikah], 500000);
+        expect(updatedById[pKendaraan], 200000);
 
         await _disposeDb(tester, db);
       },

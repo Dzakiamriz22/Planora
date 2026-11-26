@@ -387,6 +387,10 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
     final allStockTxs =
         ref.watch(allStockTransactionsStreamProvider).value ?? const [];
     final summary = ref.watch(financialSummaryProvider);
+    final activePlan = ref
+        .watch(plansWithAllocationsProvider)
+        .where((p) => p.plan.isActive)
+        .firstOrNull;
     _initFromProviders(allPortfolios, allComponents, allStockTxs, summary);
 
     final isEdit = _editingPortfolio != null;
@@ -737,6 +741,9 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                           RupiahTextField(
                             controller: _monthlyPlanCtrl,
                             label: 'Rencana setoran bulanan',
+                            helperText: activePlan != null
+                                ? 'Mengikuti Plan aktif (${activePlan.plan.name}).'
+                                : null,
                           ),
                           const SizedBox(height: 12),
                           TextFormField(
