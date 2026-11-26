@@ -33,6 +33,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
 
   final Map<String, int> _shareX100 = {};
   final Map<String, TextEditingController> _inputCtrls = {};
+  final Map<String, FocusNode> _focusNodes = {};
 
   String _inputMode = 'percent'; // 'percent' | 'nominal'
   bool _initialized = false;
@@ -48,6 +49,9 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
     for (final c in _inputCtrls.values) {
       c.dispose();
     }
+    for (final f in _focusNodes.values) {
+      f.dispose();
+    }
     super.dispose();
   }
 
@@ -57,18 +61,20 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
     FinancialSummary summary,
   ) {
     if (_initialized) return;
-    _initialized = true;
 
     final existing = widget.planId == null
         ? null
         : allPlans.where((p) => p.plan.id == widget.planId).firstOrNull;
+    if (widget.planId != null && existing == null) return;
+
+    _initialized = true;
 
     if (existing != null) {
       _nameCtrl.text = existing.plan.name;
       _descCtrl.text = existing.plan.description ?? '';
       _totalCtrl.text = existing.plan.totalAmount > 0
           ? AppFormatters.number(existing.plan.totalAmount)
-          : '0';
+          : '';
       _isEditingActivePlan = existing.plan.isActive;
       for (final porto in portfolios) {
         _shareX100[porto.id] =
@@ -77,13 +83,13 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
     } else {
       final defaultTotal = summary.ceiling ?? 0;
       _totalCtrl.text =
-          defaultTotal > 0 ? AppFormatters.number(defaultTotal) : '0';
+          defaultTotal > 0 ? AppFormatters.number(defaultTotal) : '';
       for (final porto in portfolios) {
         _shareX100[porto.id] = 0;
       }
     }
 
-    _syncControllers(portfolios);
+    _syncControllers(portfolios, forceSync: true);
   }
 
   int get _currentTotal => parseRupiahInput(_totalCtrl.text);
@@ -91,14 +97,34 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
   String _formatRowInput(String portfolioId, Map<String, int> derived) {
     if (_inputMode == 'nominal') {
       final nom = derived[portfolioId] ?? 0;
-      return nom > 0 ? AppFormatters.number(nom) : '0';
+      return nom > 0 ? AppFormatters.number(nom) : '';
     }
     final x100 = _shareX100[portfolioId] ?? 0;
+    if (x100 <= 0) return '';
     if (x100 % 100 == 0) return '${x100 ~/ 100}';
     return (x100 / 100.0).toStringAsFixed(2);
   }
 
-  void _syncControllers(List<Portfolio> portfolios, {String? skipPortfolioId}) {
+  void _ensureRowControllers(List<Portfolio> portfolios) {
+    final derived = PlanPercentCalc.computeAmountsFromPercents(
+      totalAmount: _currentTotal,
+      sharePercentX100ById: _shareX100,
+    );
+    for (final p in portfolios) {
+      _shareX100.putIfAbsent(p.id, () => 0);
+      _focusNodes.putIfAbsent(p.id, FocusNode.new);
+      _inputCtrls.putIfAbsent(
+        p.id,
+        () => TextEditingController(text: _formatRowInput(p.id, derived)),
+      );
+    }
+  }
+
+  void _syncControllers(
+    List<Portfolio> portfolios, {
+    String? skipPortfolioId,
+    bool forceSync = false,
+  }) {
     final derived = PlanPercentCalc.computeAmountsFromPercents(
       totalAmount: _currentTotal,
       sharePercentX100ById: _shareX100,
@@ -108,7 +134,8 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
         p.id,
         () => TextEditingController(text: _formatRowInput(p.id, derived)),
       );
-      if (p.id != skipPortfolioId) {
+      final focus = _focusNodes.putIfAbsent(p.id, FocusNode.new);
+      if (p.id != skipPortfolioId && (forceSync || !focus.hasFocus)) {
         final desired = _formatRowInput(p.id, derived);
         if (ctrl.text != desired) {
           ctrl.value = TextEditingValue(
@@ -125,7 +152,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
       for (final p in portfolios) {
         _shareX100[p.id] = next[p.id] ?? 0;
       }
-      _syncControllers(portfolios);
+      _syncControllers(portfolios, forceSync: true);
     });
   }
 
@@ -233,6 +260,43 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
     }
   }
 
+  Future<void> _deactivate() async {
+    if (widget.planId == null || !_isEditingActivePlan) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Nonaktifkan Plan?'),
+        content: Text(
+          'Plan "${_nameCtrl.text.trim()}" tidak akan aktif lagi. Anda bisa mengaktifkannya kembali kapan saja.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Nonaktifkan'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await ref.read(planRepositoryProvider).deactivatePlan(widget.planId!);
+    final setting = await ref.read(settingsRepositoryProvider).getSettings();
+    await ref.read(reminderServiceProvider).syncSchedules(
+          setting: setting,
+          activePlanName: null,
+          activePlanTotal: 0,
+        );
+    if (mounted) {
+      setState(() => _isEditingActivePlan = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Plan berhasil dinonaktifkan.')),
+      );
+    }
+  }
+
   Future<void> _delete() async {
     if (widget.planId == null || _isEditingActivePlan) return;
     final confirmed = await showDialog<bool>(
@@ -266,11 +330,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
     final allPlans = ref.watch(plansWithAllocationsProvider);
     final summary = ref.watch(financialSummaryProvider);
     _init(portfolios, allPlans, summary);
-
-    for (final p in portfolios) {
-      _shareX100.putIfAbsent(p.id, () => 0);
-    }
-    _syncControllers(portfolios, skipPortfolioId: null);
+    _ensureRowControllers(portfolios);
 
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -357,17 +417,6 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
                   children: [
-                    PlanoraNoteBox(
-                      child: Text(
-                        'Persen di sini membagi uang bulananmu. Persen di dalam porto membagi target porto itu.',
-                        style: AppTheme.manrope(
-                          size: 12,
-                          color: cs.onSurfaceVariant,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
                     Text(
                       'NAMA PLAN',
                       style: AppTheme.uppercaseLabel(),
@@ -377,7 +426,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                       key: const Key('plan_name_field'),
                       controller: _nameCtrl,
                       decoration: const InputDecoration(
-                        hintText: 'Contoh: Plan Fokus Rumah',
+                        hintText: 'Contoh: Fokus DP Rumah, Bulan Hemat',
                       ),
                       validator: (v) => (v == null || v.trim().isEmpty)
                           ? 'Nama Plan wajib diisi.'
@@ -385,7 +434,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'DESKRIPSI (OPSIONAL)',
+                      'CATATAN (OPSIONAL)',
                       style: AppTheme.uppercaseLabel(),
                     ),
                     const SizedBox(height: 6),
@@ -404,7 +453,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                       runSpacing: 4,
                       children: [
                         Text(
-                          'TOTAL PLAN / BULAN',
+                          'TOTAL DANA / BULAN',
                           style: AppTheme.uppercaseLabel(),
                         ),
                         if (ceiling != null && ceiling > 0)
@@ -412,7 +461,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                             onPressed: () {
                               setState(() {
                                 _totalCtrl.text = AppFormatters.number(ceiling);
-                                _syncControllers(portfolios);
+                                _syncControllers(portfolios, forceSync: true);
                               });
                             },
                             style: TextButton.styleFrom(
@@ -420,7 +469,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 8),
                             ),
                             child: Text(
-                              'Pakai semua batas (${AppFormatters.rupiah(ceiling)})',
+                              'Gunakan batas (${AppFormatters.rupiah(ceiling)})',
                             ),
                           ),
                       ],
@@ -429,7 +478,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                     RupiahTextField(
                       key: const Key('plan_total_field'),
                       controller: _totalCtrl,
-                      label: 'Total uang yang dibagi per bulan',
+                      label: 'Total dana yang dibagi per bulan',
                       onChanged: (_) => setState(() {
                         _syncControllers(portfolios);
                       }),
@@ -437,7 +486,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                     if (overCeiling) ...[
                       const SizedBox(height: 6),
                       Text(
-                        'Total Plan ${AppFormatters.rupiah(totalPlan)} — di atas batas aman ${AppFormatters.rupiah(ceiling)}. Turunkan total atau naikkan gaji di Pengaturan sebelum memakai Plan ini.',
+                        'Total Plan melebihi batas tabungan (${AppFormatters.rupiah(ceiling)}/bln). Sesuaikan totalnya atau ubah profil gaji di Pengaturan.',
                         style: AppTheme.manrope(
                           size: 12,
                           weight: FontWeight.w700,
@@ -448,7 +497,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                     const SizedBox(height: 14),
                     if (portfolios.isNotEmpty) ...[
                       Text(
-                        'TITIK MULAI CEPAT',
+                        'PILIH CEPAT',
                         style: AppTheme.uppercaseLabel(),
                       ),
                       const SizedBox(height: 6),
@@ -464,7 +513,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                             ),
                           ),
                           ActionChip(
-                            label: const Text('Fokus utama'),
+                            label: const Text('Fokus Utama'),
                             onPressed: () => _applyPercentMap(
                               portfolios,
                               PlanPercentCalc.presetFocusPrimary(portfolioIds),
@@ -472,7 +521,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                           ),
                           if (portfolios.length >= 3)
                             ActionChip(
-                              label: const Text('Dua besar'),
+                              label: const Text('Dua Besar'),
                               onPressed: () => _applyPercentMap(
                                 portfolios,
                                 PlanPercentCalc.presetTwoMajor(portfolioIds),
@@ -481,7 +530,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                           if (activePlan != null &&
                               activePlan.plan.id != widget.planId)
                             ActionChip(
-                              label: const Text('Dari plan aktif'),
+                              label: const Text('Salin Plan Aktif'),
                               onPressed: () => _applyPercentMap(
                                 portfolios,
                                 activePlan.sharePercentX100ByPortfolioId,
@@ -501,31 +550,41 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                         child: Row(
                           children: [
                             _ModeChip(
-                              label: 'Ketik persen saja',
+                              label: '% Persen',
                               selected: _inputMode == 'percent',
                               onTap: () => setState(() {
                                 _inputMode = 'percent';
-                                _syncControllers(portfolios);
+                                _syncControllers(portfolios, forceSync: true);
                               }),
                             ),
                             _ModeChip(
-                              label: 'Ketik rupiah saja',
+                              label: 'Rp Nominal',
                               selected: _inputMode == 'nominal',
                               onTap: () => setState(() {
                                 _inputMode = 'nominal';
-                                _syncControllers(portfolios);
+                                _syncControllers(portfolios, forceSync: true);
                               }),
                             ),
                           ],
                         ),
                       ),
+                      if (_inputMode == 'nominal' && totalPlan <= 0) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Isi Total Dana / Bulan terlebih dahulu agar nominal dapat dikonversi ke persen.',
+                          style: AppTheme.manrope(
+                            size: 11.5,
+                            color: PlanoraColors.gold,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       PlanoraAllocationDonutChart(
                         slices: donutSlices,
                         centerLabel: 'Plan',
                         centerValue: PlanPercentCalc.formatX100(totalX100),
                         mini: true,
-                        emptyMessage: 'Geser slider atau pilih titik mulai cepat',
+                        emptyMessage: 'Atur porsi tiap portofolio hingga total 100%',
                       ),
                       const SizedBox(height: 12),
                       for (final porto in portfolios)
@@ -535,11 +594,12 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                           derivedNominal: derived[porto.id] ?? 0,
                           inputMode: _inputMode,
                           controller: _inputCtrls[porto.id]!,
+                          focusNode: _focusNodes[porto.id]!,
                           onSliderChanged: (v) {
                             setState(() {
                               _shareX100[porto.id] =
                                   PlanPercentCalc.percentToX100(v);
-                              _syncControllers(portfolios);
+                              _syncControllers(portfolios, forceSync: true);
                             });
                           },
                           onTextChanged: (val) {
@@ -675,16 +735,25 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                       child: const Text('Simpan sebagai Plan Baru'),
                     ),
                     const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      spacing: 8,
                       children: [
                         TextButton(
                           style: TextButton.styleFrom(
                             foregroundColor: cs.onSurface,
                           ),
                           onPressed: _saving ? null : _duplicate,
-                          child: const Text('Duplikat Plan'),
+                          child: const Text('Duplikat'),
                         ),
+                        if (_isEditingActivePlan)
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              foregroundColor: cs.onSurfaceVariant,
+                            ),
+                            onPressed: _saving ? null : _deactivate,
+                            child: const Text('Nonaktifkan'),
+                          ),
                         TextButton(
                           style: TextButton.styleFrom(
                             foregroundColor: _isEditingActivePlan
@@ -699,7 +768,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                                           .showSnackBar(
                                         const SnackBar(
                                           content: Text(
-                                            'Plan aktif tidak bisa dihapus. Pakai Plan lain dulu.',
+                                            'Nonaktifkan Plan ini dulu sebelum menghapusnya.',
                                           ),
                                         ),
                                       );
@@ -727,6 +796,7 @@ class _PlanPercentRow extends StatelessWidget {
     required this.derivedNominal,
     required this.inputMode,
     required this.controller,
+    required this.focusNode,
     required this.onSliderChanged,
     required this.onTextChanged,
   });
@@ -736,6 +806,7 @@ class _PlanPercentRow extends StatelessWidget {
   final int derivedNominal;
   final String inputMode;
   final TextEditingController controller;
+  final FocusNode focusNode;
   final ValueChanged<double> onSliderChanged;
   final ValueChanged<String> onTextChanged;
 
@@ -793,6 +864,7 @@ class _PlanPercentRow extends StatelessWidget {
                 width: isNominal ? 124 : 84,
                 child: TextField(
                   controller: controller,
+                  focusNode: focusNode,
                   keyboardType: TextInputType.numberWithOptions(
                     decimal: !isNominal,
                   ),
@@ -812,6 +884,7 @@ class _PlanPercentRow extends StatelessWidget {
                   ),
                   decoration: InputDecoration(
                     isDense: true,
+                    hintText: '0',
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 10,
                       vertical: 10,

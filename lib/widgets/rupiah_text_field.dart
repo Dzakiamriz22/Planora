@@ -36,6 +36,7 @@ class RupiahTextField extends StatelessWidget {
     super.key,
     required this.controller,
     required this.label,
+    this.hintText = '0',
     this.helperText,
     this.validator,
     this.onChanged,
@@ -44,6 +45,7 @@ class RupiahTextField extends StatelessWidget {
 
   final TextEditingController controller;
   final String label;
+  final String? hintText;
   final String? helperText;
   final String? Function(String?)? validator;
   final ValueChanged<int>? onChanged;
@@ -60,7 +62,8 @@ class RupiahTextField extends StatelessWidget {
         RupiahInputFormatter(),
       ],
       decoration: InputDecoration(
-        labelText: label,
+        labelText: label.isEmpty ? null : label,
+        hintText: hintText,
         prefixText: 'Rp ',
         helperText: helperText,
       ),

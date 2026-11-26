@@ -394,8 +394,9 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
     final targetCtrl = TextEditingController(
       text: p.savedTarget != null ? AppFormatters.number(p.savedTarget!) : '',
     );
-    final monthlyCtrl =
-        TextEditingController(text: AppFormatters.number(p.monthlyPlan));
+    final monthlyCtrl = TextEditingController(
+      text: p.monthlyPlan > 0 ? AppFormatters.number(p.monthlyPlan) : '',
+    );
     final returnCtrl = TextEditingController(text: p.annualReturnPct.toString());
     var targetDate = snap.targetDate;
 

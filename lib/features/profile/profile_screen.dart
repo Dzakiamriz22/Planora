@@ -141,7 +141,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     children: [
                       PlanoraNoteBox(
                         child: Text(
-                          'Tersimpan di HP ini, bukan akun online. Profil ini opsional dan tidak dikirim ke server mana pun.',
+                          'Data profil hanya tersimpan di perangkat ini dan tidak dikirim ke mana pun.',
                           style: AppTheme.manrope(
                             size: 12,
                             color: cs.onSurfaceVariant,
@@ -204,9 +204,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         controller: _nickNameCtrl,
                         onChanged: (_) => setState(() {}),
                         decoration: const InputDecoration(
-                          labelText: 'Nama sapaan (opsional)',
-                          helperText:
-                              'Satu-satunya sumber nama sapaan di Beranda.',
+                          labelText: 'Nama panggilan (opsional)',
+                          hintText: 'Ditampilkan sebagai sapaan di Beranda',
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -214,7 +213,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         controller: _fullNameCtrl,
                         onChanged: (_) => setState(() {}),
                         decoration: const InputDecoration(
-                          labelText: 'Nama tampil lengkap (opsional)',
+                          labelText: 'Nama lengkap (opsional)',
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -222,8 +221,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,
                         decoration: const InputDecoration(
-                          labelText: 'Email catatan lokal (opsional)',
-                          helperText: 'Tidak diverifikasi dan tidak dikirim.',
+                          labelText: 'Email (opsional)',
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -231,7 +229,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         controller: _phoneCtrl,
                         keyboardType: TextInputType.phone,
                         decoration: const InputDecoration(
-                          labelText: 'Nomor HP catatan lokal (opsional)',
+                          labelText: 'Nomor HP (opsional)',
                         ),
                       ),
                       const SizedBox(height: 12),

@@ -122,6 +122,48 @@ class PlansScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _confirmDeactivatePlan(
+    BuildContext context,
+    WidgetRef ref,
+    PlanWithAllocations planData,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Nonaktifkan ${planData.plan.name}?'),
+        content: const Text(
+          'Plan ini tidak akan aktif lagi, namun data pembagiannya tetap tersimpan dan bisa dipakai kembali kapan saja.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Nonaktifkan'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+    await ref.read(planRepositoryProvider).deactivatePlan(planData.plan.id);
+    final setting = await ref.read(settingsRepositoryProvider).getSettings();
+    await ref.read(reminderServiceProvider).syncSchedules(
+          setting: setting,
+          activePlanName: null,
+          activePlanTotal: 0,
+        );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${planData.plan.name} dinonaktifkan.'),
+        ),
+      );
+    }
+  }
+
   Future<void> _createBalancedPlan(
     BuildContext context,
     WidgetRef ref,
@@ -269,8 +311,8 @@ class PlansScreen extends ConsumerWidget {
                       ),
                       TextSpan(
                         text: summary.ceiling != null
-                            ? 'Batas aman setoranmu (plafon) saat ini ${AppFormatters.rupiah(summary.ceiling!)}/bln.'
-                            : 'Atur gaji dan biaya hidup di Pengaturan untuk melihat batas aman setoran bulanan.',
+                            ? 'Batas tabungan bulanan: ${AppFormatters.rupiah(summary.ceiling!)}/bln.'
+                            : 'Atur gaji dan biaya hidup di Pengaturan untuk melihat batas tabungan bulanan.',
                         style: AppTheme.manrope(
                           size: 12.5,
                           color: cs.onSurfaceVariant,
@@ -293,6 +335,8 @@ class PlansScreen extends ConsumerWidget {
                     portfolios,
                     summary,
                   ),
+                  onDeactivate: () =>
+                      _confirmDeactivatePlan(context, ref, planData),
                   onEdit: () => context.push('/plans/${planData.plan.id}/edit'),
                 ),
                 const SizedBox(height: 12),
@@ -328,6 +372,7 @@ class _PlanCard extends StatelessWidget {
     required this.portfolios,
     required this.summary,
     required this.onApply,
+    required this.onDeactivate,
     required this.onEdit,
   });
 
@@ -335,6 +380,7 @@ class _PlanCard extends StatelessWidget {
   final List<Portfolio> portfolios;
   final FinancialSummary summary;
   final VoidCallback onApply;
+  final VoidCallback onDeactivate;
   final VoidCallback onEdit;
 
   @override
@@ -480,6 +526,25 @@ class _PlanCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (p.isActive) ...[
+                InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: onDeactivate,
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                    child: Text(
+                      'Nonaktifkan',
+                      style: AppTheme.manrope(
+                        size: 13,
+                        weight: FontWeight.w700,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+              ],
               InkWell(
                 borderRadius: BorderRadius.circular(8),
                 onTap: p.isActive ? onEdit : (canApply ? onApply : onEdit),
@@ -492,7 +557,7 @@ class _PlanCard extends StatelessWidget {
                         : (isDraft
                             ? 'Lengkapi 100%'
                             : (overCeiling
-                                ? 'Lewat batas aman'
+                                ? 'Lewat batas'
                                 : 'Pakai Plan ini')),
                     style: AppTheme.manrope(
                       size: 13,

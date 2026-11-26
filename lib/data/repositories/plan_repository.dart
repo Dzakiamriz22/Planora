@@ -128,6 +128,16 @@ class PlanRepository {
     });
   }
 
+  Future<void> deactivatePlan(String planId) async {
+    final nowIso = DateTime.now().toUtc().toIso8601String();
+    await (_db.update(_db.plans)..where((t) => t.id.equals(planId))).write(
+      PlansCompanion(
+        isActive: const Value(false),
+        updatedAt: Value(nowIso),
+      ),
+    );
+  }
+
   Future<String> savePlan({
     String? id,
     required String name,

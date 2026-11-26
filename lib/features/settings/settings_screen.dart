@@ -494,7 +494,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       text: existing != null ? AppFormatters.number(existing.downPayment) : '',
     );
     final feesCtrl = TextEditingController(
-      text: existing != null ? AppFormatters.number(existing.fees) : '0',
+      text: (existing != null && existing.fees > 0)
+          ? AppFormatters.number(existing.fees)
+          : '',
     );
     final noteCtrl = TextEditingController(text: existing?.note ?? '');
     final key = GlobalKey<FormState>();
@@ -954,13 +956,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       const Divider(),
                       PlanoraKeyValueRow(
-                        label: 'Perkiraan hasil default',
+                        label: 'Estimasi imbal hasil',
                         value: returnText,
                         onTap: () => _showEditProfileSheet(setting),
                       ),
                       const Divider(),
                       PlanoraKeyValueRow(
-                        label: 'Batas aman nabung (plafon)',
+                        label: 'Batas tabungan bulanan',
                         value: ceiling != null
                             ? '${AppFormatters.rupiah(ceiling)}/bln'
                             : 'Belum diatur',
@@ -969,8 +971,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       const SizedBox(height: 6),
                       Text(
                         ceiling != null
-                            ? 'Jadi batas aman nabungmu ${AppFormatters.rupiah(ceiling)} per bulan.'
-                            : 'Isi gaji dan biaya hidup minimum untuk menghitung batas aman nabungmu.',
+                            ? 'Dihitung otomatis dari gaji dikurangi biaya hidup minimum.'
+                            : 'Isi gaji dan biaya hidup minimum untuk menghitung batas tabungan bulanan.',
                         style: AppTheme.manrope(
                           size: 12,
                           color: cs.onSurfaceVariant,
@@ -1279,66 +1281,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Penyimpanan & Masa Depan',
-                        style: AppTheme.manrope(
-                          size: 13.5,
-                          weight: FontWeight.w800,
-                          color: cs.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Semua datamu tersimpan lokal di HP ini tanpa akun online dan tanpa izin internet.',
-                        style: AppTheme.manrope(
-                          size: 12,
-                          color: cs.onSurfaceVariant,
-                          height: 1.45,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                PlanoraCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
                       Row(
                         children: [
                           const PlanoraLogo(size: 36),
                           const SizedBox(width: 10),
-                          Text(
-                            'Tentang Planora',
-                            style: AppTheme.manrope(
-                              size: 13.5,
-                              weight: FontWeight.w800,
-                              color: cs.onSurface,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Planora',
+                                  style: AppTheme.manrope(
+                                    size: 14,
+                                    weight: FontWeight.w800,
+                                    color: cs.onSurface,
+                                  ),
+                                ),
+                                Text(
+                                  'Versi 3.1.0 · Penyimpanan lokal, tanpa internet',
+                                  style: AppTheme.manrope(
+                                    size: 11.5,
+                                    color: cs.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 8),
-                      const PlanoraKeyValueRow(
-                        label: 'Aplikasi',
-                        value: 'Planora 3.1.0',
-                      ),
-                      const Divider(),
-                      PlanoraKeyValueRow(
-                        label: 'Paket',
-                        value: 'com.planora.app',
-                        valueStyle: AppTheme.mono(
-                          size: 11.5,
-                          weight: FontWeight.w500,
-                          color: cs.onSurface,
-                        ),
-                      ),
-                      const Divider(),
-                      const PlanoraKeyValueRow(
-                        label: 'Penyimpanan',
-                        value: 'Lokal di perangkat',
                       ),
                     ],
                   ),

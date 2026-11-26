@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart' as drift;
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -58,7 +59,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
     _platformNameCtrl = TextEditingController();
     _fullPriceCtrl = TextEditingController();
     _savedTargetCtrl = TextEditingController();
-    _monthlyPlanCtrl = TextEditingController(text: '0');
+    _monthlyPlanCtrl = TextEditingController();
     _returnCtrl = TextEditingController(text: '5');
     _noteCtrl = TextEditingController();
   }
@@ -82,32 +83,33 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
     FinancialSummary summary,
   ) {
     if (!_initialized) {
-      _initialized = true;
-      _componentInputMode = summary.componentInputMode;
-
       if (widget.portfolioId != null) {
         final found =
             allPortfolios.where((p) => p.id == widget.portfolioId).firstOrNull;
-        if (found != null) {
-          _editingPortfolio = found;
-          _nameCtrl.text = found.name;
-          _platformPreset = found.platformPreset ?? 'other';
-          _platformNameCtrl.text = found.platformName ?? '';
-          _category = found.category;
-          if (found.fullPrice != null) {
-            _fullPriceCtrl.text = AppFormatters.number(found.fullPrice!);
-          }
-          if (found.savedTarget != null) {
-            _savedTargetCtrl.text = AppFormatters.number(found.savedTarget!);
-          }
-          _targetDate = AppFormatters.parseIsoDate(found.targetDate);
-          _monthlyPlanCtrl.text = AppFormatters.number(found.monthlyPlan);
-          _returnCtrl.text = found.annualReturnPct.toString();
-          _noteCtrl.text = found.note ?? '';
-          _iconKey = found.icon;
-          _colorValue = found.color;
+        if (found == null) return;
+        _initialized = true;
+        _componentInputMode = summary.componentInputMode;
+        _editingPortfolio = found;
+        _nameCtrl.text = found.name;
+        _platformPreset = found.platformPreset ?? 'other';
+        _platformNameCtrl.text = found.platformName ?? '';
+        _category = found.category;
+        if (found.fullPrice != null) {
+          _fullPriceCtrl.text = AppFormatters.number(found.fullPrice!);
         }
+        if (found.savedTarget != null) {
+          _savedTargetCtrl.text = AppFormatters.number(found.savedTarget!);
+        }
+        _targetDate = AppFormatters.parseIsoDate(found.targetDate);
+        _monthlyPlanCtrl.text =
+            found.monthlyPlan > 0 ? AppFormatters.number(found.monthlyPlan) : '';
+        _returnCtrl.text = found.annualReturnPct.toString();
+        _noteCtrl.text = found.note ?? '';
+        _iconKey = found.icon;
+        _colorValue = found.color;
       } else {
+        _initialized = true;
+        _componentInputMode = summary.componentInputMode;
         _returnCtrl.text = summary.defaultAnnualReturnPct.toString();
       }
     }
@@ -157,7 +159,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
             EditableComponentRow(
               key: 'init_comp_0',
               instrumentType: 'RDPU',
-              targetPercent: 0.0,
+              targetPercent: 100.0,
             ),
           ];
         }
@@ -167,7 +169,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
           EditableComponentRow(
             key: 'init_comp_0',
             instrumentType: 'RDPU',
-            targetPercent: 0.0,
+            targetPercent: 100.0,
           ),
         ];
       }
@@ -223,6 +225,17 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_componentRows.isNotEmpty &&
+        !PlanoraV22Calc.isExact100(_componentRows.map((r) => r.targetPercent))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Total alokasi instrumen harus 100%. Sesuaikan persentase atau tekan "Pas-kan ke 100%".',
+          ),
+        ),
+      );
+      return;
+    }
 
     final allPortfolios = ref.read(portfoliosStreamProvider).value ?? const [];
     final summary = ref.read(financialSummaryProvider);
@@ -381,8 +394,6 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
     final currentTargetTotal = _category == 'no_target'
         ? 0
         : parseRupiahInput(_savedTargetCtrl.text);
-    final componentsValid = _componentRows.isEmpty ||
-        PlanoraV22Calc.isExact100(_componentRows.map((r) => r.targetPercent));
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final fullVal = parseRupiahInput(_fullPriceCtrl.text);
@@ -431,7 +442,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(16, 6, 16, 20),
                   children: [
-                    _FieldLabel('NAMA PORTO'),
+                    _FieldLabel('NAMA PORTOFOLIO'),
                     TextFormField(
                       controller: _nameCtrl,
                       onChanged: (_) => setState(() {}),
@@ -441,16 +452,16 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                         color: cs.onSurface,
                       ),
                       decoration: const InputDecoration(
-                        hintText: 'Contoh: Dana Darurat',
+                        hintText: 'Contoh: Dana Darurat, DP Rumah',
                       ),
                       validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Nama porto wajib diisi.'
+                          ? 'Nama portofolio wajib diisi.'
                           : null,
                     ),
                     if (duplicateName) ...[
                       const SizedBox(height: 4),
                       Text(
-                        'Catatan: Sudah ada porto lain dengan nama yang sama.',
+                        'Nama ini sudah digunakan portofolio lain.',
                         style: AppTheme.manrope(
                           size: 11.5,
                           color: PlanoraColors.gold,
@@ -459,7 +470,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                     ],
                     const SizedBox(height: 14),
 
-                    _FieldLabel('JENIS TEMPAT / PLATFORM'),
+                    _FieldLabel('TEMPAT SIMPAN'),
                     DropdownButtonFormField<String>(
                       initialValue: _platformPreset,
                       style: AppTheme.manrope(
@@ -488,15 +499,13 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                         color: cs.onSurface,
                       ),
                       decoration: const InputDecoration(
-                        labelText: 'Nama platform (opsional, teks bebas)',
-                        helperText:
-                            'Hanya label tempat — tidak terhubung ke akun mana pun.',
-                        helperMaxLines: 2,
+                        labelText: 'Nama bank / aplikasi (opsional)',
+                        hintText: 'Contoh: Rekening Utama, Aplikasi Investasi',
                       ),
                     ),
 
                     const SizedBox(height: 14),
-                    _FieldLabel('MODE TARGET'),
+                    _FieldLabel('JENIS TARGET'),
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
@@ -508,7 +517,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                       child: Row(
                         children: [
                           _ModeSegmentItem(
-                            label: 'Tunai Penuh',
+                            label: 'Target Dana',
                             selected: _category == 'cash',
                             onTap: () => setState(() => _category = 'cash'),
                           ),
@@ -534,9 +543,10 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                       RupiahTextField(
                         controller: _fullPriceCtrl,
                         label: '',
+                        hintText: 'Contoh: 450.000.000',
                         onChanged: (_) => setState(() {}),
                         validator: (v) => parseRupiahInput(v ?? '') <= 0
-                            ? 'Harga penuh wajib diisi untuk mode DP + Biaya.'
+                            ? 'Harga penuh wajib diisi.'
                             : null,
                       ),
                     ],
@@ -545,13 +555,16 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                       const SizedBox(height: 14),
                       _FieldLabel(
                         _category == 'down_payment'
-                            ? 'TARGET SIMPAN (DP + BIAYA)'
-                            : 'TARGET SIMPAN',
+                            ? 'TARGET DANA (DP + BIAYA)'
+                            : 'TARGET DANA',
                       ),
                       TextFormField(
                         controller: _savedTargetCtrl,
                         keyboardType: TextInputType.number,
-                        inputFormatters: [RupiahInputFormatter()],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          RupiahInputFormatter(),
+                        ],
                         onChanged: (_) => setState(() {}),
                         style: AppTheme.manrope(
                           size: 14,
@@ -561,6 +574,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                         ),
                         decoration: InputDecoration(
                           prefixText: 'Rp ',
+                          hintText: '0',
                           suffixIcon: (_category == 'down_payment' &&
                                   dpPct != null)
                               ? Padding(
@@ -575,7 +589,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                               : null,
                         ),
                         validator: (v) => parseRupiahInput(v ?? '') <= 0
-                            ? 'Target simpan wajib lebih dari Rp 0.'
+                            ? 'Target dana wajib lebih dari Rp 0.'
                             : null,
                       ),
                       const SizedBox(height: 14),
@@ -704,10 +718,17 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                       child: ExpansionTile(
                         tilePadding: EdgeInsets.zero,
                         title: Text(
-                          'Pengaturan Lanjutan (Setoran, Return, Ikon, Catatan)',
+                          'Pengaturan Tambahan',
                           style: AppTheme.manrope(
-                            size: 12.5,
+                            size: 13,
                             weight: FontWeight.w700,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Setoran bulanan, estimasi imbal hasil, ikon, catatan',
+                          style: AppTheme.manrope(
+                            size: 11.5,
                             color: cs.onSurfaceVariant,
                           ),
                         ),
@@ -724,7 +745,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                               decimal: true,
                             ),
                             decoration: const InputDecoration(
-                              labelText: 'Asumsi return per tahun (%)',
+                              labelText: 'Estimasi imbal hasil per tahun',
                               suffixText: '%',
                             ),
                           ),
@@ -777,18 +798,6 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                         ],
                       ),
                     ),
-
-                    const SizedBox(height: 8),
-                    PlanoraNoteBox(
-                      child: Text(
-                        'Porto baru otomatis muncul di semua Plan dengan bagian 0% — atur pembagiannya dari Form Plan. Total target komponen harus tepat 100% agar bisa disimpan.',
-                        style: AppTheme.manrope(
-                          size: 12,
-                          color: cs.onSurfaceVariant,
-                          height: 1.45,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -810,8 +819,8 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   FilledButton(
-                    onPressed: (_saving || !componentsValid) ? null : _submit,
-                    child: Text(isEdit ? 'Simpan Perubahan' : 'Tambah Porto'),
+                    onPressed: _saving ? null : _submit,
+                    child: Text(isEdit ? 'Simpan Perubahan' : 'Simpan Portofolio'),
                   ),
                   if (isEdit) ...[
                     const SizedBox(height: 6),
@@ -820,7 +829,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                         foregroundColor: PlanoraColors.danger,
                       ),
                       onPressed: _saving ? null : _confirmDelete,
-                      child: const Text('Hapus Porto'),
+                      child: const Text('Hapus Portofolio'),
                     ),
                   ],
                 ],

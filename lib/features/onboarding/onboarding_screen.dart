@@ -155,7 +155,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            'Atur beberapa tujuan keuangan sekaligus sesuai batas nabung bulananmu. Semua data tersimpan di HP, 100% offline, dan tanpa akun.',
+                            'Kelola target keuangan, pembagian tabungan bulanan, dan catatan investasi dalam satu tempat. Semua data tersimpan lokal di perangkat tanpa akun.',
                             style: AppTheme.manrope(
                               size: 14,
                               color: cs.onSurfaceVariant,
@@ -165,7 +165,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           const SizedBox(height: 20),
                           PlanoraNoteBox(
                             child: Text(
-                              'Planora mulai dari nol — kamu bebas menentukan tujuan, nominal, tempat simpan, dan porsi instrumen sesuai kebutuhan sendiri.',
+                              'Anda dapat mulai dari awal dan mengatur tujuan, target dana, serta instrumen sesuai kebutuhan.',
                               style: AppTheme.manrope(
                                 size: 12.5,
                                 color: cs.onSurfaceVariant,
@@ -271,7 +271,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Porto Pertama',
+                            'Portofolio Pertama',
                             style: AppTheme.sora(
                               size: 22,
                               weight: FontWeight.w800,
@@ -280,7 +280,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Pilih contoh netral (hanya mengisi nama & kategori) atau ketik tujuan Anda sendiri. Nominal dan platform diatur nanti.',
+                            'Pilih salah satu saran di bawah atau tulis tujuan Anda sendiri. Nominal target bisa diisi nanti.',
                             style: AppTheme.manrope(
                               size: 13,
                               color: cs.onSurfaceVariant,

@@ -90,6 +90,7 @@ class ComponentAllocationEditor extends StatefulWidget {
 
 class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
   final Map<String, TextEditingController> _controllers = {};
+  final Map<String, FocusNode> _focusNodes = {};
   String? _lastEditedKey;
   int _keyCounter = 0;
 
@@ -105,7 +106,7 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
     if (oldWidget.inputMode != widget.inputMode ||
         oldWidget.portfolioTargetTotal != widget.portfolioTargetTotal ||
         oldWidget.rows.length != widget.rows.length) {
-      _syncControllersFromRows();
+      _syncControllersFromRows(respectFocus: oldWidget.inputMode == widget.inputMode);
     }
   }
 
@@ -113,6 +114,9 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
   void dispose() {
     for (final c in _controllers.values) {
       c.dispose();
+    }
+    for (final f in _focusNodes.values) {
+      f.dispose();
     }
     super.dispose();
   }
@@ -123,31 +127,39 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
         targetPercent: row.targetPercent,
         portfolioTargetTotal: widget.portfolioTargetTotal,
       );
-      return nominal > 0 ? AppFormatters.number(nominal) : '0';
+      return nominal > 0 ? AppFormatters.number(nominal) : '';
     }
     final r = PlanoraV22Calc.round2(row.targetPercent);
+    if (r <= 0) return '';
     if ((r - r.roundToDouble()).abs() < 0.005) {
       return r.round().toString();
     }
     return r.toStringAsFixed(2);
   }
 
+  FocusNode _focusNodeFor(String key) {
+    return _focusNodes.putIfAbsent(key, FocusNode.new);
+  }
+
   void _syncControllersFromRows({
     List<EditableComponentRow>? rows,
     String? skipKey,
+    bool respectFocus = true,
   }) {
     final source = rows ?? widget.rows;
     final validKeys = source.map((e) => e.key).toSet();
     final stale = _controllers.keys.where((k) => !validKeys.contains(k)).toList();
     for (final k in stale) {
       _controllers.remove(k)?.dispose();
+      _focusNodes.remove(k)?.dispose();
     }
     for (final r in source) {
       final ctrl = _controllers.putIfAbsent(
         r.key,
         () => TextEditingController(text: _formatControllerText(r)),
       );
-      if (r.key != skipKey) {
+      final focus = _focusNodeFor(r.key);
+      if (r.key != skipKey && (!respectFocus || !focus.hasFocus)) {
         final desired = _formatControllerText(r);
         if (ctrl.text != desired) {
           ctrl.value = TextEditingValue(
@@ -159,8 +171,16 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
     }
   }
 
-  void _emit(List<EditableComponentRow> next, {String? skipControllerKey}) {
-    _syncControllersFromRows(rows: next, skipKey: skipControllerKey);
+  void _emit(
+    List<EditableComponentRow> next, {
+    String? skipControllerKey,
+    bool forceSync = false,
+  }) {
+    _syncControllersFromRows(
+      rows: next,
+      skipKey: skipControllerKey,
+      respectFocus: !forceSync,
+    );
     widget.onRowsChanged(next);
   }
 
@@ -168,13 +188,18 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
     String key,
     double nextPercent, {
     bool skipController = false,
+    bool fromSlider = false,
   }) {
     _lastEditedKey = key;
     final clamped = PlanoraV22Calc.round2(nextPercent.clamp(0.0, 100.0));
     final next = widget.rows
         .map((r) => r.key == key ? r.copyWith(targetPercent: clamped) : r)
         .toList();
-    _emit(next, skipControllerKey: skipController ? key : null);
+    _emit(
+      next,
+      skipControllerKey: skipController ? key : null,
+      forceSync: fromSlider,
+    );
   }
 
   void _applyAutoBalance() {
@@ -196,7 +221,7 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
     final next = widget.rows
         .map((r) => r.copyWith(targetPercent: map[r.key] ?? r.targetPercent))
         .toList();
-    _emit(next);
+    _emit(next, forceSync: true);
   }
 
   Future<void> _showAddComponentSheet() async {
@@ -207,114 +232,15 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
         .where((p) => p == 'Lainnya' || !usedNorm.contains(p.toLowerCase()))
         .toList();
 
-    final customCtrl = TextEditingController();
-    var showCustomField = false;
-
     final chosen = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) {
-          final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
-          return Padding(
-            padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomInset),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Tambah Komponen Instrumen',
-                    style: AppTheme.sora(size: 16, weight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Satu instrumen hanya boleh muncul sekali dalam satu porto.',
-                    style: AppTheme.manrope(
-                      size: 12,
-                      color: Theme.of(ctx).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (!showCustomField)
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: available.map((preset) {
-                        final isDark =
-                            Theme.of(ctx).brightness == Brightness.dark;
-                        final color = PlanoraChartTokens.colorForInstrument(
-                          preset,
-                          isDark: isDark,
-                        );
-                        return ActionChip(
-                          avatar: CircleAvatar(
-                            backgroundColor: color,
-                            radius: 6,
-                          ),
-                          label: Text(preset),
-                          onPressed: () {
-                            if (preset == 'Lainnya') {
-                              setSheetState(() => showCustomField = true);
-                            } else {
-                              Navigator.of(ctx).pop(preset);
-                            }
-                          },
-                        );
-                      }).toList(),
-                    )
-                  else ...[
-                    TextField(
-                      controller: customCtrl,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Nama instrumen bebas',
-                        hintText: 'Contoh: Obligasi Ritel / Reksa Dana Indeks',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () =>
-                                setSheetState(() => showCustomField = false),
-                            child: const Text('Kembali'),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: FilledButton(
-                            onPressed: () {
-                              final txt = customCtrl.text.trim();
-                              if (txt.isEmpty) return;
-                              if (usedNorm.contains(txt.toLowerCase())) {
-                                ScaffoldMessenger.of(ctx).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Instrumen tersebut sudah ada di porto ini.',
-                                    ),
-                                  ),
-                                );
-                                return;
-                              }
-                              Navigator.of(ctx).pop(txt);
-                            },
-                            child: const Text('Tambahkan'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          );
-        },
+      builder: (ctx) => _AddComponentSheet(
+        availablePresets: available,
+        usedNormalizedNames: usedNorm,
       ),
     );
-    customCtrl.dispose();
 
     if (chosen == null || !mounted) return;
     _keyCounter++;
@@ -634,6 +560,7 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
                 width: isNominalMode ? 124 : 84,
                 child: TextField(
                   controller: ctrl,
+                  focusNode: _focusNodeFor(row.key),
                   keyboardType: TextInputType.numberWithOptions(
                     decimal: !isNominalMode,
                   ),
@@ -653,6 +580,7 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
                   ),
                   decoration: InputDecoration(
                     isDense: true,
+                    hintText: '0',
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 10,
                       vertical: 10,
@@ -678,7 +606,7 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
               ),
               IconButton(
                 tooltip: row.isLocked
-                    ? 'Komponen dengan transaksi lot atau saldo awal tidak dapat dihapus'
+                    ? 'Instrumen dengan transaksi lot atau saldo awal tidak dapat dihapus'
                     : 'Hapus ${row.instrumentType}',
                 onPressed: row.isLocked
                     ? null
@@ -713,11 +641,145 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
                 min: 0,
                 max: 100,
                 divisions: 200,
-                onChanged: (v) => _updateRowPercent(row.key, v),
+                onChanged: (v) =>
+                    _updateRowPercent(row.key, v, fromSlider: true),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AddComponentSheet extends StatefulWidget {
+  const _AddComponentSheet({
+    required this.availablePresets,
+    required this.usedNormalizedNames,
+  });
+
+  final List<String> availablePresets;
+  final Set<String> usedNormalizedNames;
+
+  @override
+  State<_AddComponentSheet> createState() => _AddComponentSheetState();
+}
+
+class _AddComponentSheetState extends State<_AddComponentSheet> {
+  final _customCtrl = TextEditingController();
+  bool _showCustomField = false;
+  String? _customError;
+
+  @override
+  void dispose() {
+    _customCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submitCustom() {
+    final txt = _customCtrl.text.trim();
+    if (txt.isEmpty) {
+      setState(() => _customError = 'Masukkan nama instrumen.');
+      return;
+    }
+    if (widget.usedNormalizedNames.contains(txt.toLowerCase())) {
+      setState(() => _customError = 'Instrumen ini sudah ada di portofolio.');
+      return;
+    }
+    Navigator.of(context).pop(txt);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomInset),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Tambah Instrumen',
+              style: AppTheme.sora(size: 16, weight: FontWeight.w700),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Pilih dari daftar atau buat nama instrumen sendiri.',
+              style: AppTheme.manrope(
+                size: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (!_showCustomField)
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: widget.availablePresets.map((preset) {
+                  final color = PlanoraChartTokens.colorForInstrument(
+                    preset,
+                    isDark: isDark,
+                  );
+                  return ActionChip(
+                    avatar: CircleAvatar(
+                      backgroundColor: color,
+                      radius: 6,
+                    ),
+                    label: Text(preset),
+                    onPressed: () {
+                      if (preset == 'Lainnya') {
+                        setState(() {
+                          _showCustomField = true;
+                          _customError = null;
+                        });
+                      } else {
+                        Navigator.of(context).pop(preset);
+                      }
+                    },
+                  );
+                }).toList(),
+              )
+            else ...[
+              TextField(
+                controller: _customCtrl,
+                autofocus: true,
+                textInputAction: TextInputAction.done,
+                onChanged: (_) {
+                  if (_customError != null) {
+                    setState(() => _customError = null);
+                  }
+                },
+                onSubmitted: (_) => _submitCustom(),
+                decoration: InputDecoration(
+                  labelText: 'Nama instrumen',
+                  hintText: 'Contoh: Obligasi Ritel, Reksa Dana Indeks',
+                  errorText: _customError,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () =>
+                          setState(() => _showCustomField = false),
+                      child: const Text('Kembali'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: _submitCustom,
+                      child: const Text('Tambahkan'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

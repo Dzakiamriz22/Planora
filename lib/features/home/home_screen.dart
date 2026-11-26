@@ -371,62 +371,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          dashboard.activePlanName ?? 'Plan — pembagian setoran bulan ini',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTheme.manrope(
-                            size: 12,
-                            color: cs.onSurfaceVariant,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            dashboard.activePlanName ?? 'Belum ada Plan aktif',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTheme.manrope(
+                              size: 12,
+                              color: cs.onSurfaceVariant,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${AppFormatters.rupiah(dashboard.thisMonthDeposit)} / ${AppFormatters.rupiah(dashboard.activePlanTotal)}',
-                        style: AppTheme.manrope(
-                          size: 12,
-                          weight: FontWeight.w800,
-                          color: cs.onSurface,
-                          tabular: true,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  PlanoraProgressBar(
-                    value: dashboard.activePlanTotal > 0
-                        ? (dashboard.thisMonthDeposit /
-                                dashboard.activePlanTotal)
-                            .clamp(0.0, 1.0)
-                        : (dashboard.thisMonthDeposit > 0 ? 1.0 : 0.0),
-                    color: dashboard.thisMonthDeposit >=
-                                dashboard.activePlanTotal &&
-                            dashboard.activePlanTotal > 0
-                        ? PlanoraChartTokens.chartMoney
-                        : PlanoraColors.primary,
-                    height: 7,
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Batas aman setoran (plafon)',
+                        const SizedBox(width: 8),
+                        Text(
+                          '${AppFormatters.rupiah(dashboard.thisMonthDeposit)} / ${AppFormatters.rupiah(dashboard.activePlanTotal)}',
                           style: AppTheme.manrope(
                             size: 12,
-                            weight: FontWeight.w700,
-                            color: cs.onSurfaceVariant,
+                            weight: FontWeight.w800,
+                            color: cs.onSurface,
+                            tabular: true,
                           ),
                         ),
-                      ),
-                      ceilingChip,
-                    ],
-                  ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    PlanoraProgressBar(
+                      value: dashboard.activePlanTotal > 0
+                          ? (dashboard.thisMonthDeposit /
+                                  dashboard.activePlanTotal)
+                              .clamp(0.0, 1.0)
+                          : (dashboard.thisMonthDeposit > 0 ? 1.0 : 0.0),
+                      color: dashboard.thisMonthDeposit >=
+                                  dashboard.activePlanTotal &&
+                              dashboard.activePlanTotal > 0
+                          ? PlanoraChartTokens.chartMoney
+                          : PlanoraColors.primary,
+                      height: 7,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Batas Tabungan Bulanan',
+                            style: AppTheme.manrope(
+                              size: 12,
+                              weight: FontWeight.w700,
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        ceilingChip,
+                      ],
+                    ),
                   if (ceiling != null) ...[
                     const SizedBox(height: 6),
                     PlanoraProgressBar(
