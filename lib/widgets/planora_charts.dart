@@ -278,7 +278,7 @@ class _PlanoraAllocationDonutChartState
                     tabular: true,
                   ),
                 ),
-                if (!widget.mini || s.amount > 0) ...[
+                if (s.amount > 0) ...[
                   const SizedBox(width: 6),
                   Text(
                     PlanoraChartTokens.compactRupiah(s.amount),
@@ -326,6 +326,7 @@ class PlanoraAllocationComparisonRow extends StatelessWidget {
     required this.actualPercent,
     required this.targetPercent,
     required this.highlightNominal,
+    this.hasPortfolioBalance = true,
     this.onTap,
   });
 
@@ -335,6 +336,7 @@ class PlanoraAllocationComparisonRow extends StatelessWidget {
   final double actualPercent;
   final double targetPercent;
   final bool highlightNominal;
+  final bool hasPortfolioBalance;
   final VoidCallback? onTap;
 
   @override
@@ -346,10 +348,12 @@ class PlanoraAllocationComparisonRow extends StatelessWidget {
       isDark: isDark,
     );
     final diffPoints = PlanoraV22Calc.round2(actualPercent - targetPercent);
-    final showDiff = diffPoints.abs() >= 1.0;
-    final diffLabel = diffPoints > 0
-        ? '+${PlanoraV22Calc.formatPercent(diffPoints).replaceAll('%', '')} poin dari target'
-        : '−${PlanoraV22Calc.formatPercent(diffPoints.abs()).replaceAll('%', '')} poin dari target';
+    final showDiff = hasPortfolioBalance && diffPoints.abs() >= 1.0;
+    final diffLabel = !hasPortfolioBalance
+        ? 'Belum ada setoran'
+        : diffPoints > 0
+            ? 'Lebih ${PlanoraV22Calc.formatPercent(diffPoints)} dari porsi target'
+            : 'Kurang ${PlanoraV22Calc.formatPercent(diffPoints.abs())} dari porsi target';
 
     return Semantics(
       label:
@@ -410,7 +414,7 @@ class PlanoraAllocationComparisonRow extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               _PairedBarLine(
-                label: 'Alokasi',
+                label: 'Aktual',
                 percent: actualPercent,
                 color: color,
                 trackColor: cs.surfaceContainerHighest,
@@ -422,14 +426,14 @@ class PlanoraAllocationComparisonRow extends StatelessWidget {
                 color: color.withValues(alpha: 0.38),
                 trackColor: cs.surfaceContainerHighest,
               ),
-              if (showDiff) ...[
+              if (!hasPortfolioBalance || showDiff) ...[
                 const SizedBox(height: 5),
                 Text(
                   diffLabel,
                   style: AppTheme.manrope(
                     size: 11,
                     weight: FontWeight.w700,
-                    color: diffPoints.abs() > 10
+                    color: hasPortfolioBalance && diffPoints.abs() > 10
                         ? PlanoraColors.gold
                         : cs.onSurfaceVariant,
                   ),

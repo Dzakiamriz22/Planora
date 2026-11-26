@@ -988,11 +988,15 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                                     slices: donutSlices,
                                     centerLabel:
                                         isTargetView ? 'Target' : 'Aktual',
-                                    centerValue: PlanoraChartTokens.compactRupiah(
-                                      isTargetView
-                                          ? (p.savedTarget ?? 0)
-                                          : totalActualComp,
-                                    ),
+                                    centerValue: isTargetView
+                                        ? ((p.savedTarget ?? 0) > 0
+                                            ? PlanoraChartTokens.compactRupiah(
+                                                p.savedTarget!,
+                                              )
+                                            : '100%')
+                                        : PlanoraChartTokens.compactRupiah(
+                                            totalActualComp,
+                                          ),
                                     emptyMessage: isTargetView
                                         ? 'Belum ada target komponen'
                                         : 'Belum ada setoran teralokasi — catat setoran pertama',
@@ -1011,7 +1015,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                                         MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        'Alokasi vs Target',
+                                        'Aktual vs Target',
                                         style: AppTheme.manrope(
                                           size: 13.5,
                                           weight: FontWeight.w800,
@@ -1037,6 +1041,14 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                                         ),
                                       ),
                                     ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Proporsi saldo saat ini dibandingkan porsi target.',
+                                    style: AppTheme.manrope(
+                                      size: 11.5,
+                                      color: cs.onSurfaceVariant,
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
                                   for (var i = 0;
@@ -1121,6 +1133,8 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                                         highlightNominal:
                                             summary.componentInputMode ==
                                                 'nominal',
+                                        hasPortfolioBalance:
+                                            totalActualComp > 0,
                                         onTap: () => _showComponentActualSheet(
                                           snap,
                                           snap.components[i],
