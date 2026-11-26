@@ -321,6 +321,12 @@ class AppDatabase extends _$AppDatabase {
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
+          if (await _hasTable('plan_allocations') &&
+              !await _hasColumn('plan_allocations', 'fixed_amount')) {
+            await customStatement(
+              'ALTER TABLE plan_allocations ADD COLUMN fixed_amount INTEGER',
+            );
+          }
         },
       );
 

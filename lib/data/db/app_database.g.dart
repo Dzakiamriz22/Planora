@@ -6183,6 +6183,17 @@ class $PlanAllocationsTable extends PlanAllocations
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _fixedAmountMeta = const VerificationMeta(
+    'fixedAmount',
+  );
+  @override
+  late final GeneratedColumn<int> fixedAmount = GeneratedColumn<int>(
+    'fixed_amount',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -6246,6 +6257,7 @@ class $PlanAllocationsTable extends PlanAllocations
     portfolioId,
     ownerId,
     sharePercentX100,
+    fixedAmount,
     createdAt,
     updatedAt,
     syncStatus,
@@ -6302,6 +6314,15 @@ class $PlanAllocationsTable extends PlanAllocations
         sharePercentX100.isAcceptableOrUnknown(
           data['share_percent_x100']!,
           _sharePercentX100Meta,
+        ),
+      );
+    }
+    if (data.containsKey('fixed_amount')) {
+      context.handle(
+        _fixedAmountMeta,
+        fixedAmount.isAcceptableOrUnknown(
+          data['fixed_amount']!,
+          _fixedAmountMeta,
         ),
       );
     }
@@ -6372,6 +6393,10 @@ class $PlanAllocationsTable extends PlanAllocations
         DriftSqlType.int,
         data['${effectivePrefix}share_percent_x100'],
       )!,
+      fixedAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}fixed_amount'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}created_at'],
@@ -6407,6 +6432,7 @@ class PlanAllocation extends DataClass implements Insertable<PlanAllocation> {
   final String portfolioId;
   final String ownerId;
   final int sharePercentX100;
+  final int? fixedAmount;
   final String createdAt;
   final String updatedAt;
   final String syncStatus;
@@ -6418,6 +6444,7 @@ class PlanAllocation extends DataClass implements Insertable<PlanAllocation> {
     required this.portfolioId,
     required this.ownerId,
     required this.sharePercentX100,
+    this.fixedAmount,
     required this.createdAt,
     required this.updatedAt,
     required this.syncStatus,
@@ -6432,6 +6459,9 @@ class PlanAllocation extends DataClass implements Insertable<PlanAllocation> {
     map['portfolio_id'] = Variable<String>(portfolioId);
     map['owner_id'] = Variable<String>(ownerId);
     map['share_percent_x100'] = Variable<int>(sharePercentX100);
+    if (!nullToAbsent || fixedAmount != null) {
+      map['fixed_amount'] = Variable<int>(fixedAmount);
+    }
     map['created_at'] = Variable<String>(createdAt);
     map['updated_at'] = Variable<String>(updatedAt);
     map['sync_status'] = Variable<String>(syncStatus);
@@ -6451,6 +6481,9 @@ class PlanAllocation extends DataClass implements Insertable<PlanAllocation> {
       portfolioId: Value(portfolioId),
       ownerId: Value(ownerId),
       sharePercentX100: Value(sharePercentX100),
+      fixedAmount: fixedAmount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fixedAmount),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       syncStatus: Value(syncStatus),
@@ -6474,6 +6507,7 @@ class PlanAllocation extends DataClass implements Insertable<PlanAllocation> {
       portfolioId: serializer.fromJson<String>(json['portfolioId']),
       ownerId: serializer.fromJson<String>(json['ownerId']),
       sharePercentX100: serializer.fromJson<int>(json['sharePercentX100']),
+      fixedAmount: serializer.fromJson<int?>(json['fixedAmount']),
       createdAt: serializer.fromJson<String>(json['createdAt']),
       updatedAt: serializer.fromJson<String>(json['updatedAt']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
@@ -6490,6 +6524,7 @@ class PlanAllocation extends DataClass implements Insertable<PlanAllocation> {
       'portfolioId': serializer.toJson<String>(portfolioId),
       'ownerId': serializer.toJson<String>(ownerId),
       'sharePercentX100': serializer.toJson<int>(sharePercentX100),
+      'fixedAmount': serializer.toJson<int?>(fixedAmount),
       'createdAt': serializer.toJson<String>(createdAt),
       'updatedAt': serializer.toJson<String>(updatedAt),
       'syncStatus': serializer.toJson<String>(syncStatus),
@@ -6504,6 +6539,7 @@ class PlanAllocation extends DataClass implements Insertable<PlanAllocation> {
     String? portfolioId,
     String? ownerId,
     int? sharePercentX100,
+    Value<int?> fixedAmount = const Value.absent(),
     String? createdAt,
     String? updatedAt,
     String? syncStatus,
@@ -6515,6 +6551,7 @@ class PlanAllocation extends DataClass implements Insertable<PlanAllocation> {
     portfolioId: portfolioId ?? this.portfolioId,
     ownerId: ownerId ?? this.ownerId,
     sharePercentX100: sharePercentX100 ?? this.sharePercentX100,
+    fixedAmount: fixedAmount.present ? fixedAmount.value : this.fixedAmount,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     syncStatus: syncStatus ?? this.syncStatus,
@@ -6532,6 +6569,9 @@ class PlanAllocation extends DataClass implements Insertable<PlanAllocation> {
       sharePercentX100: data.sharePercentX100.present
           ? data.sharePercentX100.value
           : this.sharePercentX100,
+      fixedAmount: data.fixedAmount.present
+          ? data.fixedAmount.value
+          : this.fixedAmount,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       syncStatus: data.syncStatus.present
@@ -6550,6 +6590,7 @@ class PlanAllocation extends DataClass implements Insertable<PlanAllocation> {
           ..write('portfolioId: $portfolioId, ')
           ..write('ownerId: $ownerId, ')
           ..write('sharePercentX100: $sharePercentX100, ')
+          ..write('fixedAmount: $fixedAmount, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('syncStatus: $syncStatus, ')
@@ -6566,6 +6607,7 @@ class PlanAllocation extends DataClass implements Insertable<PlanAllocation> {
     portfolioId,
     ownerId,
     sharePercentX100,
+    fixedAmount,
     createdAt,
     updatedAt,
     syncStatus,
@@ -6581,6 +6623,7 @@ class PlanAllocation extends DataClass implements Insertable<PlanAllocation> {
           other.portfolioId == this.portfolioId &&
           other.ownerId == this.ownerId &&
           other.sharePercentX100 == this.sharePercentX100 &&
+          other.fixedAmount == this.fixedAmount &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.syncStatus == this.syncStatus &&
@@ -6594,6 +6637,7 @@ class PlanAllocationsCompanion extends UpdateCompanion<PlanAllocation> {
   final Value<String> portfolioId;
   final Value<String> ownerId;
   final Value<int> sharePercentX100;
+  final Value<int?> fixedAmount;
   final Value<String> createdAt;
   final Value<String> updatedAt;
   final Value<String> syncStatus;
@@ -6606,6 +6650,7 @@ class PlanAllocationsCompanion extends UpdateCompanion<PlanAllocation> {
     this.portfolioId = const Value.absent(),
     this.ownerId = const Value.absent(),
     this.sharePercentX100 = const Value.absent(),
+    this.fixedAmount = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.syncStatus = const Value.absent(),
@@ -6619,6 +6664,7 @@ class PlanAllocationsCompanion extends UpdateCompanion<PlanAllocation> {
     required String portfolioId,
     required String ownerId,
     this.sharePercentX100 = const Value.absent(),
+    this.fixedAmount = const Value.absent(),
     required String createdAt,
     required String updatedAt,
     this.syncStatus = const Value.absent(),
@@ -6637,6 +6683,7 @@ class PlanAllocationsCompanion extends UpdateCompanion<PlanAllocation> {
     Expression<String>? portfolioId,
     Expression<String>? ownerId,
     Expression<int>? sharePercentX100,
+    Expression<int>? fixedAmount,
     Expression<String>? createdAt,
     Expression<String>? updatedAt,
     Expression<String>? syncStatus,
@@ -6650,6 +6697,7 @@ class PlanAllocationsCompanion extends UpdateCompanion<PlanAllocation> {
       if (portfolioId != null) 'portfolio_id': portfolioId,
       if (ownerId != null) 'owner_id': ownerId,
       if (sharePercentX100 != null) 'share_percent_x100': sharePercentX100,
+      if (fixedAmount != null) 'fixed_amount': fixedAmount,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (syncStatus != null) 'sync_status': syncStatus,
@@ -6665,6 +6713,7 @@ class PlanAllocationsCompanion extends UpdateCompanion<PlanAllocation> {
     Value<String>? portfolioId,
     Value<String>? ownerId,
     Value<int>? sharePercentX100,
+    Value<int?>? fixedAmount,
     Value<String>? createdAt,
     Value<String>? updatedAt,
     Value<String>? syncStatus,
@@ -6678,6 +6727,7 @@ class PlanAllocationsCompanion extends UpdateCompanion<PlanAllocation> {
       portfolioId: portfolioId ?? this.portfolioId,
       ownerId: ownerId ?? this.ownerId,
       sharePercentX100: sharePercentX100 ?? this.sharePercentX100,
+      fixedAmount: fixedAmount ?? this.fixedAmount,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       syncStatus: syncStatus ?? this.syncStatus,
@@ -6704,6 +6754,9 @@ class PlanAllocationsCompanion extends UpdateCompanion<PlanAllocation> {
     }
     if (sharePercentX100.present) {
       map['share_percent_x100'] = Variable<int>(sharePercentX100.value);
+    }
+    if (fixedAmount.present) {
+      map['fixed_amount'] = Variable<int>(fixedAmount.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<String>(createdAt.value);
@@ -6734,6 +6787,7 @@ class PlanAllocationsCompanion extends UpdateCompanion<PlanAllocation> {
           ..write('portfolioId: $portfolioId, ')
           ..write('ownerId: $ownerId, ')
           ..write('sharePercentX100: $sharePercentX100, ')
+          ..write('fixedAmount: $fixedAmount, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('syncStatus: $syncStatus, ')
@@ -13416,6 +13470,7 @@ typedef $$PlanAllocationsTableCreateCompanionBuilder =
       required String portfolioId,
       required String ownerId,
       Value<int> sharePercentX100,
+      Value<int?> fixedAmount,
       required String createdAt,
       required String updatedAt,
       Value<String> syncStatus,
@@ -13430,6 +13485,7 @@ typedef $$PlanAllocationsTableUpdateCompanionBuilder =
       Value<String> portfolioId,
       Value<String> ownerId,
       Value<int> sharePercentX100,
+      Value<int?> fixedAmount,
       Value<String> createdAt,
       Value<String> updatedAt,
       Value<String> syncStatus,
@@ -13515,6 +13571,11 @@ class $$PlanAllocationsTableFilterComposer
 
   ColumnFilters<int> get sharePercentX100 => $composableBuilder(
     column: $table.sharePercentX100,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get fixedAmount => $composableBuilder(
+    column: $table.fixedAmount,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13632,6 +13693,11 @@ class $$PlanAllocationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get fixedAmount => $composableBuilder(
+    column: $table.fixedAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -13741,6 +13807,11 @@ class $$PlanAllocationsTableAnnotationComposer
 
   GeneratedColumn<int> get sharePercentX100 => $composableBuilder(
     column: $table.sharePercentX100,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get fixedAmount => $composableBuilder(
+    column: $table.fixedAmount,
     builder: (column) => column,
   );
 
@@ -13866,6 +13937,7 @@ class $$PlanAllocationsTableTableManager
                 Value<String> portfolioId = const Value.absent(),
                 Value<String> ownerId = const Value.absent(),
                 Value<int> sharePercentX100 = const Value.absent(),
+                Value<int?> fixedAmount = const Value.absent(),
                 Value<String> createdAt = const Value.absent(),
                 Value<String> updatedAt = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
@@ -13878,6 +13950,7 @@ class $$PlanAllocationsTableTableManager
                 portfolioId: portfolioId,
                 ownerId: ownerId,
                 sharePercentX100: sharePercentX100,
+                fixedAmount: fixedAmount,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 syncStatus: syncStatus,
@@ -13892,6 +13965,7 @@ class $$PlanAllocationsTableTableManager
                 required String portfolioId,
                 required String ownerId,
                 Value<int> sharePercentX100 = const Value.absent(),
+                Value<int?> fixedAmount = const Value.absent(),
                 required String createdAt,
                 required String updatedAt,
                 Value<String> syncStatus = const Value.absent(),
@@ -13904,6 +13978,7 @@ class $$PlanAllocationsTableTableManager
                 portfolioId: portfolioId,
                 ownerId: ownerId,
                 sharePercentX100: sharePercentX100,
+                fixedAmount: fixedAmount,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 syncStatus: syncStatus,

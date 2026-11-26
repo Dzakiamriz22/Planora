@@ -19,11 +19,16 @@ class PlanWithAllocations {
     required this.plan,
     required this.sharePercentX100ByPortfolioId,
     required this.derivedAmountsByPortfolioId,
+    this.fixedAmountsByPortfolioId,
   });
 
   final Plan plan;
   final Map<String, int> sharePercentX100ByPortfolioId;
   final Map<String, int> derivedAmountsByPortfolioId;
+  final Map<String, int>? fixedAmountsByPortfolioId;
+
+  bool get hasExactFixedAmounts =>
+      fixedAmountsByPortfolioId != null && fixedAmountsByPortfolioId!.isNotEmpty;
 
   int get totalX100 =>
       PlanPercentCalc.totalX100(sharePercentX100ByPortfolioId.values);
@@ -83,11 +88,21 @@ class PlanRepository {
       final shareMap = <String, int>{
         for (final p in portfolios) p.id: 0,
       };
+      final fixedMap = <String, int>{};
+      var hasAnyFixed = false;
       for (final row in allocRows) {
         if (shareMap.containsKey(row.portfolioId)) {
           shareMap[row.portfolioId] = row.sharePercentX100;
+          if (row.fixedAmount != null) {
+            fixedMap[row.portfolioId] = row.fixedAmount!;
+            hasAnyFixed = true;
+          }
         }
       }
+      final fixedSum = fixedMap.values.fold<int>(0, (a, b) => a + b);
+      final useExactFixed = hasAnyFixed &&
+          fixedMap.length == portfolios.length &&
+          fixedSum == plan.totalAmount;
 
       final namesById = {for (final p in portfolios) p.id: p.name};
       final validation = PlanPercentCalc.validateForApply(
@@ -105,6 +120,9 @@ class PlanRepository {
         );
       }
 
+      final effectiveAmounts =
+          useExactFixed ? fixedMap : validation.derivedAmountsById;
+
       await _db.update(_db.plans).write(
             const PlansCompanion(isActive: Value(false)),
           );
@@ -116,7 +134,7 @@ class PlanRepository {
       );
 
       for (final p in portfolios) {
-        final nextMonthly = validation.derivedAmountsById[p.id] ?? 0;
+        final nextMonthly = effectiveAmounts[p.id] ?? 0;
         await (_db.update(_db.portfolios)..where((t) => t.id.equals(p.id)))
             .write(
           PortfoliosCompanion(
@@ -144,6 +162,7 @@ class PlanRepository {
     String? description,
     required int totalAmount,
     required Map<String, int> sharePercentX100ByPortfolioId,
+    Map<String, int>? fixedAmountsByPortfolioId,
   }) async {
     if (name.trim().isEmpty) {
       throw PlanValidationException('Nama Plan wajib diisi.');
@@ -219,6 +238,7 @@ class PlanRepository {
                 sharePercentX100: Value(
                   sharePercentX100ByPortfolioId[p.id] ?? 0,
                 ),
+                fixedAmount: Value(fixedAmountsByPortfolioId?[p.id]),
                 createdAt: nowIso,
                 updatedAt: nowIso,
               ),
@@ -277,6 +297,15 @@ class PlanRepository {
       await (_db.update(_db.plans)..where((t) => t.id.equals(active.id))).write(
         PlansCompanion(
           totalAmount: Value(newCeiling),
+          updatedAt: Value(nowIso),
+        ),
+      );
+
+      await (_db.update(_db.planAllocations)
+            ..where((t) => t.planId.equals(active.id)))
+          .write(
+        PlanAllocationsCompanion(
+          fixedAmount: const Value(null),
           updatedAt: Value(nowIso),
         ),
       );
@@ -345,6 +374,10 @@ class PlanRepository {
       final shareMap = {
         for (final a in sourceAllocs) a.portfolioId: a.sharePercentX100,
       };
+      final fixedMap = {
+        for (final a in sourceAllocs)
+          if (a.fixedAmount != null) a.portfolioId: a.fixedAmount!,
+      };
 
       final portfolios = await _db.select(_db.portfolios).get();
       for (final p in portfolios) {
@@ -355,6 +388,7 @@ class PlanRepository {
                 portfolioId: p.id,
                 ownerId: ownerId,
                 sharePercentX100: Value(shareMap[p.id] ?? 0),
+                fixedAmount: Value(fixedMap[p.id]),
                 createdAt: nowIso,
                 updatedAt: nowIso,
               ),

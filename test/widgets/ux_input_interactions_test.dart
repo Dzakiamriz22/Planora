@@ -272,5 +272,114 @@ void main() {
         await _disposeDb(tester, db);
       },
     );
+
+    testWidgets(
+      'Plan mode Rp Nominal: 1jt + 400k + 500k + 200k tersimpan & diterapkan EXACT tanpa bergeser',
+      (tester) async {
+        final db = AppDatabase(NativeDatabase.memory());
+        await db.ensureInitialized();
+        final portoRepo = PortfolioRepository(db);
+        final planRepo = PlanRepository(db);
+
+        final pSaham = await portoRepo.createPortfolio(
+          name: 'Saham',
+          category: 'no_target',
+          monthlyPlan: 0,
+          annualReturnPct: 8,
+          icon: 'trending_up',
+          color: 0xFF0E7C66,
+        );
+        final pRumah = await portoRepo.createPortfolio(
+          name: 'Rumah',
+          category: 'cash',
+          savedTarget: 100000000,
+          monthlyPlan: 0,
+          annualReturnPct: 6,
+          icon: 'home',
+          color: 0xFF2F6DB3,
+        );
+        final pNikah = await portoRepo.createPortfolio(
+          name: 'Nikah',
+          category: 'cash',
+          savedTarget: 50000000,
+          monthlyPlan: 0,
+          annualReturnPct: 5,
+          icon: 'favorite',
+          color: 0xFFD97706,
+        );
+        final pKendaraan = await portoRepo.createPortfolio(
+          name: 'Kendaraan',
+          category: 'cash',
+          savedTarget: 30000000,
+          monthlyPlan: 0,
+          annualReturnPct: 5,
+          icon: 'directions_car',
+          color: 0xFF7C3AED,
+        );
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              appDatabaseProvider.overrideWithValue(db),
+              notificationGatewayProvider.overrideWithValue(_SilentGateway()),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.light(),
+              home: const PlanFormScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.byKey(const Key('plan_name_field')),
+          'Plan Bulanan',
+        );
+
+        final rpModeFinder = find.text('Rp Nominal');
+        await tester.scrollUntilVisible(
+          rpModeFinder,
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.tap(rpModeFinder);
+        await tester.pumpAndSettle();
+
+        final targets = [
+          (pSaham, '1000000'),
+          (pRumah, '400000'),
+          (pNikah, '500000'),
+          (pKendaraan, '200000'),
+        ];
+        for (final (pid, val) in targets) {
+          final fieldFinder = find.byKey(Key('plan_row_input_$pid'));
+          await tester.scrollUntilVisible(
+            fieldFinder,
+            200,
+            scrollable: find.byType(Scrollable).first,
+          );
+          await tester.enterText(fieldFinder, val);
+          await tester.pump();
+        }
+
+        // Simpan Plan
+        await tester.tap(find.byKey(const Key('plan_save_button')));
+        await tester.pumpAndSettle();
+
+        final savedPlan = (await db.select(db.plans).get()).single;
+        expect(savedPlan.totalAmount, 2100000);
+
+        // Terapkan Plan & cek monthlyPlan tiap porto harus EXACT 0 rupiah meleset!
+        await planRepo.applyPlan(savedPlan.id);
+        final allPortos = await db.select(db.portfolios).get();
+        final byId = {for (final p in allPortos) p.id: p.monthlyPlan};
+        expect(byId[pSaham], 1000000);
+        expect(byId[pRumah], 400000);
+        expect(byId[pNikah], 500000);
+        expect(byId[pKendaraan], 200000);
+
+        await _disposeDb(tester, db);
+      },
+    );
   });
 }

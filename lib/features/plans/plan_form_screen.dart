@@ -32,10 +32,12 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
   final _totalCtrl = TextEditingController();
 
   final Map<String, int> _shareX100 = {};
+  final Map<String, int> _exactAmounts = {};
   final Map<String, TextEditingController> _inputCtrls = {};
   final Map<String, FocusNode> _focusNodes = {};
 
   String _inputMode = 'percent'; // 'percent' | 'nominal'
+  bool _useExactAmounts = false;
   bool _initialized = false;
   bool _saving = false;
   bool _isEditingActivePlan = false;
@@ -79,6 +81,12 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
       for (final porto in portfolios) {
         _shareX100[porto.id] =
             existing.sharePercentX100ByPortfolioId[porto.id] ?? 0;
+        _exactAmounts[porto.id] =
+            existing.derivedAmountsByPortfolioId[porto.id] ?? 0;
+      }
+      if (existing.hasExactFixedAmounts) {
+        _useExactAmounts = true;
+        _inputMode = 'nominal';
       }
     } else {
       final defaultTotal = summary.ceiling ?? 0;
@@ -86,6 +94,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
           defaultTotal > 0 ? AppFormatters.number(defaultTotal) : '';
       for (final porto in portfolios) {
         _shareX100[porto.id] = 0;
+        _exactAmounts[porto.id] = 0;
       }
     }
 
@@ -94,9 +103,23 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
 
   int get _currentTotal => parseRupiahInput(_totalCtrl.text);
 
+  Map<String, int> _currentDerivedAmounts(List<Portfolio> portfolios) {
+    if (_useExactAmounts) {
+      return {
+        for (final p in portfolios) p.id: _exactAmounts[p.id] ?? 0,
+      };
+    }
+    return PlanPercentCalc.computeAmountsFromPercents(
+      totalAmount: _currentTotal,
+      sharePercentX100ById: _shareX100,
+    );
+  }
+
   String _formatRowInput(String portfolioId, Map<String, int> derived) {
     if (_inputMode == 'nominal') {
-      final nom = derived[portfolioId] ?? 0;
+      final nom = _useExactAmounts
+          ? (_exactAmounts[portfolioId] ?? 0)
+          : (derived[portfolioId] ?? 0);
       return nom > 0 ? AppFormatters.number(nom) : '';
     }
     final x100 = _shareX100[portfolioId] ?? 0;
@@ -106,12 +129,10 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
   }
 
   void _ensureRowControllers(List<Portfolio> portfolios) {
-    final derived = PlanPercentCalc.computeAmountsFromPercents(
-      totalAmount: _currentTotal,
-      sharePercentX100ById: _shareX100,
-    );
+    final derived = _currentDerivedAmounts(portfolios);
     for (final p in portfolios) {
       _shareX100.putIfAbsent(p.id, () => 0);
+      _exactAmounts.putIfAbsent(p.id, () => 0);
       _focusNodes.putIfAbsent(p.id, FocusNode.new);
       _inputCtrls.putIfAbsent(
         p.id,
@@ -125,10 +146,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
     String? skipPortfolioId,
     bool forceSync = false,
   }) {
-    final derived = PlanPercentCalc.computeAmountsFromPercents(
-      totalAmount: _currentTotal,
-      sharePercentX100ById: _shareX100,
-    );
+    final derived = _currentDerivedAmounts(portfolios);
     for (final p in portfolios) {
       final ctrl = _inputCtrls.putIfAbsent(
         p.id,
@@ -149,6 +167,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
 
   void _applyPercentMap(List<Portfolio> portfolios, Map<String, int> next) {
     setState(() {
+      _useExactAmounts = false;
       for (final p in portfolios) {
         _shareX100[p.id] = next[p.id] ?? 0;
       }
@@ -207,14 +226,21 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
       final shareSnapshot = {
         for (final p in portfolios) p.id: _shareX100[p.id] ?? 0,
       };
+      final exactSnapshot = _useExactAmounts
+          ? {for (final p in portfolios) p.id: _exactAmounts[p.id] ?? 0}
+          : null;
+      final effectiveTotal = _useExactAmounts && exactSnapshot != null
+          ? exactSnapshot.values.fold<int>(0, (a, b) => a + b)
+          : _currentTotal;
       final isDraft = !PlanPercentCalc.isExact100(shareSnapshot.values);
 
       await ref.read(planRepositoryProvider).savePlan(
             id: saveAsNew ? null : widget.planId,
             name: _nameCtrl.text.trim(),
             description: _descCtrl.text.trim(),
-            totalAmount: _currentTotal,
+            totalAmount: effectiveTotal,
             sharePercentX100ByPortfolioId: shareSnapshot,
+            fixedAmountsByPortfolioId: exactSnapshot,
           );
 
       if (_isEditingActivePlan && !saveAsNew) {
@@ -340,10 +366,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
     final totalX100 = PlanPercentCalc.totalX100(_shareX100.values);
     final isPas = totalX100 == PlanPercentCalc.exact100X100;
     final isOver100 = totalX100 > PlanPercentCalc.exact100X100;
-    final derived = PlanPercentCalc.computeAmountsFromPercents(
-      totalAmount: totalPlan,
-      sharePercentX100ById: _shareX100,
-    );
+    final derived = _currentDerivedAmounts(portfolios);
 
     final ceiling = summary.ceiling;
     final overCeiling = ceiling != null && totalPlan > ceiling;
@@ -480,6 +503,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                       controller: _totalCtrl,
                       label: 'Total dana yang dibagi per bulan',
                       onChanged: (_) => setState(() {
+                        _useExactAmounts = false;
                         _syncControllers(portfolios);
                       }),
                     ),
@@ -561,6 +585,13 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                               label: 'Rp Nominal',
                               selected: _inputMode == 'nominal',
                               onTap: () => setState(() {
+                                if (!_useExactAmounts) {
+                                  final curDerived =
+                                      _currentDerivedAmounts(portfolios);
+                                  for (final p in portfolios) {
+                                    _exactAmounts[p.id] = curDerived[p.id] ?? 0;
+                                  }
+                                }
                                 _inputMode = 'nominal';
                                 _syncControllers(portfolios, forceSync: true);
                               }),
@@ -568,16 +599,6 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                           ],
                         ),
                       ),
-                      if (_inputMode == 'nominal' && totalPlan <= 0) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          'Isi Total Dana / Bulan terlebih dahulu agar nominal dapat dikonversi ke persen.',
-                          style: AppTheme.manrope(
-                            size: 11.5,
-                            color: PlanoraColors.gold,
-                          ),
-                        ),
-                      ],
                       const SizedBox(height: 12),
                       PlanoraAllocationDonutChart(
                         slices: donutSlices,
@@ -597,6 +618,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                           focusNode: _focusNodes[porto.id]!,
                           onSliderChanged: (v) {
                             setState(() {
+                              _useExactAmounts = false;
                               _shareX100[porto.id] =
                                   PlanPercentCalc.percentToX100(v);
                               _syncControllers(portfolios, forceSync: true);
@@ -606,14 +628,26 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                             setState(() {
                               if (_inputMode == 'nominal') {
                                 final nom = parseRupiahInput(val);
-                                final x100 = totalPlan > 0
-                                    ? ((nom / totalPlan) *
-                                            PlanPercentCalc.exact100X100)
-                                        .round()
-                                        .clamp(0, PlanPercentCalc.exact100X100)
-                                    : 0;
-                                _shareX100[porto.id] = x100;
+                                _useExactAmounts = true;
+                                _exactAmounts[porto.id] = nom;
+                                final amountsMap = {
+                                  for (final p in portfolios)
+                                    p.id: _exactAmounts[p.id] ?? 0,
+                                };
+                                final converted = PlanPercentCalc
+                                    .migrateNominalAmountsToPlanPercents(
+                                  amountsMap,
+                                );
+                                _totalCtrl.text = converted.totalAmount > 0
+                                    ? AppFormatters.number(converted.totalAmount)
+                                    : '';
+                                for (final p in portfolios) {
+                                  _shareX100[p.id] = converted
+                                          .sharePercentX100ById[p.id] ??
+                                      0;
+                                }
                               } else {
+                                _useExactAmounts = false;
                                 final parsed = double.tryParse(
                                       val.replaceAll(',', '.'),
                                     ) ??
@@ -863,6 +897,7 @@ class _PlanPercentRow extends StatelessWidget {
               SizedBox(
                 width: isNominal ? 124 : 84,
                 child: TextField(
+                  key: Key('plan_row_input_${portfolio.id}'),
                   controller: controller,
                   focusNode: focusNode,
                   keyboardType: TextInputType.numberWithOptions(

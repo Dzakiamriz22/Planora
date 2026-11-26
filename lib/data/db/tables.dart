@@ -204,6 +204,7 @@ class PlanAllocations extends Table {
       )();
   TextColumn get ownerId => text().references(UserProfiles, #id)();
   IntColumn get sharePercentX100 => integer().withDefault(const Constant(0))();
+  IntColumn get fixedAmount => integer().nullable()();
 
   TextColumn get createdAt => text()();
   TextColumn get updatedAt => text()();

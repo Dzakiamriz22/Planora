@@ -582,21 +582,37 @@ final plansWithAllocationsProvider =
       ref.watch(planAllocationsStreamProvider).value ?? const [];
 
   final byPlan = <String, Map<String, int>>{};
+  final fixedByPlan = <String, Map<String, int>>{};
   for (final a in allocations) {
     byPlan.putIfAbsent(a.planId, () => <String, int>{})[a.portfolioId] =
         a.sharePercentX100;
+    if (a.fixedAmount != null) {
+      fixedByPlan.putIfAbsent(a.planId, () => <String, int>{})[a.portfolioId] =
+          a.fixedAmount!;
+    }
   }
 
   return plans.map((pl) {
     final shareMap = byPlan[pl.id] ?? const <String, int>{};
-    final derived = PlanPercentCalc.computeAmountsFromPercents(
-      totalAmount: pl.totalAmount,
-      sharePercentX100ById: shareMap,
-    );
+    final fixedMap = fixedByPlan[pl.id];
+    final fixedSum =
+        fixedMap?.values.fold<int>(0, (sum, v) => sum + v) ?? -1;
+    final useExactFixed = fixedMap != null &&
+        fixedMap.length == shareMap.length &&
+        shareMap.isNotEmpty &&
+        fixedSum == pl.totalAmount;
+
+    final derived = useExactFixed
+        ? fixedMap
+        : PlanPercentCalc.computeAmountsFromPercents(
+            totalAmount: pl.totalAmount,
+            sharePercentX100ById: shareMap,
+          );
     return PlanWithAllocations(
       plan: pl,
       sharePercentX100ByPortfolioId: shareMap,
       derivedAmountsByPortfolioId: derived,
+      fixedAmountsByPortfolioId: useExactFixed ? fixedMap : null,
     );
   }).toList();
 });
