@@ -1,11 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:planora/core/calc/planora_calc.dart';
 import 'package:planora/core/calc/planora_v22_calc.dart';
+import 'package:planora/core/calc/stock_lot_calc.dart';
 import 'package:planora/core/format/formatters.dart';
+import 'package:planora/core/notifications/reminder_service.dart';
 import 'package:planora/core/theme/app_theme.dart';
 import 'package:planora/core/theme/chart_tokens.dart';
 import 'package:planora/data/db/app_database.dart';
 import 'package:planora/data/repositories/portfolio_repository.dart';
+import 'package:planora/data/repositories/settings_repository.dart';
 import 'package:planora/features/shared/planora_providers.dart';
 import 'package:planora/widgets/planora_widgets.dart';
 import 'package:planora/widgets/rupiah_text_field.dart';
@@ -105,6 +109,10 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
           components.isEmpty ? null : _selectedComponentId;
 
       if (widget.existing == null) {
+        final snapBefore = ref
+            .read(portfolioSnapshotsProvider)
+            .where((s) => s.portfolio.id == widget.portfolioId)
+            .firstOrNull;
         await repo.addContribution(
           portfolioId: widget.portfolioId,
           amount: amount,
@@ -112,6 +120,20 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
           note: note,
           componentId: effectiveComponentId,
         );
+        if (snapBefore != null && snapBefore.hasTarget) {
+          final nextPct = PlanoraCalc.progressPercent(
+            savedTarget: snapBefore.portfolio.savedTarget,
+            balance: snapBefore.balance + amount,
+          );
+          final setting =
+              await ref.read(settingsRepositoryProvider).getSettings();
+          await ref.read(reminderServiceProvider).notifyMilestoneIfCrossed(
+                setting: setting,
+                portfolioName: widget.portfolioName,
+                previousProgressPct: snapBefore.progressPct,
+                nextProgressPct: nextPct,
+              );
+        }
       } else {
         await repo.updateContribution(
           id: widget.existing!.id,
@@ -137,9 +159,12 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
     final isEdit = widget.existing != null;
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final components =
+    final allComponents =
         ref.watch(portfolioComponentsProvider(widget.portfolioId)).value ??
             const <PortfolioComponent>[];
+    final components = allComponents
+        .where((c) => c.mechanism != StockLotCalc.mechanismLotBased)
+        .toList();
 
     final hasPercentComponents = components.isNotEmpty &&
         components.any((c) => c.targetPercent > 0);

@@ -141,7 +141,7 @@ void main() {
 
       final exported = await settingsRepo.exportAllToJson();
       final decoded = jsonDecode(exported) as Map<String, dynamic>;
-      expect(decoded['schema_version'], 4);
+      expect(decoded['schema_version'], 7);
       final exportedComps =
           (decoded['portfolios'] as List).first['components'] as List;
       expect(exportedComps.first['target_percent'], 20.0);

@@ -4,7 +4,9 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:planora/core/calc/plan_percent_calc.dart';
 import 'package:planora/core/calc/planora_v22_calc.dart';
+import 'package:planora/core/calc/stock_lot_calc.dart';
 import 'package:planora/data/db/seed_data.dart';
 import 'package:planora/data/db/tables.dart';
 import 'package:uuid/uuid.dart';
@@ -18,16 +20,17 @@ part 'app_database.g.dart';
     Portfolios,
     PortfolioComponents,
     Contributions,
-    Phases,
-    PhaseAllocations,
+    Plans,
+    PlanAllocations,
     PriceReferences,
+    StockTransactions,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -76,8 +79,8 @@ class AppDatabase extends _$AppDatabase {
               await m.createTable(settings);
               await m.createTable(portfolios);
               await m.createTable(contributions);
-              await m.createTable(phases);
-              await m.createTable(phaseAllocations);
+              await m.createTable(plans);
+              await m.createTable(planAllocations);
               await m.createTable(priceReferences);
 
               if (oldSettings.isNotEmpty) {
@@ -95,7 +98,7 @@ class AppDatabase extends _$AppDatabase {
                       (s['default_annual_return_pct'] as num?)?.toDouble() ??
                           5.0,
                     ),
-                    phaseLimitEnabled: const Value(false),
+                    planLimitEnabled: const Value(false),
                     onboardingDone: const Value(true),
                     seedVersion: const Value(3),
                     createdAt: nowIso,
@@ -154,34 +157,44 @@ class AppDatabase extends _$AppDatabase {
 
               for (final row in oldPhases) {
                 final d = row.data;
-                await into(phases).insert(
-                  PhasesCompanion.insert(
-                    id: d['id'] as String,
+                final pid = d['id'] as String;
+                final phaseAllocs = oldAllocs
+                    .where((a) => (a.data['phase_id'] as String) == pid)
+                    .toList();
+                final amountsByPorto = <String, int>{
+                  for (final a in phaseAllocs)
+                    a.data['portfolio_id'] as String:
+                        (a.data['monthly_amount'] as num?)?.toInt() ?? 0,
+                };
+                final migrated = PlanPercentCalc.migrateNominalAmountsToPlanPercents(
+                  amountsByPorto,
+                );
+                await into(plans).insert(
+                  PlansCompanion.insert(
+                    id: pid,
                     ownerId: ownerId,
                     name: d['name'] as String,
                     description: Value(d['description'] as String?),
+                    totalAmount: Value(migrated.totalAmount),
                     isActive: Value((d['is_active'] as num?)?.toInt() == 1),
                     sortOrder: Value((d['sort_order'] as num?)?.toInt() ?? 0),
                     createdAt: (d['created_at'] as String?) ?? nowIso,
                     updatedAt: (d['updated_at'] as String?) ?? nowIso,
                   ),
                 );
-              }
-
-              for (final row in oldAllocs) {
-                final d = row.data;
-                await into(phaseAllocations).insert(
-                  PhaseAllocationsCompanion.insert(
-                    id: d['id'] as String,
-                    phaseId: d['phase_id'] as String,
-                    portfolioId: d['portfolio_id'] as String,
-                    ownerId: ownerId,
-                    monthlyAmount:
-                        Value((d['monthly_amount'] as num?)?.toInt() ?? 0),
-                    createdAt: nowIso,
-                    updatedAt: nowIso,
-                  ),
-                );
+                for (final entry in migrated.sharePercentX100ById.entries) {
+                  await into(planAllocations).insert(
+                    PlanAllocationsCompanion.insert(
+                      id: uuid.v4(),
+                      planId: pid,
+                      portfolioId: entry.key,
+                      ownerId: ownerId,
+                      sharePercentX100: Value(entry.value),
+                      createdAt: nowIso,
+                      updatedAt: nowIso,
+                    ),
+                  );
+                }
               }
 
               for (final row in oldRefs) {
@@ -297,11 +310,370 @@ class AppDatabase extends _$AppDatabase {
               await customStatement('PRAGMA foreign_keys = ON');
             }
           }
+
+          if (from < 4) {
+            await migrateToV23LotMechanism(m);
+          }
+
+          if (from < 5) {
+            await migrateToV31PlanPercent(m);
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
         },
       );
+
+  Future<bool> _hasColumn(String table, String column) async {
+    final rows = await customSelect('PRAGMA table_info($table)').get();
+    return rows.any((r) => (r.data['name'] as String?) == column);
+  }
+
+  Future<bool> _hasTable(String table) async {
+    final rows = await customSelect(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+      variables: [Variable.withString(table)],
+    ).get();
+    return rows.isNotEmpty;
+  }
+
+  Future<void> migrateToV23LotMechanism([Migrator? m]) async {
+    await customStatement('PRAGMA foreign_keys = OFF');
+    try {
+      final beforeContribRows = await customSelect(
+        'SELECT COALESCE(SUM(amount), 0) AS total FROM contributions',
+      ).getSingle();
+      final totalContribBefore =
+          (beforeContribRows.data['total'] as num?)?.toInt() ?? 0;
+
+      final beforeCompRows = await customSelect(
+        'SELECT id, portfolio_id, instrument_type, actual_amount FROM portfolio_components',
+      ).get();
+
+      var totalCompActualBefore = 0;
+      for (final row in beforeCompRows) {
+        final amt = (row.data['actual_amount'] as num?)?.toInt() ?? 0;
+        if (amt < 0) {
+          throw MigrationValidationException(
+            'Migrasi v2.3 dibatalkan: saldo aktual komponen ${row.data['id']} tidak valid (negatif). Data lama dipertahankan.',
+          );
+        }
+        totalCompActualBefore += amt;
+      }
+
+      if (!await _hasColumn('portfolio_components', 'mechanism')) {
+        await customStatement(
+          "ALTER TABLE portfolio_components ADD COLUMN mechanism TEXT NOT NULL DEFAULT 'nominal'",
+        );
+      }
+      if (!await _hasColumn('portfolio_components', 'legacy_opening_amount')) {
+        await customStatement(
+          'ALTER TABLE portfolio_components ADD COLUMN legacy_opening_amount INTEGER NOT NULL DEFAULT 0',
+        );
+      }
+      if (!await _hasColumn('contributions', 'stock_transaction_id')) {
+        await customStatement(
+          'ALTER TABLE contributions ADD COLUMN stock_transaction_id TEXT',
+        );
+      }
+      if (!await _hasColumn('contributions', 'source')) {
+        await customStatement(
+          "ALTER TABLE contributions ADD COLUMN source TEXT NOT NULL DEFAULT 'manual'",
+        );
+      }
+
+      if (!await _hasTable('stock_transactions')) {
+        if (m != null) {
+          await m.createTable(stockTransactions);
+        } else {
+          await customStatement(
+            '''
+            CREATE TABLE IF NOT EXISTS stock_transactions (
+              id TEXT NOT NULL PRIMARY KEY,
+              owner_id TEXT NOT NULL REFERENCES user_profiles(id),
+              component_id TEXT NOT NULL REFERENCES portfolio_components(id) ON DELETE CASCADE,
+              portfolio_id TEXT NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+              ticker TEXT NOT NULL,
+              side TEXT NOT NULL,
+              lots INTEGER NOT NULL,
+              shares INTEGER NOT NULL,
+              price_per_share INTEGER NOT NULL,
+              total_amount INTEGER NOT NULL,
+              transaction_date TEXT NOT NULL,
+              note TEXT,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL,
+              sync_status TEXT NOT NULL DEFAULT 'local_only',
+              remote_id TEXT,
+              deleted_at TEXT
+            )
+            ''',
+          );
+        }
+      }
+
+      final compRows = await customSelect(
+        'SELECT id, instrument_type, actual_amount, mechanism, legacy_opening_amount FROM portfolio_components',
+      ).get();
+
+      for (final row in compRows) {
+        final id = row.data['id'] as String;
+        final instrument = (row.data['instrument_type'] as String?) ?? '';
+        final actual = (row.data['actual_amount'] as num?)?.toInt() ?? 0;
+        final existingLegacy =
+            (row.data['legacy_opening_amount'] as num?)?.toInt() ?? 0;
+        final isDirectStock = StockLotCalc.isDirectStockInstrument(instrument);
+        final mechanism = isDirectStock
+            ? StockLotCalc.mechanismLotBased
+            : StockLotCalc.mechanismNominal;
+
+        if (isDirectStock) {
+          final txRows = await customSelect(
+            'SELECT id, ticker, side, lots, shares, price_per_share, total_amount, transaction_date, created_at FROM stock_transactions WHERE component_id = ? AND deleted_at IS NULL',
+            variables: [Variable.withString(id)],
+          ).get();
+
+          final ledger = StockLotCalc.computeLedger(
+            txRows.map(
+              (t) => StockTxRecord(
+                id: t.data['id'] as String,
+                ticker: t.data['ticker'] as String,
+                side: t.data['side'] as String,
+                lots: (t.data['lots'] as num).toInt(),
+                shares: (t.data['shares'] as num).toInt(),
+                pricePerShare: (t.data['price_per_share'] as num).toInt(),
+                totalAmount: (t.data['total_amount'] as num).toInt(),
+                transactionDate: t.data['transaction_date'] as String,
+                createdAt: t.data['created_at'] as String,
+              ),
+            ),
+          );
+
+          final expectedLegacy =
+              (actual - ledger.totalPositionsModal).clamp(0, actual);
+          final nextLegacy = existingLegacy > 0 &&
+                  (ledger.totalPositionsModal + existingLegacy == actual)
+              ? existingLegacy
+              : expectedLegacy;
+
+          await customStatement(
+            'UPDATE portfolio_components SET mechanism = ?, legacy_opening_amount = ? WHERE id = ?',
+            [mechanism, nextLegacy, id],
+          );
+        } else {
+          await customStatement(
+            'UPDATE portfolio_components SET mechanism = ?, legacy_opening_amount = 0 WHERE id = ?',
+            [mechanism, id],
+          );
+        }
+      }
+
+      final afterContribRow = await customSelect(
+        'SELECT COALESCE(SUM(amount), 0) AS total FROM contributions',
+      ).getSingle();
+      final totalContribAfter =
+          (afterContribRow.data['total'] as num?)?.toInt() ?? 0;
+
+      final afterCompRows = await customSelect(
+        'SELECT id, actual_amount, mechanism, legacy_opening_amount FROM portfolio_components',
+      ).get();
+      var totalCompActualAfter = 0;
+      for (final row in afterCompRows) {
+        final actual = (row.data['actual_amount'] as num?)?.toInt() ?? 0;
+        final legacy =
+            (row.data['legacy_opening_amount'] as num?)?.toInt() ?? 0;
+        if (actual < 0 || legacy < 0) {
+          throw MigrationValidationException(
+            'Migrasi v2.3 dibatalkan: ditemukan saldo negatif setelah migrasi.',
+          );
+        }
+        totalCompActualAfter += actual;
+      }
+
+      if (totalContribAfter != totalContribBefore ||
+          totalCompActualAfter != totalCompActualBefore) {
+        throw MigrationValidationException(
+          'Migrasi v2.3 dibatalkan: total saldo tidak cocok setelah migrasi (sebelum: $totalContribBefore/$totalCompActualBefore, sesudah: $totalContribAfter/$totalCompActualAfter).',
+        );
+      }
+    } finally {
+      await customStatement('PRAGMA foreign_keys = ON');
+    }
+  }
+
+  Future<void> migrateToV31PlanPercent([Migrator? m]) async {
+    await customStatement('PRAGMA foreign_keys = OFF');
+    try {
+      if (!await _hasColumn('settings', 'plan_limit_enabled')) {
+        await customStatement(
+          'ALTER TABLE settings ADD COLUMN plan_limit_enabled INTEGER NOT NULL DEFAULT 0',
+        );
+        if (await _hasColumn('settings', 'phase_limit_enabled')) {
+          await customStatement(
+            'UPDATE settings SET plan_limit_enabled = phase_limit_enabled',
+          );
+        }
+      }
+      if (!await _hasColumn('settings', 'plan_limit_amount')) {
+        await customStatement(
+          'ALTER TABLE settings ADD COLUMN plan_limit_amount INTEGER',
+        );
+        if (await _hasColumn('settings', 'phase_limit_amount')) {
+          await customStatement(
+            'UPDATE settings SET plan_limit_amount = phase_limit_amount',
+          );
+        }
+      }
+      final reminderCols = <String, String>{
+        'reminder_monthly_enabled': 'INTEGER NOT NULL DEFAULT 0',
+        'reminder_monthly_day': 'INTEGER NOT NULL DEFAULT 1',
+        'reminder_monthly_hour': 'INTEGER NOT NULL DEFAULT 9',
+        'reminder_monthly_minute': 'INTEGER NOT NULL DEFAULT 0',
+        'reminder_expense_enabled': 'INTEGER NOT NULL DEFAULT 0',
+        'reminder_expense_hour': 'INTEGER NOT NULL DEFAULT 9',
+        'reminder_expense_minute': 'INTEGER NOT NULL DEFAULT 0',
+        'reminder_milestone_enabled': 'INTEGER NOT NULL DEFAULT 0',
+      };
+      for (final entry in reminderCols.entries) {
+        if (!await _hasColumn('settings', entry.key)) {
+          await customStatement(
+            'ALTER TABLE settings ADD COLUMN ${entry.key} ${entry.value}',
+          );
+        }
+      }
+
+      final hasOldPhases = await _hasTable('phases');
+      final hasNewPlans = await _hasTable('plans');
+
+      if (!hasNewPlans) {
+        if (m != null) {
+          await m.createTable(plans);
+          await m.createTable(planAllocations);
+        } else {
+          await customStatement('''
+            CREATE TABLE IF NOT EXISTS plans (
+              id TEXT NOT NULL PRIMARY KEY,
+              owner_id TEXT NOT NULL REFERENCES user_profiles(id),
+              name TEXT NOT NULL,
+              description TEXT,
+              total_amount INTEGER NOT NULL DEFAULT 0,
+              is_active INTEGER NOT NULL DEFAULT 0,
+              sort_order INTEGER NOT NULL DEFAULT 0,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL,
+              sync_status TEXT NOT NULL DEFAULT 'local',
+              remote_id TEXT,
+              deleted_at TEXT
+            )
+          ''');
+          await customStatement('''
+            CREATE TABLE IF NOT EXISTS plan_allocations (
+              id TEXT NOT NULL PRIMARY KEY,
+              plan_id TEXT NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
+              portfolio_id TEXT NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+              owner_id TEXT NOT NULL REFERENCES user_profiles(id),
+              share_percent_x100 INTEGER NOT NULL DEFAULT 0,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL,
+              sync_status TEXT NOT NULL DEFAULT 'local',
+              remote_id TEXT,
+              deleted_at TEXT,
+              UNIQUE(plan_id, portfolio_id)
+            )
+          ''');
+        }
+      }
+
+      if (hasOldPhases) {
+        final existingPortfolios = await customSelect(
+          'SELECT id FROM portfolios',
+        ).get();
+        final validPortfolioIds = {
+          for (final r in existingPortfolios) r.data['id'] as String,
+        };
+
+        final oldPhases = await customSelect('SELECT * FROM phases').get();
+        final hasOldAllocs = await _hasTable('phase_allocations');
+        final oldAllocs = hasOldAllocs
+            ? await customSelect('SELECT * FROM phase_allocations').get()
+            : const <QueryRow>[];
+
+        final allocsByPhase = <String, Map<String, int>>{};
+        final allocMetaByKey = <String, Map<String, dynamic>>{};
+        for (final row in oldAllocs) {
+          final phId = row.data['phase_id'] as String;
+          final portoId = row.data['portfolio_id'] as String;
+          if (!validPortfolioIds.contains(portoId)) continue;
+          final amt = (row.data['monthly_amount'] as num?)?.toInt() ?? 0;
+          allocsByPhase.putIfAbsent(phId, () => {})[portoId] = amt;
+          allocMetaByKey['$phId::$portoId'] = row.data;
+        }
+
+        const uuid = Uuid();
+        final nowIso = DateTime.now().toUtc().toIso8601String();
+
+        for (final ph in oldPhases) {
+          final d = ph.data;
+          final phId = d['id'] as String;
+          final ownerId = d['owner_id'] as String;
+          final amountsByPorto = allocsByPhase[phId] ?? const <String, int>{};
+          final migrated = PlanPercentCalc.migrateNominalAmountsToPlanPercents(
+            amountsByPorto,
+          );
+
+          await customStatement(
+            '''
+            INSERT OR REPLACE INTO plans
+              (id, owner_id, name, description, total_amount, is_active, sort_order, created_at, updated_at, sync_status, remote_id, deleted_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''',
+            [
+              phId,
+              ownerId,
+              d['name'],
+              d['description'],
+              migrated.totalAmount,
+              d['is_active'] ?? 0,
+              d['sort_order'] ?? 0,
+              d['created_at'] ?? nowIso,
+              d['updated_at'] ?? nowIso,
+              d['sync_status'] ?? 'local',
+              d['remote_id'],
+              d['deleted_at'],
+            ],
+          );
+
+          for (final entry in migrated.sharePercentX100ById.entries) {
+            final meta = allocMetaByKey['$phId::${entry.key}'];
+            await customStatement(
+              '''
+              INSERT OR REPLACE INTO plan_allocations
+                (id, plan_id, portfolio_id, owner_id, share_percent_x100, created_at, updated_at, sync_status, remote_id, deleted_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              ''',
+              [
+                meta?['id'] ?? uuid.v4(),
+                phId,
+                entry.key,
+                ownerId,
+                entry.value,
+                meta?['created_at'] ?? nowIso,
+                meta?['updated_at'] ?? nowIso,
+                meta?['sync_status'] ?? 'local',
+                meta?['remote_id'],
+                meta?['deleted_at'],
+              ],
+            );
+          }
+        }
+
+        await customStatement('DROP TABLE IF EXISTS phase_allocations');
+        await customStatement('DROP TABLE IF EXISTS phases');
+      }
+    } finally {
+      await customStatement('PRAGMA foreign_keys = ON');
+    }
+  }
 
   Future<void> ensureInitialized({DateTime? now}) async {
     await ensureEmptyInitialState(this, now: now);
@@ -319,10 +691,11 @@ class AppDatabase extends _$AppDatabase {
     }
 
     await transaction(() async {
-      await delete(phaseAllocations).go();
+      await delete(stockTransactions).go();
+      await delete(planAllocations).go();
       await delete(portfolioComponents).go();
       await delete(contributions).go();
-      await delete(phases).go();
+      await delete(plans).go();
       await delete(portfolios).go();
       await delete(priceReferences).go();
       await delete(settings).go();

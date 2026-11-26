@@ -534,7 +534,7 @@ class PlanoraV22Calc {
     'Tahu batas nabung bulanan membuat pembagian tujuan lebih masuk akal.',
     'Pisahkan dana darurat supaya tujuan lain tidak terganggu saat ada kebutuhan mendadak.',
     'Target yang jelas memudahkan kamu mengukur seberapa dekat tujuanmu.',
-    'Prioritas boleh berubah; cukup sesuaikan fase alokasi tanpa rombak semua porto.',
+    'Prioritas boleh berubah; cukup sesuaikan Plan setoran tanpa rombak semua porto.',
     'Catat setiap setoran supaya progres dan estimasi waktu tetap akurat.',
     'Sisihkan tabungan di awal bulan agar tidak terpakai untuk belanja impulsif.',
     'Jaga biaya hidup tetap terkendali supaya ruang nabung lebih lega.',

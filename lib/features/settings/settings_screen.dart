@@ -10,11 +10,13 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:planora/core/calc/planora_calc.dart';
 import 'package:planora/core/format/formatters.dart';
+import 'package:planora/core/notifications/reminder_service.dart';
 import 'package:planora/core/theme/app_theme.dart';
 import 'package:planora/core/theme/planora_colors.dart';
 import 'package:planora/data/db/app_database.dart';
 import 'package:planora/data/repositories/settings_repository.dart';
 import 'package:planora/features/shared/planora_providers.dart';
+import 'package:planora/widgets/planora_logo.dart';
 import 'package:planora/widgets/planora_widgets.dart';
 import 'package:planora/widgets/rupiah_text_field.dart';
 import 'package:share_plus/share_plus.dart';
@@ -27,6 +29,137 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  Future<void> _toggleReminder({
+    required Setting currentSetting,
+    required bool nextValue,
+    bool? monthly,
+    bool? expense,
+    bool? milestone,
+  }) async {
+    final reminderService = ref.read(reminderServiceProvider);
+    if (nextValue) {
+      final alreadyAllowed = await reminderService.areNotificationsEnabled();
+      if (!alreadyAllowed && mounted) {
+        final proceed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            key: const Key('notification_rationale_dialog'),
+            title: const Text('Aktifkan Pengingat Lokal?'),
+            content: const Text(
+              'Pengingat dibuat lokal di HP ini, tidak ada data yang dikirim ke mana pun. Setelah ini sistem akan meminta izin notifikasi.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Batal'),
+              ),
+              FilledButton(
+                key: const Key('notification_rationale_continue'),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Lanjutkan'),
+              ),
+            ],
+          ),
+        );
+        if (proceed != true || !mounted) return;
+        await reminderService.requestPermission();
+        ref.invalidate(notificationPermissionStatusProvider);
+      }
+    }
+
+    await ref.read(settingsRepositoryProvider).updateReminderSettings(
+          reminderMonthlyEnabled: monthly,
+          reminderExpenseEnabled: expense,
+          reminderMilestoneEnabled: milestone,
+        );
+
+    final updated = await ref.read(settingsRepositoryProvider).getSettings();
+    final plans = ref.read(plansWithAllocationsProvider);
+    final activePlan = plans.where((p) => p.plan.isActive).firstOrNull;
+    await reminderService.syncSchedules(
+      setting: updated,
+      activePlanName: activePlan?.plan.name,
+      activePlanTotal: activePlan?.totalMonthly ?? 0,
+    );
+    ref.invalidate(notificationPermissionStatusProvider);
+  }
+
+  Future<void> _pickReminderDay(Setting setting) async {
+    final chosen = await showDialog<int>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Pilih Tanggal Pengingat (1–28)'),
+        children: [
+          SizedBox(
+            width: double.maxFinite,
+            height: 280,
+            child: ListView.builder(
+              itemCount: 28,
+              itemBuilder: (_, idx) {
+                final day = idx + 1;
+                return ListTile(
+                  title: Text('Tanggal $day setiap bulan'),
+                  trailing: day == setting.reminderMonthlyDay
+                      ? const Icon(Icons.check, color: PlanoraColors.primary)
+                      : null,
+                  onTap: () => Navigator.of(ctx).pop(day),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+    if (chosen == null || !mounted) return;
+    await ref
+        .read(settingsRepositoryProvider)
+        .updateReminderSettings(reminderMonthlyDay: chosen);
+    final updated = await ref.read(settingsRepositoryProvider).getSettings();
+    final activePlan = ref
+        .read(plansWithAllocationsProvider)
+        .where((p) => p.plan.isActive)
+        .firstOrNull;
+    await ref.read(reminderServiceProvider).syncSchedules(
+          setting: updated,
+          activePlanName: activePlan?.plan.name,
+          activePlanTotal: activePlan?.totalMonthly ?? 0,
+        );
+  }
+
+  Future<void> _pickReminderTime(Setting setting, {required bool isMonthly}) async {
+    final initial = TimeOfDay(
+      hour: isMonthly ? setting.reminderMonthlyHour : setting.reminderExpenseHour,
+      minute:
+          isMonthly ? setting.reminderMonthlyMinute : setting.reminderExpenseMinute,
+    );
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initial,
+    );
+    if (picked == null || !mounted) return;
+    await ref.read(settingsRepositoryProvider).updateReminderSettings(
+          reminderMonthlyHour: isMonthly ? picked.hour : null,
+          reminderMonthlyMinute: isMonthly ? picked.minute : null,
+          reminderExpenseHour: isMonthly ? null : picked.hour,
+          reminderExpenseMinute: isMonthly ? null : picked.minute,
+        );
+    final updated = await ref.read(settingsRepositoryProvider).getSettings();
+    final activePlan = ref
+        .read(plansWithAllocationsProvider)
+        .where((p) => p.plan.isActive)
+        .firstOrNull;
+    await ref.read(reminderServiceProvider).syncSchedules(
+          setting: updated,
+          activePlanName: activePlan?.plan.name,
+          activePlanTotal: activePlan?.totalMonthly ?? 0,
+        );
+  }
+
+  String _formatTime(int hour, int minute) {
+    final h = hour.toString().padLeft(2, '0');
+    final m = minute.toString().padLeft(2, '0');
+    return '$h.$m';
+  }
   Future<void> _showEditProfileSheet(Setting s) async {
     final formKey = GlobalKey<FormState>();
     final salaryCtrl = TextEditingController(
@@ -176,11 +309,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Future<void> _showPhaseLimitSheet(Setting s) async {
-    var enabled = s.phaseLimitEnabled;
+  Future<void> _showPlanLimitSheet(Setting s) async {
+    var enabled = s.planLimitEnabled;
     final amountCtrl = TextEditingController(
-      text: s.phaseLimitAmount != null
-          ? AppFormatters.number(s.phaseLimitAmount!)
+      text: s.planLimitAmount != null
+          ? AppFormatters.number(s.planLimitAmount!)
           : '',
     );
 
@@ -198,12 +331,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Batas Per Porto dalam Fase',
+                  'Batas Setoran per Porto dalam Plan',
                   style: AppTheme.sora(size: 17, weight: FontWeight.w700),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Opsional. Jika diaktifkan, berlaku untuk seluruh porto tanpa memandang platform atau instrumen saat fase disimpan.',
+                  'Opsional. Jika aktif, berlaku untuk semua porto saat Plan dipakai.',
                   style: AppTheme.manrope(
                     size: 12.5,
                     color: PlanoraColors.inkMuted,
@@ -235,13 +368,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       );
                       return;
                     }
-                    await ref.read(settingsRepositoryProvider).updatePhaseLimit(
+                    await ref.read(settingsRepositoryProvider).updatePlanLimit(
                           enabled: enabled,
                           amount: enabled ? amt : null,
                         );
                     if (ctx.mounted) Navigator.of(ctx).pop();
                   },
-                  child: const Text('Simpan Pengaturan Batas'),
+                  child: const Text('Simpan Batas'),
                 ),
               ],
             ),
@@ -270,7 +403,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Referensi Harga',
+                      'Catatan Harga',
                       style: AppTheme.sora(size: 17, weight: FontWeight.w700),
                     ),
                     TextButton.icon(
@@ -280,12 +413,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  'Harga yang kamu catat sendiri — bukan harga live.',
+                  style: AppTheme.manrope(
+                    size: 12,
+                    color: PlanoraColors.inkMuted,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 if (liveRefs.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     child: Text(
-                      'Belum ada referensi harga tersimpan. Ketuk Tambah untuk membuat referensi buatan Anda sendiri.',
+                      'Belum ada Catatan Harga tersimpan. Ketuk Tambah untuk mencatat harga barang impianmu sendiri.',
                       textAlign: TextAlign.center,
                       style: AppTheme.manrope(
                         size: 12.5,
@@ -440,12 +581,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Ekspor Cadangan (JSON)',
+                'Simpan Cadangan (file JSON)',
                 style: AppTheme.sora(size: 16, weight: FontWeight.w700),
               ),
               const SizedBox(height: 6),
               Text(
-                'Pilih cara menyimpan file cadangan data Planora Anda.',
+                'Satu file berisi semua datamu. Simpan di tempat aman.',
                 style: AppTheme.manrope(
                   size: 12.5,
                   color: mutedColor,
@@ -528,7 +669,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal mengekspor JSON: $e')),
+          SnackBar(content: Text('Gagal menyimpan cadangan: $e')),
         );
       }
     }
@@ -548,9 +689,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Impor Data Cadangan?'),
+          title: const Text('Pulihkan dari Cadangan?'),
           content: const Text(
-            'Impor ini akan menggantikan seluruh data Planora saat ini (profil, porto, komponen, setoran, fase, dan referensi) dengan isi file JSON yang dipilih.',
+            'Tindakan ini mengganti semua data sekarang (profil, porto, setoran, Plan, dan Catatan Harga) dengan isi file cadangan yang dipilih.',
           ),
           actions: [
             TextButton(
@@ -559,7 +700,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             FilledButton(
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Impor Sekarang'),
+              child: const Text('Pulihkan Sekarang'),
             ),
           ],
         ),
@@ -585,9 +726,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final step1 = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Reset ke Keadaan Kosong? (1/2)'),
+        title: const Text('Hapus Semua Data? (1/2)'),
         content: const Text(
-          'Seluruh porto, komponen, catatan setoran, fase, referensi harga, profil lokal, dan foto profil akan dihapus dan dikembalikan ke keadaan kosong total.',
+          'Semua porto, isi porto, setoran, Plan, Catatan Harga, dan profil lokal akan dihapus permanen dan kembali kosong.',
         ),
         actions: [
           TextButton(
@@ -604,26 +745,50 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
     if (step1 != true || !mounted) return;
 
+    final confirmCtrl = TextEditingController();
     final step2 = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Konfirmasi Terakhir (2/2)'),
-        content: const Text(
-          'Tindakan ini tidak dapat dibatalkan dan menghapus seluruh data lokal Anda. Pastikan Anda sudah mengekspor cadangan JSON bila diperlukan.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: PlanoraColors.danger),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Ya, Hapus & Kosongkan'),
-          ),
-        ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final canDelete = confirmCtrl.text.trim().toUpperCase() == 'HAPUS';
+          return AlertDialog(
+            title: const Text('Konfirmasi Terakhir (2/2)'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Tindakan ini tidak bisa dibatalkan. Ketik HAPUS di bawah untuk melanjutkan.',
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: confirmCtrl,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    hintText: 'Ketik HAPUS',
+                  ),
+                  onChanged: (_) => setDialogState(() {}),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Batal'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: PlanoraColors.danger,
+                ),
+                onPressed: canDelete ? () => Navigator.of(ctx).pop(true) : null,
+                child: const Text('Hapus Semua Data'),
+              ),
+            ],
+          );
+        },
       ),
     );
+    confirmCtrl.dispose();
     if (step2 != true) return;
 
     await ref.read(settingsRepositoryProvider).resetToEmpty();
@@ -745,7 +910,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Profil Keuangan',
+                            'Gaji & Biaya Hidup',
                             style: AppTheme.manrope(
                               size: 13.5,
                               weight: FontWeight.w800,
@@ -789,13 +954,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       const Divider(),
                       PlanoraKeyValueRow(
-                        label: 'Return default',
+                        label: 'Perkiraan hasil default',
                         value: returnText,
                         onTap: () => _showEditProfileSheet(setting),
                       ),
                       const Divider(),
                       PlanoraKeyValueRow(
-                        label: 'Batas nabung (otomatis)',
+                        label: 'Batas aman nabung (plafon)',
                         value: ceiling != null
                             ? '${AppFormatters.rupiah(ceiling)}/bln'
                             : 'Belum diatur',
@@ -803,9 +968,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Mengubah gaji atau biaya hidup langsung menghitung ulang batas nabung dan seluruh layar.',
+                        ceiling != null
+                            ? 'Jadi batas aman nabungmu ${AppFormatters.rupiah(ceiling)} per bulan.'
+                            : 'Isi gaji dan biaya hidup minimum untuk menghitung batas aman nabungmu.',
                         style: AppTheme.manrope(
-                          size: 11.5,
+                          size: 12,
                           color: cs.onSurfaceVariant,
                           height: 1.4,
                         ),
@@ -821,7 +988,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Batas Fase',
+                        'Batas Plan',
                         style: AppTheme.manrope(
                           size: 13.5,
                           weight: FontWeight.w800,
@@ -830,16 +997,199 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       const SizedBox(height: 6),
                       PlanoraKeyValueRow(
-                        label: 'Batas per porto per bulan',
-                        value: setting.phaseLimitEnabled &&
-                                setting.phaseLimitAmount != null
-                            ? AppFormatters.rupiah(setting.phaseLimitAmount!)
+                        label: 'Batas setoran per porto',
+                        value: setting.planLimitEnabled &&
+                                setting.planLimitAmount != null
+                            ? AppFormatters.rupiah(setting.planLimitAmount!)
                             : 'Nonaktif',
                         valueColor: cs.primary,
-                        onTap: () => _showPhaseLimitSheet(setting),
+                        onTap: () => _showPlanLimitSheet(setting),
                       ),
                     ],
                   ),
+                ),
+
+                const SizedBox(height: 12),
+
+                Builder(
+                  builder: (context) {
+                    final notifAllowed = ref
+                            .watch(notificationPermissionStatusProvider)
+                            .value ??
+                        false;
+                    final anyEnabled = setting.reminderMonthlyEnabled ||
+                        setting.reminderMilestoneEnabled ||
+                        (ReminderService.expenseModuleEnabled &&
+                            setting.reminderExpenseEnabled);
+                    return PlanoraCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Pengingat Lokal',
+                            style: AppTheme.manrope(
+                              size: 13.5,
+                              weight: FontWeight.w800,
+                              color: cs.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Dibuat lokal di HP ini, tanpa internet dan tanpa mengirim data.',
+                            style: AppTheme.manrope(
+                              size: 12,
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                          if (!notifAllowed && anyEnabled) ...[
+                            const SizedBox(height: 10),
+                            PlanoraNoteBox(
+                              isWarning: true,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'Notifikasi belum aktif — pengingat sementara tampil sebagai kartu di Beranda.',
+                                      key: const Key(
+                                        'notification_disabled_banner',
+                                      ),
+                                      style: AppTheme.manrope(
+                                        size: 12,
+                                        weight: FontWeight.w700,
+                                        color: cs.onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  TextButton(
+                                    key: const Key(
+                                      'open_system_notification_settings',
+                                    ),
+                                    onPressed: () async {
+                                      await ref
+                                          .read(reminderServiceProvider)
+                                          .openSystemSettings();
+                                      ref.invalidate(
+                                        notificationPermissionStatusProvider,
+                                      );
+                                    },
+                                    child: const Text('Buka Pengaturan'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 6),
+                          SwitchListTile(
+                            key: const Key('reminder_monthly_switch'),
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              'Setoran bulanan sesuai Plan aktif',
+                              style: AppTheme.manrope(
+                                size: 13,
+                                weight: FontWeight.w700,
+                                color: cs.onSurface,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Setiap tanggal ${setting.reminderMonthlyDay} pukul ${_formatTime(setting.reminderMonthlyHour, setting.reminderMonthlyMinute)}',
+                              style: AppTheme.manrope(
+                                size: 12,
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                            value: setting.reminderMonthlyEnabled,
+                            onChanged: (v) => _toggleReminder(
+                              currentSetting: setting,
+                              nextValue: v,
+                              monthly: v,
+                            ),
+                          ),
+                          if (setting.reminderMonthlyEnabled) ...[
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: () => _pickReminderDay(setting),
+                                    child: Text(
+                                      'Tanggal ${setting.reminderMonthlyDay}',
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: () => _pickReminderTime(
+                                      setting,
+                                      isMonthly: true,
+                                    ),
+                                    child: Text(
+                                      'Jam ${_formatTime(setting.reminderMonthlyHour, setting.reminderMonthlyMinute)}',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                          ],
+                          if (ReminderService.expenseModuleEnabled) ...[
+                            const Divider(),
+                            SwitchListTile(
+                              key: const Key('reminder_expense_switch'),
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(
+                                'Catat pengeluaran harian',
+                                style: AppTheme.manrope(
+                                  size: 13,
+                                  weight: FontWeight.w700,
+                                  color: cs.onSurface,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'Setiap hari pukul ${_formatTime(setting.reminderExpenseHour, setting.reminderExpenseMinute)}',
+                                style: AppTheme.manrope(
+                                  size: 12,
+                                  color: cs.onSurfaceVariant,
+                                ),
+                              ),
+                              value: setting.reminderExpenseEnabled,
+                              onChanged: (v) => _toggleReminder(
+                                currentSetting: setting,
+                                nextValue: v,
+                                expense: v,
+                              ),
+                            ),
+                          ],
+                          const Divider(),
+                          SwitchListTile(
+                            key: const Key('reminder_milestone_switch'),
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              'Milestone portofolio tercapai',
+                              style: AppTheme.manrope(
+                                size: 13,
+                                weight: FontWeight.w700,
+                                color: cs.onSurface,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Notifikasi saat porto mencapai 25%, 50%, 75%, atau 100%',
+                              style: AppTheme.manrope(
+                                size: 12,
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                            value: setting.reminderMilestoneEnabled,
+                            onChanged: (v) => _toggleReminder(
+                              currentSetting: setting,
+                              nextValue: v,
+                              milestone: v,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 12),
@@ -849,16 +1199,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Referensi Harga',
+                        'Catatan Harga',
                         style: AppTheme.manrope(
                           size: 13.5,
                           weight: FontWeight.w800,
                           color: cs.onSurface,
                         ),
                       ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Harga yang kamu catat sendiri — bukan harga live.',
+                        style: AppTheme.manrope(
+                          size: 12,
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
                       const SizedBox(height: 6),
                       PlanoraKeyValueRow(
-                        label: '${refs.length} referensi tersimpan',
+                        label: '${refs.length} catatan tersimpan',
                         value: 'Kelola',
                         valueColor: cs.primary,
                         onTap: () => _showPriceRefsManager(refs),
@@ -883,30 +1241,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       const SizedBox(height: 6),
                       PlanoraKeyValueRow(
-                        label: 'Ekspor cadangan (JSON)',
-                        value: 'Ekspor',
+                        label: 'Simpan cadangan (file JSON)',
+                        value: 'Simpan',
                         valueColor: cs.primary,
                         onTap: _exportJson,
                       ),
                       const Divider(),
                       PlanoraKeyValueRow(
-                        label: 'Impor cadangan',
-                        value: 'Pilih File',
+                        label: 'Pulihkan dari cadangan',
+                        value: 'Pulihkan',
                         valueColor: cs.primary,
                         onTap: _importJson,
                       ),
                       const Divider(),
                       PlanoraKeyValueRow(
-                        label: 'Reset ke keadaan kosong',
-                        value: 'Reset',
+                        label: 'Hapus semua data',
+                        value: 'Hapus',
                         valueColor: PlanoraColors.danger,
                         onTap: _resetDataDoubleConfirm,
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Reset meminta konfirmasi ganda dan menghapus seluruh porto, setoran, fase, referensi, serta profil lokal.',
+                        'Menghapus semua porto, Plan, setoran, dan profil lokal. Tidak bisa dibatalkan.',
                         style: AppTheme.manrope(
-                          size: 11.5,
+                          size: 12,
                           color: cs.onSurfaceVariant,
                           height: 1.4,
                         ),
@@ -931,7 +1289,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Seluruh data Anda tersimpan lokal di perangkat ini tanpa akun online dan tanpa izin internet. Struktur data sudah disiapkan untuk sinkronisasi cloud opsional pada versi 3.0 mendatang.',
+                        'Semua datamu tersimpan lokal di HP ini tanpa akun online dan tanpa izin internet.',
                         style: AppTheme.manrope(
                           size: 12,
                           color: cs.onSurfaceVariant,
@@ -948,18 +1306,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Tentang',
-                        style: AppTheme.manrope(
-                          size: 13.5,
-                          weight: FontWeight.w800,
-                          color: cs.onSurface,
-                        ),
+                      Row(
+                        children: [
+                          const PlanoraLogo(size: 36),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Tentang Planora',
+                            style: AppTheme.manrope(
+                              size: 13.5,
+                              weight: FontWeight.w800,
+                              color: cs.onSurface,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       const PlanoraKeyValueRow(
                         label: 'Aplikasi',
-                        value: 'Planora 2.1.0',
+                        value: 'Planora 3.1.0',
                       ),
                       const Divider(),
                       PlanoraKeyValueRow(

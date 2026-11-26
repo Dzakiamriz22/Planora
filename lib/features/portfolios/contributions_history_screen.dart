@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planora/core/calc/stock_lot_calc.dart';
 import 'package:planora/core/format/formatters.dart';
 import 'package:planora/core/theme/app_theme.dart';
 import 'package:planora/data/db/app_database.dart';
@@ -257,8 +258,12 @@ class _HistoryRowTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dt = AppFormatters.parseIsoDate(contribution.date);
+    final isStockLinked = contribution.stockTransactionId != null ||
+        contribution.source != StockLotCalc.sourceManual;
+    final isWithdrawal = contribution.amount < 0;
     final subtitleParts = [
       if (portfolio != null) portfolio!.name,
+      if (isStockLinked) 'Transaksi saham',
       if (dt != null) AppFormatters.shortDate(dt),
       if (contribution.note != null && contribution.note!.isNotEmpty)
         contribution.note!,
@@ -273,21 +278,40 @@ class _HistoryRowTile extends StatelessWidget {
             )
           : const Icon(Icons.savings_outlined),
       title: Text(
-        AppFormatters.rupiah(contribution.amount),
-        style: const TextStyle(fontWeight: FontWeight.w700),
+        isWithdrawal
+            ? '− ${AppFormatters.rupiah(contribution.amount.abs())}'
+            : AppFormatters.rupiah(contribution.amount),
+        style: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: isWithdrawal ? AppTheme.danger : null,
+        ),
       ),
       subtitle: Text(subtitleParts.join(' • ')),
-      trailing: PopupMenuButton<String>(
-        tooltip: 'Opsi setoran',
-        onSelected: (action) {
-          if (action == 'edit') onEdit();
-          if (action == 'delete') onDelete();
-        },
-        itemBuilder: (_) => const [
-          PopupMenuItem(value: 'edit', child: Text('Edit')),
-          PopupMenuItem(value: 'delete', child: Text('Hapus')),
-        ],
-      ),
+      trailing: isStockLinked
+          ? IconButton(
+              tooltip: 'Ubah melalui transaksi saham di Detail Porto',
+              icon: const Icon(Icons.lock_outline_rounded, size: 18),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Ubah atau hapus catatan ini melalui komponen Saham langsung di Detail Porto.',
+                    ),
+                  ),
+                );
+              },
+            )
+          : PopupMenuButton<String>(
+              tooltip: 'Opsi setoran',
+              onSelected: (action) {
+                if (action == 'edit') onEdit();
+                if (action == 'delete') onDelete();
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'edit', child: Text('Edit')),
+                PopupMenuItem(value: 'delete', child: Text('Hapus')),
+              ],
+            ),
     );
   }
 }

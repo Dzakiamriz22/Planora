@@ -4,23 +4,22 @@
     android:height="108dp"
     android:viewportWidth="120"
     android:viewportHeight="120">
-    <!-- Zona aman 66% adaptive icon: monogram resmi Planora -->
     <group
         android:scaleX="0.66"
         android:scaleY="0.66"
         android:pivotX="60"
         android:pivotY="60">
         <path
-            android:pathData="M40,90 L40,30 L63,30 A17,17 0 0,1 63,64 L40,64"
+            android:pathData="M30,86 H47 V69 H64 V52 H81"
             android:strokeColor="#F7F3E7"
             android:strokeWidth="10"
             android:strokeLineCap="round"
             android:strokeLineJoin="round" />
         <path
             android:fillColor="#C98A1B"
-            android:pathData="M76,30 A6,6 0 1,1 88,30 A6,6 0 1,1 76,30 Z" />
+            android:pathData="M82,45 A6,6 0 1,1 94,45 A6,6 0 1,1 82,45 Z" />
         <path
-            android:pathData="M40,102 L84,102"
+            android:pathData="M30,100 H90"
             android:strokeColor="#C98A1B"
             android:strokeWidth="6"
             android:strokeLineCap="round" />

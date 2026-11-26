@@ -1,8 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Planora">
   <rect width="120" height="120" rx="27" fill="#0B4A34"/>
-  <path d="M40 90 V30 h23 a17 17 0 0 1 0 34 H40" fill="none"
-        stroke="#F7F3E7" stroke-width="10"
-        stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="82" cy="30" r="6" fill="#C98A1B"/>
-  <path d="M40 102 H84" stroke="#C98A1B" stroke-width="6" stroke-linecap="round"/>
+  <path d="M30 86 H47 V69 H64 V52 H81" fill="none" stroke="#F7F3E7" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="88" cy="45" r="6" fill="#C98A1B"/>
+  <path d="M30 100 H90" stroke="#C98A1B" stroke-width="6" stroke-linecap="round"/>
 </svg>

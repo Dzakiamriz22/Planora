@@ -4,7 +4,7 @@ import 'package:drift/drift.dart' as drift;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planora/data/db/app_database.dart';
-import 'package:planora/data/repositories/phase_repository.dart';
+import 'package:planora/data/repositories/plan_repository.dart';
 import 'package:planora/data/repositories/portfolio_repository.dart';
 import 'package:planora/data/repositories/profile_repository.dart';
 import 'package:planora/data/repositories/settings_repository.dart';
@@ -13,7 +13,7 @@ void main() {
   late AppDatabase db;
   late ProfileRepository profileRepo;
   late PortfolioRepository portfolioRepo;
-  late PhaseRepository phaseRepo;
+  late PlanRepository planRepo;
   late SettingsRepository settingsRepo;
 
   setUp(() async {
@@ -21,7 +21,7 @@ void main() {
     await db.ensureInitialized(now: DateTime(2026, 11, 25));
     profileRepo = ProfileRepository(db);
     portfolioRepo = PortfolioRepository(db);
-    phaseRepo = PhaseRepository(db);
+    planRepo = PlanRepository(db);
     settingsRepo = SettingsRepository(db);
   });
 
@@ -96,13 +96,13 @@ void main() {
       throwsA(isA<ComponentLimitException>()),
     );
 
-    // Total tepat 100% berhasil disimpan
+    // Total tepat 100% berhasil disimpan (semua nominal: RDPU, RD Obligasi, RD Saham)
     await portfolioRepo.replacePortfolioComponents(
       portfolioId: portoId,
       drafts: const [
         ComponentDraft(instrumentType: 'RDPU', targetPercent: 20),
         ComponentDraft(instrumentType: 'RD Obligasi', targetPercent: 70),
-        ComponentDraft(instrumentType: 'Saham langsung', targetPercent: 10),
+        ComponentDraft(instrumentType: 'RD Saham', targetPercent: 10),
       ],
     );
 
@@ -143,7 +143,7 @@ void main() {
         .get();
     expect(afterAuto.firstWhere((c) => c.instrumentType == 'RDPU').actualAmount, 100000);
     expect(afterAuto.firstWhere((c) => c.instrumentType == 'RD Obligasi').actualAmount, 350000);
-    expect(afterAuto.firstWhere((c) => c.instrumentType == 'Saham langsung').actualAmount, 50000);
+    expect(afterAuto.firstWhere((c) => c.instrumentType == 'RD Saham').actualAmount, 50000);
 
     // Hapus setoran auto-split mengembalikan semua actualAmount ke 0
     await portfolioRepo.deleteContribution(autoContribId);
@@ -173,40 +173,32 @@ void main() {
       );
     }
 
-    final phaseId = await phaseRepo.createBalancedPhase();
-    final allocs = await (db.select(db.phaseAllocations)
-          ..where((t) => t.phaseId.equals(phaseId)))
+    final planId = await planRepo.createBalancedPlan();
+    final allocs = await (db.select(db.planAllocations)
+          ..where((t) => t.planId.equals(planId)))
         .get();
     expect(allocs.length, 4);
-    expect(allocs.every((a) => a.monthlyAmount == 875000), isTrue);
+    expect(allocs.every((a) => a.sharePercentX100 == 2500), isTrue);
 
-    // Terapkan fase -> menjadi aktif -> tidak boleh dihapus
-    await phaseRepo.applyPhase(phaseId);
+    // Pakai plan -> menjadi aktif -> tidak boleh dihapus
+    await planRepo.applyPlan(planId);
     expect(
-      () => phaseRepo.deletePhase(phaseId),
-      throwsA(isA<PhaseValidationException>()),
+      () => planRepo.deletePlan(planId),
+      throwsA(isA<PlanValidationException>()),
     );
 
-    // Duplikat fase menyalin semua alokasi
-    final copyId = await phaseRepo.duplicatePhase(phaseId);
-    final copyAllocs = await (db.select(db.phaseAllocations)
-          ..where((t) => t.phaseId.equals(copyId)))
+    // Duplikat plan menyalin semua pembagian persen
+    final copyId = await planRepo.duplicatePlan(planId);
+    final copyAllocs = await (db.select(db.planAllocations)
+          ..where((t) => t.planId.equals(copyId)))
         .get();
     expect(copyAllocs.length, 4);
 
-    // Aktifkan batas per porto Rp 800.000 -> simpan fase dengan 850.000 ditolak
-    await settingsRepo.updatePhaseLimit(enabled: true, amount: 800000);
+    // Aktifkan batas per porto Rp 800.000 -> pakai plan dengan turunan 875.000 ditolak
+    await settingsRepo.updatePlanLimit(enabled: true, amount: 800000);
     expect(
-      () => phaseRepo.savePhase(
-        name: 'Melebihi Batas',
-        allocationsByPortfolioId: {
-          ids[0]: 850000,
-          ids[1]: 500000,
-          ids[2]: 500000,
-          ids[3]: 500000,
-        },
-      ),
-      throwsA(isA<PhaseValidationException>()),
+      () => planRepo.applyPlan(copyId),
+      throwsA(isA<PlanValidationException>()),
     );
   });
 

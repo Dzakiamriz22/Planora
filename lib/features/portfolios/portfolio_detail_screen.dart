@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planora/core/calc/planora_calc.dart';
 import 'package:planora/core/calc/planora_v22_calc.dart';
+import 'package:planora/core/calc/stock_lot_calc.dart';
 import 'package:planora/core/constants/portfolio_palette.dart';
 import 'package:planora/core/format/formatters.dart';
 import 'package:planora/core/theme/app_theme.dart';
@@ -11,7 +12,9 @@ import 'package:planora/core/theme/chart_tokens.dart';
 import 'package:planora/core/theme/planora_colors.dart';
 import 'package:planora/data/db/app_database.dart';
 import 'package:planora/data/repositories/portfolio_repository.dart';
+import 'package:planora/data/repositories/stock_repository.dart';
 import 'package:planora/features/portfolios/contribution_sheet.dart';
+import 'package:planora/features/portfolios/stock_transaction_sheets.dart';
 import 'package:planora/features/shared/planora_providers.dart';
 import 'package:planora/widgets/planora_charts.dart';
 import 'package:planora/widgets/planora_widgets.dart';
@@ -32,6 +35,41 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
   int _tenorMonths = 240;
   double _illustrativeRatePct = 6.75;
   String _donutMode = 'actual'; // 'actual' | 'target'
+  final Set<String> _expandedStockComponentIds = {};
+
+  Future<void> _confirmDeleteStockTransaction(StockTransaction tx) async {
+    final sideLabel = tx.side == StockLotCalc.sideBuy ? 'beli' : 'jual';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Transaksi Saham?'),
+        content: Text(
+          'Transaksi $sideLabel ${tx.ticker} ${tx.lots} lot (${AppFormatters.rupiah(tx.totalAmount)}) akan dihapus. Posisi, harga rata-rata, dan setoran terkait akan dihitung ulang.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: PlanoraColors.danger),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref.read(stockRepositoryProvider).deleteStockTransaction(tx.id);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$e')),
+        );
+      }
+    }
+  }
 
   Future<void> _showComponentActualSheet(
     PortfolioSnapshot snap,
@@ -171,7 +209,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Terapkan Referensi Harga',
+              'Ambil dari Catatan Harga',
               style: AppTheme.sora(size: 17, weight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
@@ -229,7 +267,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
     final approved = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Terapkan "${r.name}"?'),
+        title: Text('Pakai "${r.name}"?'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,7 +313,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Terapkan'),
+            child: const Text('Pakai'),
           ),
         ],
       ),
@@ -344,7 +382,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
               });
               Navigator.of(ctx).pop();
             },
-            child: const Text('Terapkan'),
+            child: const Text('Pakai'),
           ),
         ],
       ),
@@ -1004,34 +1042,89 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                                       i < snap.components.length;
                                       i++) ...[
                                     if (i > 0) const Divider(),
-                                    PlanoraAllocationComparisonRow(
-                                      instrument:
-                                          snap.components[i].instrumentType,
-                                      actualAmount:
-                                          snap.components[i].actualAmount,
-                                      targetAmount:
-                                          PlanoraV22Calc.targetAmountFromPercent(
-                                        targetPercent:
-                                            snap.components[i].targetPercent,
+                                    if (snap.components[i].mechanism ==
+                                        StockLotCalc.mechanismLotBased) ...[
+                                      _StockComponentTile(
+                                        component: snap.components[i],
                                         portfolioTargetTotal:
                                             p.savedTarget ?? 0,
+                                        totalActualPortfolio: totalActualComp,
+                                        highlightNominal:
+                                            summary.componentInputMode ==
+                                                'nominal',
+                                        expanded: _expandedStockComponentIds
+                                            .contains(snap.components[i].id),
+                                        onToggleExpand: () {
+                                          setState(() {
+                                            final cid = snap.components[i].id;
+                                            if (_expandedStockComponentIds
+                                                .contains(cid)) {
+                                              _expandedStockComponentIds
+                                                  .remove(cid);
+                                            } else {
+                                              _expandedStockComponentIds
+                                                  .add(cid);
+                                            }
+                                          });
+                                        },
+                                        onBuyTap: () => showBuyStockSheet(
+                                          context,
+                                          ref: ref,
+                                          componentId: snap.components[i].id,
+                                        ),
+                                        onSellTap: (pos) => showSellStockSheet(
+                                          context,
+                                          ref: ref,
+                                          componentId: snap.components[i].id,
+                                          position: pos,
+                                        ),
+                                        onConvertLegacyTap: () =>
+                                            showBuyStockSheet(
+                                          context,
+                                          ref: ref,
+                                          componentId: snap.components[i].id,
+                                          legacyOpeningLimit: snap
+                                              .components[i]
+                                              .legacyOpeningAmount,
+                                        ),
+                                        onEditTx: (tx) => showBuyStockSheet(
+                                          context,
+                                          ref: ref,
+                                          componentId: snap.components[i].id,
+                                          existing: tx,
+                                        ),
+                                        onDeleteTx:
+                                            _confirmDeleteStockTransaction,
                                       ),
-                                      actualPercent:
-                                          PlanoraV22Calc.actualPercent(
+                                    ] else
+                                      PlanoraAllocationComparisonRow(
+                                        instrument:
+                                            snap.components[i].instrumentType,
                                         actualAmount:
                                             snap.components[i].actualAmount,
-                                        totalActualPortfolio: totalActualComp,
+                                        targetAmount: PlanoraV22Calc
+                                            .targetAmountFromPercent(
+                                          targetPercent:
+                                              snap.components[i].targetPercent,
+                                          portfolioTargetTotal:
+                                              p.savedTarget ?? 0,
+                                        ),
+                                        actualPercent:
+                                            PlanoraV22Calc.actualPercent(
+                                          actualAmount:
+                                              snap.components[i].actualAmount,
+                                          totalActualPortfolio: totalActualComp,
+                                        ),
+                                        targetPercent:
+                                            snap.components[i].targetPercent,
+                                        highlightNominal:
+                                            summary.componentInputMode ==
+                                                'nominal',
+                                        onTap: () => _showComponentActualSheet(
+                                          snap,
+                                          snap.components[i],
+                                        ),
                                       ),
-                                      targetPercent:
-                                          snap.components[i].targetPercent,
-                                      highlightNominal:
-                                          summary.componentInputMode ==
-                                              'nominal',
-                                      onTap: () => _showComponentActualSheet(
-                                        snap,
-                                        snap.components[i],
-                                      ),
-                                    ),
                                   ],
                                   if (snap.unallocatedBalance > 0) ...[
                                     const Divider(),
@@ -1263,7 +1356,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                               InkWell(
                                 onTap: () => _showPriceReferenceSheet(snap),
                                 child: Text(
-                                  'Terapkan referensi harga →',
+                                  'Ambil dari Catatan Harga →',
                                   style: AppTheme.manrope(
                                     size: 12,
                                     weight: FontWeight.w800,
@@ -1283,7 +1376,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                       child: TextButton.icon(
                         onPressed: () => _showPriceReferenceSheet(snap),
                         icon: const Icon(Icons.bookmark_outline, size: 18),
-                        label: const Text('Terapkan Referensi Harga'),
+                        label: const Text('Ambil dari Catatan Harga'),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -1350,15 +1443,50 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                                 for (var i = 0; i < recent.length; i++) ...[
                                   if (i > 0) const Divider(),
                                   InkWell(
-                                    onTap: () => showContributionSheet(
-                                      context,
-                                      ref: ref,
-                                      portfolioId: p.id,
-                                      portfolioName: p.name,
-                                      existing: recent[i],
-                                    ),
-                                    onLongPress: () =>
-                                        _confirmDeleteContribution(recent[i]),
+                                    onTap: () {
+                                      final isStockLinked = recent[i]
+                                                  .stockTransactionId !=
+                                              null ||
+                                          recent[i].source !=
+                                              StockLotCalc.sourceManual;
+                                      if (isStockLinked) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Ubah transaksi saham melalui komponen Saham langsung di atas.',
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      showContributionSheet(
+                                        context,
+                                        ref: ref,
+                                        portfolioId: p.id,
+                                        portfolioName: p.name,
+                                        existing: recent[i],
+                                      );
+                                    },
+                                    onLongPress: () {
+                                      final isStockLinked = recent[i]
+                                                  .stockTransactionId !=
+                                              null ||
+                                          recent[i].source !=
+                                              StockLotCalc.sourceManual;
+                                      if (isStockLinked) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Hapus transaksi saham melalui riwayat komponen Saham langsung di atas.',
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      _confirmDeleteContribution(recent[i]);
+                                    },
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
                                         vertical: 10,
@@ -1367,28 +1495,55 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                                         mainAxisAlignment:
                                             MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text(
-                                            AppFormatters.parseIsoDate(
-                                                      recent[i].date,
-                                                    ) !=
-                                                    null
-                                                ? AppFormatters.shortDate(
-                                                    AppFormatters.parseIsoDate(
-                                                      recent[i].date,
-                                                    )!,
-                                                  )
-                                                : recent[i].date,
-                                            style: AppTheme.manrope(
-                                              size: 13,
-                                              color: cs.onSurfaceVariant,
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  AppFormatters.parseIsoDate(
+                                                            recent[i].date,
+                                                          ) !=
+                                                          null
+                                                      ? AppFormatters.shortDate(
+                                                          AppFormatters
+                                                              .parseIsoDate(
+                                                            recent[i].date,
+                                                          )!,
+                                                        )
+                                                      : recent[i].date,
+                                                  style: AppTheme.manrope(
+                                                    size: 13,
+                                                    color: cs.onSurfaceVariant,
+                                                  ),
+                                                ),
+                                                if (recent[i].note != null &&
+                                                    recent[i].note!.isNotEmpty)
+                                                  Text(
+                                                    recent[i].note!,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: AppTheme.manrope(
+                                                      size: 11,
+                                                      color:
+                                                          cs.onSurfaceVariant,
+                                                    ),
+                                                  ),
+                                              ],
                                             ),
                                           ),
+                                          const SizedBox(width: 8),
                                           Text(
-                                            '+ ${AppFormatters.rupiah(recent[i].amount)}',
+                                            recent[i].amount < 0
+                                                ? '− ${AppFormatters.rupiah(recent[i].amount.abs())}'
+                                                : '+ ${AppFormatters.rupiah(recent[i].amount)}',
                                             style: AppTheme.manrope(
                                               size: 13,
                                               weight: FontWeight.w800,
-                                              color: cs.onSurface,
+                                              color: recent[i].amount < 0
+                                                  ? PlanoraColors.danger
+                                                  : cs.onSurface,
                                               tabular: true,
                                             ),
                                           ),
@@ -1436,6 +1591,531 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _StockComponentTile extends ConsumerWidget {
+  const _StockComponentTile({
+    required this.component,
+    required this.portfolioTargetTotal,
+    required this.totalActualPortfolio,
+    required this.highlightNominal,
+    required this.expanded,
+    required this.onToggleExpand,
+    required this.onBuyTap,
+    required this.onSellTap,
+    required this.onConvertLegacyTap,
+    required this.onEditTx,
+    required this.onDeleteTx,
+  });
+
+  final PortfolioComponent component;
+  final int portfolioTargetTotal;
+  final int totalActualPortfolio;
+  final bool highlightNominal;
+  final bool expanded;
+  final VoidCallback onToggleExpand;
+  final VoidCallback onBuyTap;
+  final ValueChanged<StockPosition> onSellTap;
+  final VoidCallback onConvertLegacyTap;
+  final ValueChanged<StockTransaction> onEditTx;
+  final ValueChanged<StockTransaction> onDeleteTx;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final txs =
+        ref.watch(componentStockTransactionsProvider(component.id)).value ??
+            const <StockTransaction>[];
+    final ledger = ref.watch(componentStockLedgerProvider(component.id));
+
+    final targetAmount = PlanoraV22Calc.targetAmountFromPercent(
+      targetPercent: component.targetPercent,
+      portfolioTargetTotal: portfolioTargetTotal,
+    );
+    final actualPercent = PlanoraV22Calc.actualPercent(
+      actualAmount: component.actualAmount,
+      totalActualPortfolio: totalActualPortfolio,
+    );
+
+    final tickerSlices = <DonutSliceData>[
+      for (var i = 0; i < ledger.activePositions.length; i++)
+        DonutSliceData(
+          label: ledger.activePositions[i].ticker,
+          percent: StockLotCalc.percentWithinStockComponent(
+            tickerModal: ledger.activePositions[i].totalModal,
+            stockComponentActual: component.actualAmount,
+          ),
+          amount: ledger.activePositions[i].totalModal,
+          color: PlanoraChartTokens.stockTickerColor(i, isDark: isDark),
+        ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        PlanoraAllocationComparisonRow(
+          instrument: component.instrumentType,
+          actualAmount: component.actualAmount,
+          targetAmount: targetAmount,
+          actualPercent: actualPercent,
+          targetPercent: component.targetPercent,
+          highlightNominal: highlightNominal,
+          onTap: onToggleExpand,
+        ),
+        InkWell(
+          key: Key('stock_component_toggle_${component.id}'),
+          onTap: onToggleExpand,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: PlanoraChartTokens.chartStock
+                        .withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'Mekanisme Lot',
+                    style: AppTheme.manrope(
+                      size: 10.5,
+                      weight: FontWeight.w800,
+                      color: PlanoraChartTokens.chartStock,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    ledger.activePositions.isEmpty
+                        ? (component.legacyOpeningAmount > 0
+                            ? 'Ada saldo awal belum dirinci'
+                            : '0 lot')
+                        : '${ledger.activePositions.length} kode · ${ledger.totalActiveLots} lot',
+                    style: AppTheme.manrope(
+                      size: 11.5,
+                      color: cs.onSurfaceVariant,
+                      tabular: true,
+                    ),
+                  ),
+                ),
+                Text(
+                  expanded ? 'Tutup' : 'Rincian',
+                  style: AppTheme.manrope(
+                    size: 11.5,
+                    weight: FontWeight.w700,
+                    color: cs.primary,
+                  ),
+                ),
+                Icon(
+                  expanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  size: 18,
+                  color: cs.primary,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (expanded) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: cs.outlineVariant),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (component.legacyOpeningAmount > 0) ...[
+                  Container(
+                    key: const Key('legacy_opening_row'),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? PlanoraColors.gold.withValues(alpha: 0.14)
+                          : PlanoraColors.noteYellowBg,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: PlanoraColors.gold.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Saldo awal (belum dirinci per lot)',
+                                style: AppTheme.manrope(
+                                  size: 12,
+                                  weight: FontWeight.w700,
+                                  color: cs.onSurface,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              AppFormatters.rupiah(
+                                component.legacyOpeningAmount,
+                              ),
+                              style: AppTheme.manrope(
+                                size: 12.5,
+                                weight: FontWeight.w800,
+                                color: cs.onSurface,
+                                tabular: true,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: OutlinedButton.icon(
+                            key: const Key('convert_legacy_button'),
+                            onPressed: onConvertLegacyTap,
+                            icon: const Icon(Icons.splitscreen_outlined,
+                                size: 16),
+                            label: const Text('Rinci menjadi lot'),
+                            style: OutlinedButton.styleFrom(
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                if (ledger.activePositions.isEmpty &&
+                    component.legacyOpeningAmount == 0) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Belum ada saham tercatat',
+                          style: AppTheme.manrope(
+                            size: 13,
+                            weight: FontWeight.w700,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        FilledButton.icon(
+                          key: const Key('buy_stock_empty_button'),
+                          onPressed: onBuyTap,
+                          icon: const Icon(Icons.add, size: 18),
+                          label: const Text('Beli Saham'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  if (ledger.activePositions.isNotEmpty) ...[
+                    Text(
+                      'Komposisi per Kode',
+                      style: AppTheme.manrope(
+                        size: 12,
+                        weight: FontWeight.w800,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    PlanoraAllocationDonutChart(
+                      slices: tickerSlices,
+                      centerLabel: 'Saham',
+                      centerValue: '${ledger.totalActiveLots} lot',
+                      mini: true,
+                      emptyMessage: 'Belum ada posisi aktif',
+                    ),
+                    const SizedBox(height: 10),
+                    const Divider(),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Daftar Posisi Aktif',
+                      style: AppTheme.manrope(
+                        size: 12,
+                        weight: FontWeight.w800,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    for (var idx = 0;
+                        idx < ledger.activePositions.length;
+                        idx++) ...[
+                      if (idx > 0) const Divider(),
+                      _StockPositionCard(
+                        position: ledger.activePositions[idx],
+                        pctInStock: StockLotCalc.percentWithinStockComponent(
+                          tickerModal: ledger.activePositions[idx].totalModal,
+                          stockComponentActual: component.actualAmount,
+                        ),
+                        pctInPortfolio: StockLotCalc.percentOfPortfolio(
+                          tickerModal: ledger.activePositions[idx].totalModal,
+                          portfolioTotalActual: totalActualPortfolio,
+                        ),
+                        accentColor: PlanoraChartTokens.stockTickerColor(
+                          idx,
+                          isDark: isDark,
+                        ),
+                        onSell: () => onSellTap(ledger.activePositions[idx]),
+                      ),
+                    ],
+                    const SizedBox(height: 10),
+                  ],
+                  FilledButton.icon(
+                    key: const Key('buy_stock_button'),
+                    onPressed: onBuyTap,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Beli Saham'),
+                  ),
+                ],
+                if (txs.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  const Divider(),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Riwayat Transaksi',
+                    style: AppTheme.manrope(
+                      size: 12,
+                      weight: FontWeight.w800,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  for (var idx = 0; idx < txs.length; idx++) ...[
+                    if (idx > 0) const Divider(height: 10),
+                    _StockTxRow(
+                      tx: txs[idx],
+                      onEdit: () => onEditTx(txs[idx]),
+                      onDelete: () => onDeleteTx(txs[idx]),
+                    ),
+                  ],
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _StockPositionCard extends StatelessWidget {
+  const _StockPositionCard({
+    required this.position,
+    required this.pctInStock,
+    required this.pctInPortfolio,
+    required this.accentColor,
+    required this.onSell,
+  });
+
+  final StockPosition position;
+  final double pctInStock;
+  final double pctInPortfolio;
+  final Color accentColor;
+  final VoidCallback onSell;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 9,
+                height: 9,
+                decoration: BoxDecoration(
+                  color: accentColor,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      position.ticker,
+                      style: AppTheme.sora(
+                        size: 14,
+                        weight: FontWeight.w800,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    Text(
+                      '${position.totalLots} lot · ${AppFormatters.number(position.totalShares)} lembar',
+                      style: AppTheme.manrope(
+                        size: 11.5,
+                        color: cs.onSurfaceVariant,
+                        tabular: true,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              OutlinedButton(
+                key: Key('sell_stock_button_${position.ticker}'),
+                onPressed: onSell,
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
+                child: const Text('Jual'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Rata-rata ${StockLotCalc.formatAveragePrice(position.averagePrice)}/lbr',
+                  style: AppTheme.manrope(
+                    size: 11.5,
+                    color: cs.onSurfaceVariant,
+                    tabular: true,
+                  ),
+                ),
+              ),
+              Text(
+                AppFormatters.rupiah(position.totalModal),
+                style: AppTheme.manrope(
+                  size: 12.5,
+                  weight: FontWeight.w800,
+                  color: cs.onSurface,
+                  tabular: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${PlanoraV22Calc.formatPercent(pctInStock)} dari Saham · ${PlanoraV22Calc.formatPercent(pctInPortfolio)} dari Porto',
+            style: AppTheme.manrope(
+              size: 11,
+              color: cs.onSurfaceVariant,
+              tabular: true,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StockTxRow extends StatelessWidget {
+  const _StockTxRow({
+    required this.tx,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final StockTransaction tx;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isBuy = tx.side == StockLotCalc.sideBuy;
+    final dt = AppFormatters.parseIsoDate(tx.transactionDate);
+    final dateText =
+        dt != null ? AppFormatters.shortDate(dt) : tx.transactionDate;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    tx.ticker,
+                    style: AppTheme.manrope(
+                      size: 12.5,
+                      weight: FontWeight.w800,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: (isBuy
+                              ? PlanoraChartTokens.chartMoney
+                              : PlanoraColors.danger)
+                          .withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text(
+                      isBuy ? 'Beli' : 'Jual',
+                      style: AppTheme.manrope(
+                        size: 10,
+                        weight: FontWeight.w800,
+                        color: isBuy
+                            ? PlanoraChartTokens.chartMoney
+                            : PlanoraColors.danger,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${tx.lots} lot @ ${AppFormatters.rupiah(tx.pricePerShare)}',
+                    style: AppTheme.manrope(
+                      size: 11.5,
+                      color: cs.onSurfaceVariant,
+                      tabular: true,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '$dateText · ${AppFormatters.rupiah(tx.totalAmount)}',
+                style: AppTheme.manrope(
+                  size: 11,
+                  color: cs.onSurfaceVariant,
+                  tabular: true,
+                ),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuButton<String>(
+          tooltip: 'Opsi transaksi saham',
+          onSelected: (action) {
+            if (action == 'edit') onEdit();
+            if (action == 'delete') onDelete();
+          },
+          itemBuilder: (_) => const [
+            PopupMenuItem(value: 'edit', child: Text('Edit')),
+            PopupMenuItem(value: 'delete', child: Text('Hapus')),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -1524,4 +2204,3 @@ class _TargetModeRadioCard extends StatelessWidget {
     );
   }
 }
-

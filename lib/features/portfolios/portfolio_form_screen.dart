@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planora/core/calc/planora_calc.dart';
 import 'package:planora/core/calc/planora_v22_calc.dart';
+import 'package:planora/core/calc/stock_lot_calc.dart';
 import 'package:planora/core/constants/portfolio_palette.dart';
 import 'package:planora/core/format/formatters.dart';
 import 'package:planora/core/theme/app_theme.dart';
@@ -77,6 +78,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
   void _initFromProviders(
     List<Portfolio> allPortfolios,
     List<PortfolioComponent> allComponents,
+    List<StockTransaction> allStockTxs,
     FinancialSummary summary,
   ) {
     if (!_initialized) {
@@ -117,19 +119,38 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
             .toList();
         if (existing.isNotEmpty) {
           _componentsInitialized = true;
-          _componentRows = existing
-              .map(
-                (c) => EditableComponentRow(
-                  key: c.id,
-                  id: c.id,
-                  instrumentType: c.instrumentType,
-                  targetPercent: PlanoraV22Calc.round2(c.targetPercent),
-                  actualAmount: c.actualAmount,
-                  name: c.name,
-                  codeNote: c.codeNote,
+          _componentRows = existing.map((c) {
+            final compTxs =
+                allStockTxs.where((t) => t.componentId == c.id).toList();
+            final ledger = StockLotCalc.computeLedger(
+              compTxs.map(
+                (t) => StockTxRecord(
+                  id: t.id,
+                  ticker: t.ticker,
+                  side: t.side,
+                  lots: t.lots,
+                  shares: t.shares,
+                  pricePerShare: t.pricePerShare,
+                  totalAmount: t.totalAmount,
+                  transactionDate: t.transactionDate,
+                  createdAt: t.createdAt,
                 ),
-              )
-              .toList();
+              ),
+              validateStrict: false,
+            );
+            return EditableComponentRow(
+              key: c.id,
+              id: c.id,
+              instrumentType: c.instrumentType,
+              targetPercent: PlanoraV22Calc.round2(c.targetPercent),
+              actualAmount: c.actualAmount,
+              mechanism: c.mechanism,
+              totalStockLots: ledger.totalActiveLots,
+              isLocked: compTxs.isNotEmpty || c.legacyOpeningAmount > 0,
+              name: c.name,
+              codeNote: c.codeNote,
+            );
+          }).toList();
         } else if (allPortfolios.any((p) => p.id == widget.portfolioId)) {
           _componentsInitialized = true;
           _componentRows = [
@@ -178,7 +199,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('Hapus Porto?'),
         content: Text(
-          'Porto "${p.name}" beserta ${counts.contributions} catatan setoran dan ${counts.components} komponen instrumen di dalamnya akan dihapus permanen. Alokasinya di semua fase juga ikut terhapus.',
+          'Porto "${p.name}" beserta ${counts.contributions} catatan setoran dan ${counts.components} komponen instrumen di dalamnya akan dihapus permanen. Bagiannya di semua Plan juga ikut terhapus.',
         ),
         actions: [
           TextButton(
@@ -350,8 +371,10 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
     final allPortfolios = ref.watch(portfoliosStreamProvider).value ?? const [];
     final allComponents =
         ref.watch(allComponentsStreamProvider).value ?? const [];
+    final allStockTxs =
+        ref.watch(allStockTransactionsStreamProvider).value ?? const [];
     final summary = ref.watch(financialSummaryProvider);
-    _initFromProviders(allPortfolios, allComponents, summary);
+    _initFromProviders(allPortfolios, allComponents, allStockTxs, summary);
 
     final isEdit = _editingPortfolio != null;
     final cs = Theme.of(context).colorScheme;
@@ -758,7 +781,7 @@ class _PortfolioFormScreenState extends ConsumerState<PortfolioFormScreen> {
                     const SizedBox(height: 8),
                     PlanoraNoteBox(
                       child: Text(
-                        'Porto baru otomatis muncul di semua fase dengan alokasi Rp 0 — atur pembagiannya dari Form Fase. Total target komponen harus tepat 100% agar bisa disimpan.',
+                        'Porto baru otomatis muncul di semua Plan dengan bagian 0% — atur pembagiannya dari Form Plan. Total target komponen harus tepat 100% agar bisa disimpan.',
                         style: AppTheme.manrope(
                           size: 12,
                           color: cs.onSurfaceVariant,

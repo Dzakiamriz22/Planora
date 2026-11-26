@@ -70,10 +70,10 @@ class AppTheme {
 
   static TextStyle uppercaseLabel({Color? color}) {
     return manrope(
-      size: 10.5,
+      size: 12,
       weight: FontWeight.w700,
-      color: color ?? PlanoraColors.inkFaded,
-      letterSpacing: 0.84,
+      color: color ?? PlanoraColors.inkMuted,
+      letterSpacing: 0.72,
     );
   }
 
@@ -189,11 +189,12 @@ class AppTheme {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: PlanoraColors.greenBright,
       brightness: Brightness.dark,
-      primary: const Color(0xFF34D399),
-      onPrimary: const Color(0xFF06281E),
-      secondary: const Color(0xFF6EE7B7),
-      onSecondary: const Color(0xFF06281E),
-      error: const Color(0xFFF87171),
+      primary: PlanoraColors.darkPrimary,
+      onPrimary: PlanoraColors.darkOnPrimary,
+      primaryContainer: PlanoraColors.darkPrimaryContainer,
+      secondary: PlanoraColors.darkPrimary,
+      onSecondary: PlanoraColors.darkOnPrimary,
+      error: PlanoraColors.darkDanger,
       surface: PlanoraColors.darkCard,
       onSurface: PlanoraColors.darkInkPrimary,
       onSurfaceVariant: PlanoraColors.darkInkSecondary,

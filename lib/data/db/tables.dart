@@ -33,9 +33,9 @@ class Settings extends Table {
   IntColumn get currentLivingCost => integer().nullable()();
   RealColumn get defaultAnnualReturnPct =>
       real().withDefault(const Constant(5.0))();
-  BoolColumn get phaseLimitEnabled =>
+  BoolColumn get planLimitEnabled =>
       boolean().withDefault(const Constant(false))();
-  IntColumn get phaseLimitAmount => integer().nullable()();
+  IntColumn get planLimitAmount => integer().nullable()();
   BoolColumn get onboardingDone =>
       boolean().withDefault(const Constant(false))();
   IntColumn get seedVersion => integer().withDefault(const Constant(3))();
@@ -44,6 +44,25 @@ class Settings extends Table {
       text().withDefault(const Constant('percent'))();
 
   TextColumn get quoteCardDismissedMonth => text().nullable()();
+
+  BoolColumn get reminderMonthlyEnabled =>
+      boolean().withDefault(const Constant(false))();
+  IntColumn get reminderMonthlyDay =>
+      integer().withDefault(const Constant(1))();
+  IntColumn get reminderMonthlyHour =>
+      integer().withDefault(const Constant(9))();
+  IntColumn get reminderMonthlyMinute =>
+      integer().withDefault(const Constant(0))();
+
+  BoolColumn get reminderExpenseEnabled =>
+      boolean().withDefault(const Constant(false))();
+  IntColumn get reminderExpenseHour =>
+      integer().withDefault(const Constant(9))();
+  IntColumn get reminderExpenseMinute =>
+      integer().withDefault(const Constant(0))();
+
+  BoolColumn get reminderMilestoneEnabled =>
+      boolean().withDefault(const Constant(false))();
 
   TextColumn get createdAt => text()();
   TextColumn get updatedAt => text()();
@@ -107,6 +126,12 @@ class PortfolioComponents extends Table {
 
   IntColumn get actualAmount => integer().withDefault(const Constant(0))();
 
+  TextColumn get mechanism =>
+      text().withDefault(const Constant('nominal'))();
+
+  IntColumn get legacyOpeningAmount =>
+      integer().withDefault(const Constant(0))();
+
   TextColumn get codeNote => text().nullable()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
 
@@ -133,6 +158,8 @@ class Contributions extends Table {
   TextColumn get note => text().nullable()();
 
   TextColumn get componentId => text().nullable()();
+  TextColumn get stockTransactionId => text().nullable()();
+  TextColumn get source => text().withDefault(const Constant('manual'))();
 
   TextColumn get createdAt => text()();
   TextColumn get updatedAt => text()();
@@ -144,11 +171,12 @@ class Contributions extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
-class Phases extends Table {
+class Plans extends Table {
   TextColumn get id => text()();
   TextColumn get ownerId => text().references(UserProfiles, #id)();
   TextColumn get name => text()();
   TextColumn get description => text().nullable()();
+  IntColumn get totalAmount => integer().withDefault(const Constant(0))();
   BoolColumn get isActive => boolean().withDefault(const Constant(false))();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
 
@@ -162,10 +190,10 @@ class Phases extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
-class PhaseAllocations extends Table {
+class PlanAllocations extends Table {
   TextColumn get id => text()();
-  TextColumn get phaseId => text().references(
-        Phases,
+  TextColumn get planId => text().references(
+        Plans,
         #id,
         onDelete: KeyAction.cascade,
       )();
@@ -175,7 +203,7 @@ class PhaseAllocations extends Table {
         onDelete: KeyAction.cascade,
       )();
   TextColumn get ownerId => text().references(UserProfiles, #id)();
-  IntColumn get monthlyAmount => integer().withDefault(const Constant(0))();
+  IntColumn get sharePercentX100 => integer().withDefault(const Constant(0))();
 
   TextColumn get createdAt => text()();
   TextColumn get updatedAt => text()();
@@ -188,7 +216,7 @@ class PhaseAllocations extends Table {
 
   @override
   List<Set<Column<Object>>> get uniqueKeys => [
-        {phaseId, portfolioId},
+        {planId, portfolioId},
       ];
 }
 
@@ -212,3 +240,35 @@ class PriceReferences extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+class StockTransactions extends Table {
+  TextColumn get id => text()();
+  TextColumn get ownerId => text().references(UserProfiles, #id)();
+  TextColumn get componentId => text().references(
+        PortfolioComponents,
+        #id,
+        onDelete: KeyAction.cascade,
+      )();
+  TextColumn get portfolioId => text().references(
+        Portfolios,
+        #id,
+        onDelete: KeyAction.cascade,
+      )();
+  TextColumn get ticker => text()();
+  TextColumn get side => text()();
+  IntColumn get lots => integer()();
+  IntColumn get shares => integer()();
+  IntColumn get pricePerShare => integer()();
+  IntColumn get totalAmount => integer()();
+  TextColumn get transactionDate => text()();
+  TextColumn get note => text().nullable()();
+
+  TextColumn get createdAt => text()();
+  TextColumn get updatedAt => text()();
+  TextColumn get syncStatus =>
+      text().withDefault(const Constant('local_only'))();
+  TextColumn get remoteId => text().nullable()();
+  TextColumn get deletedAt => text().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}

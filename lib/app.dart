@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:planora/core/theme/app_theme.dart';
 import 'package:planora/features/home/home_screen.dart';
 import 'package:planora/features/onboarding/onboarding_screen.dart';
-import 'package:planora/features/phases/phase_form_screen.dart';
-import 'package:planora/features/phases/phases_screen.dart';
+import 'package:planora/features/plans/plan_form_screen.dart';
+import 'package:planora/features/plans/plans_screen.dart';
 import 'package:planora/features/portfolios/contributions_history_screen.dart';
 import 'package:planora/features/portfolios/portfolio_detail_screen.dart';
 import 'package:planora/features/portfolios/portfolio_form_screen.dart';
@@ -71,8 +71,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/phases',
-                builder: (context, state) => const PhasesScreen(),
+                path: '/plans',
+                builder: (context, state) => const PlansScreen(),
               ),
             ],
           ),
@@ -111,13 +111,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/phases/new',
-        builder: (context, state) => const PhaseFormScreen(),
+        path: '/plans/new',
+        builder: (context, state) => const PlanFormScreen(),
       ),
       GoRoute(
-        path: '/phases/:id/edit',
-        builder: (context, state) => PhaseFormScreen(
-          phaseId: state.pathParameters['id']!,
+        path: '/plans/:id/edit',
+        builder: (context, state) => PlanFormScreen(
+          planId: state.pathParameters['id']!,
         ),
       ),
     ],

@@ -46,7 +46,10 @@ class PlanoraCard extends StatelessWidget {
             : null,
       ),
       child: onTap == null
-          ? Padding(padding: padding, child: child)
+          ? Material(
+              type: MaterialType.transparency,
+              child: Padding(padding: padding, child: child),
+            )
           : Material(
               color: Colors.transparent,
               borderRadius: BorderRadius.circular(18),
@@ -133,12 +136,16 @@ class PlanoraPill extends StatelessWidget {
             Icon(icon, size: 12, color: fg),
             const SizedBox(width: 4),
           ],
-          Text(
-            label,
-            style: AppTheme.manrope(
-              size: 10.5,
-              weight: FontWeight.w700,
-              color: fg,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.manrope(
+                size: 10.5,
+                weight: FontWeight.w700,
+                color: fg,
+              ),
             ),
           ),
         ],
@@ -469,7 +476,7 @@ class PlanoraBottomNavBar extends StatelessWidget {
     const items = [
       (icon: Icons.home_outlined, label: 'Beranda'),
       (icon: Icons.account_balance_wallet_outlined, label: 'Porto'),
-      (icon: Icons.layers_outlined, label: 'Fase'),
+      (icon: Icons.checklist_rounded, label: 'Plan'),
       (icon: Icons.settings_outlined, label: 'Pengaturan'),
     ];
 
@@ -520,11 +527,11 @@ class PlanoraBottomNavBar extends StatelessWidget {
                         Text(
                           items[i].label,
                           style: AppTheme.manrope(
-                            size: 10.5,
+                            size: 12,
                             weight: FontWeight.w700,
                             color: i == currentIndex
                                 ? (isDark
-                                    ? const Color(0xFF34D399)
+                                    ? PlanoraColors.darkPrimary
                                     : PlanoraColors.primary)
                                 : PlanoraColors.navInactive,
                           ),

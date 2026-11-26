@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planora/core/calc/planora_calc.dart';
 import 'package:planora/core/calc/planora_v22_calc.dart';
+import 'package:planora/core/calc/stock_lot_calc.dart';
 import 'package:planora/core/format/formatters.dart';
 import 'package:planora/data/db/app_database.dart';
 import 'package:planora/data/db/database_provider.dart';
@@ -134,13 +135,34 @@ class PortfolioRepository {
     return (contributions: contribs.length, components: comps.length);
   }
 
+  Future<bool> _componentHasLockedStockData(PortfolioComponent comp) async {
+    if (comp.legacyOpeningAmount > 0) return true;
+    final txs = await (_db.select(_db.stockTransactions)
+          ..where((t) => t.componentId.equals(comp.id) & t.deletedAt.isNull())
+          ..limit(1))
+        .get();
+    return txs.isNotEmpty;
+  }
+
   Future<void> _saveComponentsInTx({
     required String portfolioId,
     required String ownerId,
     required List<ComponentDraft> drafts,
     required String nowIso,
   }) async {
+    final existing = await (_db.select(_db.portfolioComponents)
+          ..where((t) => t.portfolioId.equals(portfolioId)))
+        .get();
+    final existingById = {for (final e in existing) e.id: e};
+
     if (drafts.isEmpty) {
+      for (final e in existing) {
+        if (await _componentHasLockedStockData(e)) {
+          throw ComponentLimitException(
+            'Komponen "${e.instrumentType}" sudah memiliki transaksi lot atau saldo awal dan tidak dapat dihapus.',
+          );
+        }
+      }
       await (_db.delete(_db.portfolioComponents)
             ..where((t) => t.portfolioId.equals(portfolioId)))
           .go();
@@ -174,44 +196,95 @@ class PortfolioRepository {
       );
     }
 
-    final existing = await (_db.select(_db.portfolioComponents)
-          ..where((t) => t.portfolioId.equals(portfolioId)))
-        .get();
-    final actualById = {for (final e in existing) e.id: e.actualAmount};
-    final actualByType = {
-      for (final e in existing) e.instrumentType.trim().toLowerCase(): e.actualAmount,
-    };
+    final keptIds = <String>{};
+    for (final d in drafts) {
+      if (d.id != null && existingById.containsKey(d.id!)) {
+        final prev = existingById[d.id!]!;
+        keptIds.add(prev.id);
+        final prevNorm = prev.instrumentType.trim().toLowerCase();
+        final nextNorm = d.instrumentType.trim().toLowerCase();
+        if (prevNorm != nextNorm && await _componentHasLockedStockData(prev)) {
+          throw ComponentLimitException(
+            'Instrumen komponen "${prev.instrumentType}" yang sudah memiliki transaksi lot atau saldo awal tidak dapat diganti. Buat komponen baru jika perlu.',
+          );
+        }
+      }
+    }
 
-    await (_db.delete(_db.portfolioComponents)
-          ..where((t) => t.portfolioId.equals(portfolioId)))
-        .go();
+    for (final prev in existing) {
+      if (!keptIds.contains(prev.id)) {
+        if (await _componentHasLockedStockData(prev)) {
+          throw ComponentLimitException(
+            'Komponen "${prev.instrumentType}" sudah memiliki transaksi lot atau saldo awal dan tidak dapat dihapus.',
+          );
+        }
+        await (_db.delete(_db.portfolioComponents)
+              ..where((t) => t.id.equals(prev.id)))
+            .go();
+      }
+    }
 
     for (var i = 0; i < drafts.length; i++) {
       final d = drafts[i];
-      final id = d.id ?? _uuid.v4();
-      final preservedActual = d.actualAmount ??
-          (d.id != null ? actualById[d.id!] : null) ??
-          actualByType[d.instrumentType.trim().toLowerCase()] ??
-          0;
-      await _db.into(_db.portfolioComponents).insert(
-            PortfolioComponentsCompanion.insert(
-              id: id,
-              portfolioId: portfolioId,
-              ownerId: ownerId,
-              instrumentType: d.instrumentType.trim(),
-              name: Value(
-                d.name?.trim().isEmpty ?? true ? null : d.name!.trim(),
-              ),
-              targetPercent: Value(roundedPercents[i]),
-              actualAmount: Value(preservedActual),
-              codeNote: Value(
-                d.codeNote?.trim().isEmpty ?? true ? null : d.codeNote!.trim(),
-              ),
-              sortOrder: Value(i),
-              createdAt: nowIso,
-              updatedAt: nowIso,
+      final trimmedInstrument = d.instrumentType.trim();
+      final existingComp = d.id != null ? existingById[d.id!] : null;
+
+      if (existingComp != null) {
+        final isLot = existingComp.mechanism == StockLotCalc.mechanismLotBased;
+        final nextMechanism = existingComp.instrumentType.trim().toLowerCase() ==
+                trimmedInstrument.toLowerCase()
+            ? existingComp.mechanism
+            : StockLotCalc.defaultMechanismForInstrument(trimmedInstrument);
+        final nextActual = isLot
+            ? existingComp.actualAmount
+            : (d.actualAmount ?? existingComp.actualAmount);
+        await (_db.update(_db.portfolioComponents)
+              ..where((t) => t.id.equals(existingComp.id)))
+            .write(
+          PortfolioComponentsCompanion(
+            instrumentType: Value(trimmedInstrument),
+            name: Value(
+              d.name?.trim().isEmpty ?? true ? null : d.name!.trim(),
             ),
-          );
+            targetPercent: Value(roundedPercents[i]),
+            actualAmount: Value(nextActual),
+            mechanism: Value(nextMechanism),
+            codeNote: Value(
+              d.codeNote?.trim().isEmpty ?? true ? null : d.codeNote!.trim(),
+            ),
+            sortOrder: Value(i),
+            updatedAt: Value(nowIso),
+          ),
+        );
+      } else {
+        final id = d.id ?? _uuid.v4();
+        final mechanism =
+            StockLotCalc.defaultMechanismForInstrument(trimmedInstrument);
+        final initialActual = mechanism == StockLotCalc.mechanismLotBased
+            ? 0
+            : (d.actualAmount ?? 0);
+        await _db.into(_db.portfolioComponents).insert(
+              PortfolioComponentsCompanion.insert(
+                id: id,
+                portfolioId: portfolioId,
+                ownerId: ownerId,
+                instrumentType: trimmedInstrument,
+                name: Value(
+                  d.name?.trim().isEmpty ?? true ? null : d.name!.trim(),
+                ),
+                targetPercent: Value(roundedPercents[i]),
+                actualAmount: Value(initialActual),
+                mechanism: Value(mechanism),
+                legacyOpeningAmount: const Value(0),
+                codeNote: Value(
+                  d.codeNote?.trim().isEmpty ?? true ? null : d.codeNote!.trim(),
+                ),
+                sortOrder: Value(i),
+                createdAt: nowIso,
+                updatedAt: nowIso,
+              ),
+            );
+      }
     }
   }
 
@@ -304,15 +377,15 @@ class PortfolioRepository {
             ),
           );
 
-      final phases = await _db.select(_db.phases).get();
-      for (final phase in phases) {
-        await _db.into(_db.phaseAllocations).insert(
-              PhaseAllocationsCompanion.insert(
+      final plans = await _db.select(_db.plans).get();
+      for (final plan in plans) {
+        await _db.into(_db.planAllocations).insert(
+              PlanAllocationsCompanion.insert(
                 id: _uuid.v4(),
-                phaseId: phase.id,
+                planId: plan.id,
                 portfolioId: id,
                 ownerId: ownerId,
-                monthlyAmount: const Value(0),
+                sharePercentX100: const Value(0),
                 createdAt: nowIso,
                 updatedAt: nowIso,
               ),
@@ -472,6 +545,14 @@ class PortfolioRepository {
     if (actualAmount < 0) {
       throw ComponentLimitException('Saldo aktual komponen tidak boleh negatif.');
     }
+    final comp = await (_db.select(_db.portfolioComponents)
+          ..where((t) => t.id.equals(componentId)))
+        .getSingleOrNull();
+    if (comp != null && comp.mechanism == StockLotCalc.mechanismLotBased) {
+      throw ComponentLimitException(
+        'Saldo aktual komponen Saham langsung dihitung otomatis dari transaksi lot.',
+      );
+    }
     final nowIso = DateTime.now().toUtc().toIso8601String();
     await (_db.update(_db.portfolioComponents)
           ..where((t) => t.id.equals(componentId)))
@@ -484,6 +565,14 @@ class PortfolioRepository {
   }
 
   Future<void> deleteComponent(String componentId) async {
+    final comp = await (_db.select(_db.portfolioComponents)
+          ..where((t) => t.id.equals(componentId)))
+        .getSingleOrNull();
+    if (comp != null && await _componentHasLockedStockData(comp)) {
+      throw ComponentLimitException(
+        'Komponen "${comp.instrumentType}" sudah memiliki transaksi lot atau saldo awal dan tidak dapat dihapus.',
+      );
+    }
     await (_db.delete(_db.portfolioComponents)
           ..where((t) => t.id.equals(componentId)))
         .go();
@@ -498,9 +587,12 @@ class PortfolioRepository {
     if (componentId == null || deltaAmount == 0) return;
 
     if (componentId == autoSplitComponentId) {
-      final comps = await (_db.select(_db.portfolioComponents)
+      final allComps = await (_db.select(_db.portfolioComponents)
             ..where((t) => t.portfolioId.equals(portfolioId)))
           .get();
+      final comps = allComps
+          .where((c) => c.mechanism != StockLotCalc.mechanismLotBased)
+          .toList();
       if (comps.isEmpty) return;
 
       final splits = PlanoraV22Calc.splitDepositByTargetPercent(
@@ -528,6 +620,11 @@ class PortfolioRepository {
           ..where((t) => t.id.equals(componentId)))
         .getSingleOrNull();
     if (comp != null) {
+      if (comp.mechanism == StockLotCalc.mechanismLotBased) {
+        throw ComponentLimitException(
+          'Setoran nominal tidak dapat masuk ke komponen Saham langsung. Catat melalui tombol Beli Saham.',
+        );
+      }
       await (_db.update(_db.portfolioComponents)
             ..where((t) => t.id.equals(componentId)))
           .write(
@@ -596,6 +693,13 @@ class PortfolioRepository {
             ..where((t) => t.id.equals(id)))
           .getSingle();
 
+      if (existing.stockTransactionId != null ||
+          existing.source != StockLotCalc.sourceManual) {
+        throw ComponentLimitException(
+          'Setoran ini terhubung dengan transaksi saham. Ubah melalui riwayat transaksi saham di Detail Porto.',
+        );
+      }
+
       final oldCompId = existing.componentId;
       final nextCompId = updateComponentId ? componentId : (componentId ?? oldCompId);
 
@@ -641,6 +745,13 @@ class PortfolioRepository {
             ..where((t) => t.id.equals(id)))
           .getSingleOrNull();
       if (existing == null) return;
+
+      if (existing.stockTransactionId != null ||
+          existing.source != StockLotCalc.sourceManual) {
+        throw ComponentLimitException(
+          'Setoran ini terhubung dengan transaksi saham. Hapus melalui riwayat transaksi saham di Detail Porto.',
+        );
+      }
 
       await _applyComponentAllocationDelta(
         portfolioId: existing.portfolioId,

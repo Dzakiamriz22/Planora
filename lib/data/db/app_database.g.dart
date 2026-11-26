@@ -418,8 +418,6 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
   final String? phoneLocal;
   final String? birthDate;
   final String? avatarPath;
-
-  /// `ikut_sistem` | `terang` | `gelap`
   final String themePref;
   final String currency;
   final String locale;
@@ -998,27 +996,27 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
         requiredDuringInsert: false,
         defaultValue: const Constant(5.0),
       );
-  static const VerificationMeta _phaseLimitEnabledMeta = const VerificationMeta(
-    'phaseLimitEnabled',
+  static const VerificationMeta _planLimitEnabledMeta = const VerificationMeta(
+    'planLimitEnabled',
   );
   @override
-  late final GeneratedColumn<bool> phaseLimitEnabled = GeneratedColumn<bool>(
-    'phase_limit_enabled',
+  late final GeneratedColumn<bool> planLimitEnabled = GeneratedColumn<bool>(
+    'plan_limit_enabled',
     aliasedName,
     false,
     type: DriftSqlType.bool,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("phase_limit_enabled" IN (0, 1))',
+      'CHECK ("plan_limit_enabled" IN (0, 1))',
     ),
     defaultValue: const Constant(false),
   );
-  static const VerificationMeta _phaseLimitAmountMeta = const VerificationMeta(
-    'phaseLimitAmount',
+  static const VerificationMeta _planLimitAmountMeta = const VerificationMeta(
+    'planLimitAmount',
   );
   @override
-  late final GeneratedColumn<int> phaseLimitAmount = GeneratedColumn<int>(
-    'phase_limit_amount',
+  late final GeneratedColumn<int> planLimitAmount = GeneratedColumn<int>(
+    'plan_limit_amount',
     aliasedName,
     true,
     type: DriftSqlType.int,
@@ -1073,6 +1071,106 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
         true,
         type: DriftSqlType.string,
         requiredDuringInsert: false,
+      );
+  static const VerificationMeta _reminderMonthlyEnabledMeta =
+      const VerificationMeta('reminderMonthlyEnabled');
+  @override
+  late final GeneratedColumn<bool> reminderMonthlyEnabled =
+      GeneratedColumn<bool>(
+        'reminder_monthly_enabled',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("reminder_monthly_enabled" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _reminderMonthlyDayMeta =
+      const VerificationMeta('reminderMonthlyDay');
+  @override
+  late final GeneratedColumn<int> reminderMonthlyDay = GeneratedColumn<int>(
+    'reminder_monthly_day',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _reminderMonthlyHourMeta =
+      const VerificationMeta('reminderMonthlyHour');
+  @override
+  late final GeneratedColumn<int> reminderMonthlyHour = GeneratedColumn<int>(
+    'reminder_monthly_hour',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(9),
+  );
+  static const VerificationMeta _reminderMonthlyMinuteMeta =
+      const VerificationMeta('reminderMonthlyMinute');
+  @override
+  late final GeneratedColumn<int> reminderMonthlyMinute = GeneratedColumn<int>(
+    'reminder_monthly_minute',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _reminderExpenseEnabledMeta =
+      const VerificationMeta('reminderExpenseEnabled');
+  @override
+  late final GeneratedColumn<bool> reminderExpenseEnabled =
+      GeneratedColumn<bool>(
+        'reminder_expense_enabled',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("reminder_expense_enabled" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _reminderExpenseHourMeta =
+      const VerificationMeta('reminderExpenseHour');
+  @override
+  late final GeneratedColumn<int> reminderExpenseHour = GeneratedColumn<int>(
+    'reminder_expense_hour',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(9),
+  );
+  static const VerificationMeta _reminderExpenseMinuteMeta =
+      const VerificationMeta('reminderExpenseMinute');
+  @override
+  late final GeneratedColumn<int> reminderExpenseMinute = GeneratedColumn<int>(
+    'reminder_expense_minute',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _reminderMilestoneEnabledMeta =
+      const VerificationMeta('reminderMilestoneEnabled');
+  @override
+  late final GeneratedColumn<bool> reminderMilestoneEnabled =
+      GeneratedColumn<bool>(
+        'reminder_milestone_enabled',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("reminder_milestone_enabled" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
       );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
@@ -1138,12 +1236,20 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
     minimumLivingCost,
     currentLivingCost,
     defaultAnnualReturnPct,
-    phaseLimitEnabled,
-    phaseLimitAmount,
+    planLimitEnabled,
+    planLimitAmount,
     onboardingDone,
     seedVersion,
     componentInputMode,
     quoteCardDismissedMonth,
+    reminderMonthlyEnabled,
+    reminderMonthlyDay,
+    reminderMonthlyHour,
+    reminderMonthlyMinute,
+    reminderExpenseEnabled,
+    reminderExpenseHour,
+    reminderExpenseMinute,
+    reminderMilestoneEnabled,
     createdAt,
     updatedAt,
     syncStatus,
@@ -1211,21 +1317,21 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
         ),
       );
     }
-    if (data.containsKey('phase_limit_enabled')) {
+    if (data.containsKey('plan_limit_enabled')) {
       context.handle(
-        _phaseLimitEnabledMeta,
-        phaseLimitEnabled.isAcceptableOrUnknown(
-          data['phase_limit_enabled']!,
-          _phaseLimitEnabledMeta,
+        _planLimitEnabledMeta,
+        planLimitEnabled.isAcceptableOrUnknown(
+          data['plan_limit_enabled']!,
+          _planLimitEnabledMeta,
         ),
       );
     }
-    if (data.containsKey('phase_limit_amount')) {
+    if (data.containsKey('plan_limit_amount')) {
       context.handle(
-        _phaseLimitAmountMeta,
-        phaseLimitAmount.isAcceptableOrUnknown(
-          data['phase_limit_amount']!,
-          _phaseLimitAmountMeta,
+        _planLimitAmountMeta,
+        planLimitAmount.isAcceptableOrUnknown(
+          data['plan_limit_amount']!,
+          _planLimitAmountMeta,
         ),
       );
     }
@@ -1262,6 +1368,78 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
         quoteCardDismissedMonth.isAcceptableOrUnknown(
           data['quote_card_dismissed_month']!,
           _quoteCardDismissedMonthMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reminder_monthly_enabled')) {
+      context.handle(
+        _reminderMonthlyEnabledMeta,
+        reminderMonthlyEnabled.isAcceptableOrUnknown(
+          data['reminder_monthly_enabled']!,
+          _reminderMonthlyEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reminder_monthly_day')) {
+      context.handle(
+        _reminderMonthlyDayMeta,
+        reminderMonthlyDay.isAcceptableOrUnknown(
+          data['reminder_monthly_day']!,
+          _reminderMonthlyDayMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reminder_monthly_hour')) {
+      context.handle(
+        _reminderMonthlyHourMeta,
+        reminderMonthlyHour.isAcceptableOrUnknown(
+          data['reminder_monthly_hour']!,
+          _reminderMonthlyHourMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reminder_monthly_minute')) {
+      context.handle(
+        _reminderMonthlyMinuteMeta,
+        reminderMonthlyMinute.isAcceptableOrUnknown(
+          data['reminder_monthly_minute']!,
+          _reminderMonthlyMinuteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reminder_expense_enabled')) {
+      context.handle(
+        _reminderExpenseEnabledMeta,
+        reminderExpenseEnabled.isAcceptableOrUnknown(
+          data['reminder_expense_enabled']!,
+          _reminderExpenseEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reminder_expense_hour')) {
+      context.handle(
+        _reminderExpenseHourMeta,
+        reminderExpenseHour.isAcceptableOrUnknown(
+          data['reminder_expense_hour']!,
+          _reminderExpenseHourMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reminder_expense_minute')) {
+      context.handle(
+        _reminderExpenseMinuteMeta,
+        reminderExpenseMinute.isAcceptableOrUnknown(
+          data['reminder_expense_minute']!,
+          _reminderExpenseMinuteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reminder_milestone_enabled')) {
+      context.handle(
+        _reminderMilestoneEnabledMeta,
+        reminderMilestoneEnabled.isAcceptableOrUnknown(
+          data['reminder_milestone_enabled']!,
+          _reminderMilestoneEnabledMeta,
         ),
       );
     }
@@ -1332,13 +1510,13 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
         DriftSqlType.double,
         data['${effectivePrefix}default_annual_return_pct'],
       )!,
-      phaseLimitEnabled: attachedDatabase.typeMapping.read(
+      planLimitEnabled: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
-        data['${effectivePrefix}phase_limit_enabled'],
+        data['${effectivePrefix}plan_limit_enabled'],
       )!,
-      phaseLimitAmount: attachedDatabase.typeMapping.read(
+      planLimitAmount: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
-        data['${effectivePrefix}phase_limit_amount'],
+        data['${effectivePrefix}plan_limit_amount'],
       ),
       onboardingDone: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
@@ -1356,6 +1534,38 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
         DriftSqlType.string,
         data['${effectivePrefix}quote_card_dismissed_month'],
       ),
+      reminderMonthlyEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}reminder_monthly_enabled'],
+      )!,
+      reminderMonthlyDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reminder_monthly_day'],
+      )!,
+      reminderMonthlyHour: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reminder_monthly_hour'],
+      )!,
+      reminderMonthlyMinute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reminder_monthly_minute'],
+      )!,
+      reminderExpenseEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}reminder_expense_enabled'],
+      )!,
+      reminderExpenseHour: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reminder_expense_hour'],
+      )!,
+      reminderExpenseMinute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reminder_expense_minute'],
+      )!,
+      reminderMilestoneEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}reminder_milestone_enabled'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}created_at'],
@@ -1392,16 +1602,20 @@ class Setting extends DataClass implements Insertable<Setting> {
   final int? minimumLivingCost;
   final int? currentLivingCost;
   final double defaultAnnualReturnPct;
-  final bool phaseLimitEnabled;
-  final int? phaseLimitAmount;
+  final bool planLimitEnabled;
+  final int? planLimitAmount;
   final bool onboardingDone;
   final int seedVersion;
-
-  /// v2.2: Preferensi mode input komponen ('percent' bawaan | 'nominal')
   final String componentInputMode;
-
-  /// v2.2: Bulan 'YYYY-MM' saat kartu quote ditutup (muncul lagi saat bulan berganti)
   final String? quoteCardDismissedMonth;
+  final bool reminderMonthlyEnabled;
+  final int reminderMonthlyDay;
+  final int reminderMonthlyHour;
+  final int reminderMonthlyMinute;
+  final bool reminderExpenseEnabled;
+  final int reminderExpenseHour;
+  final int reminderExpenseMinute;
+  final bool reminderMilestoneEnabled;
   final String createdAt;
   final String updatedAt;
   final String syncStatus;
@@ -1414,12 +1628,20 @@ class Setting extends DataClass implements Insertable<Setting> {
     this.minimumLivingCost,
     this.currentLivingCost,
     required this.defaultAnnualReturnPct,
-    required this.phaseLimitEnabled,
-    this.phaseLimitAmount,
+    required this.planLimitEnabled,
+    this.planLimitAmount,
     required this.onboardingDone,
     required this.seedVersion,
     required this.componentInputMode,
     this.quoteCardDismissedMonth,
+    required this.reminderMonthlyEnabled,
+    required this.reminderMonthlyDay,
+    required this.reminderMonthlyHour,
+    required this.reminderMonthlyMinute,
+    required this.reminderExpenseEnabled,
+    required this.reminderExpenseHour,
+    required this.reminderExpenseMinute,
+    required this.reminderMilestoneEnabled,
     required this.createdAt,
     required this.updatedAt,
     required this.syncStatus,
@@ -1441,9 +1663,9 @@ class Setting extends DataClass implements Insertable<Setting> {
       map['current_living_cost'] = Variable<int>(currentLivingCost);
     }
     map['default_annual_return_pct'] = Variable<double>(defaultAnnualReturnPct);
-    map['phase_limit_enabled'] = Variable<bool>(phaseLimitEnabled);
-    if (!nullToAbsent || phaseLimitAmount != null) {
-      map['phase_limit_amount'] = Variable<int>(phaseLimitAmount);
+    map['plan_limit_enabled'] = Variable<bool>(planLimitEnabled);
+    if (!nullToAbsent || planLimitAmount != null) {
+      map['plan_limit_amount'] = Variable<int>(planLimitAmount);
     }
     map['onboarding_done'] = Variable<bool>(onboardingDone);
     map['seed_version'] = Variable<int>(seedVersion);
@@ -1453,6 +1675,16 @@ class Setting extends DataClass implements Insertable<Setting> {
         quoteCardDismissedMonth,
       );
     }
+    map['reminder_monthly_enabled'] = Variable<bool>(reminderMonthlyEnabled);
+    map['reminder_monthly_day'] = Variable<int>(reminderMonthlyDay);
+    map['reminder_monthly_hour'] = Variable<int>(reminderMonthlyHour);
+    map['reminder_monthly_minute'] = Variable<int>(reminderMonthlyMinute);
+    map['reminder_expense_enabled'] = Variable<bool>(reminderExpenseEnabled);
+    map['reminder_expense_hour'] = Variable<int>(reminderExpenseHour);
+    map['reminder_expense_minute'] = Variable<int>(reminderExpenseMinute);
+    map['reminder_milestone_enabled'] = Variable<bool>(
+      reminderMilestoneEnabled,
+    );
     map['created_at'] = Variable<String>(createdAt);
     map['updated_at'] = Variable<String>(updatedAt);
     map['sync_status'] = Variable<String>(syncStatus);
@@ -1479,16 +1711,24 @@ class Setting extends DataClass implements Insertable<Setting> {
           ? const Value.absent()
           : Value(currentLivingCost),
       defaultAnnualReturnPct: Value(defaultAnnualReturnPct),
-      phaseLimitEnabled: Value(phaseLimitEnabled),
-      phaseLimitAmount: phaseLimitAmount == null && nullToAbsent
+      planLimitEnabled: Value(planLimitEnabled),
+      planLimitAmount: planLimitAmount == null && nullToAbsent
           ? const Value.absent()
-          : Value(phaseLimitAmount),
+          : Value(planLimitAmount),
       onboardingDone: Value(onboardingDone),
       seedVersion: Value(seedVersion),
       componentInputMode: Value(componentInputMode),
       quoteCardDismissedMonth: quoteCardDismissedMonth == null && nullToAbsent
           ? const Value.absent()
           : Value(quoteCardDismissedMonth),
+      reminderMonthlyEnabled: Value(reminderMonthlyEnabled),
+      reminderMonthlyDay: Value(reminderMonthlyDay),
+      reminderMonthlyHour: Value(reminderMonthlyHour),
+      reminderMonthlyMinute: Value(reminderMonthlyMinute),
+      reminderExpenseEnabled: Value(reminderExpenseEnabled),
+      reminderExpenseHour: Value(reminderExpenseHour),
+      reminderExpenseMinute: Value(reminderExpenseMinute),
+      reminderMilestoneEnabled: Value(reminderMilestoneEnabled),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       syncStatus: Value(syncStatus),
@@ -1515,8 +1755,8 @@ class Setting extends DataClass implements Insertable<Setting> {
       defaultAnnualReturnPct: serializer.fromJson<double>(
         json['defaultAnnualReturnPct'],
       ),
-      phaseLimitEnabled: serializer.fromJson<bool>(json['phaseLimitEnabled']),
-      phaseLimitAmount: serializer.fromJson<int?>(json['phaseLimitAmount']),
+      planLimitEnabled: serializer.fromJson<bool>(json['planLimitEnabled']),
+      planLimitAmount: serializer.fromJson<int?>(json['planLimitAmount']),
       onboardingDone: serializer.fromJson<bool>(json['onboardingDone']),
       seedVersion: serializer.fromJson<int>(json['seedVersion']),
       componentInputMode: serializer.fromJson<String>(
@@ -1524,6 +1764,28 @@ class Setting extends DataClass implements Insertable<Setting> {
       ),
       quoteCardDismissedMonth: serializer.fromJson<String?>(
         json['quoteCardDismissedMonth'],
+      ),
+      reminderMonthlyEnabled: serializer.fromJson<bool>(
+        json['reminderMonthlyEnabled'],
+      ),
+      reminderMonthlyDay: serializer.fromJson<int>(json['reminderMonthlyDay']),
+      reminderMonthlyHour: serializer.fromJson<int>(
+        json['reminderMonthlyHour'],
+      ),
+      reminderMonthlyMinute: serializer.fromJson<int>(
+        json['reminderMonthlyMinute'],
+      ),
+      reminderExpenseEnabled: serializer.fromJson<bool>(
+        json['reminderExpenseEnabled'],
+      ),
+      reminderExpenseHour: serializer.fromJson<int>(
+        json['reminderExpenseHour'],
+      ),
+      reminderExpenseMinute: serializer.fromJson<int>(
+        json['reminderExpenseMinute'],
+      ),
+      reminderMilestoneEnabled: serializer.fromJson<bool>(
+        json['reminderMilestoneEnabled'],
       ),
       createdAt: serializer.fromJson<String>(json['createdAt']),
       updatedAt: serializer.fromJson<String>(json['updatedAt']),
@@ -1544,13 +1806,23 @@ class Setting extends DataClass implements Insertable<Setting> {
       'defaultAnnualReturnPct': serializer.toJson<double>(
         defaultAnnualReturnPct,
       ),
-      'phaseLimitEnabled': serializer.toJson<bool>(phaseLimitEnabled),
-      'phaseLimitAmount': serializer.toJson<int?>(phaseLimitAmount),
+      'planLimitEnabled': serializer.toJson<bool>(planLimitEnabled),
+      'planLimitAmount': serializer.toJson<int?>(planLimitAmount),
       'onboardingDone': serializer.toJson<bool>(onboardingDone),
       'seedVersion': serializer.toJson<int>(seedVersion),
       'componentInputMode': serializer.toJson<String>(componentInputMode),
       'quoteCardDismissedMonth': serializer.toJson<String?>(
         quoteCardDismissedMonth,
+      ),
+      'reminderMonthlyEnabled': serializer.toJson<bool>(reminderMonthlyEnabled),
+      'reminderMonthlyDay': serializer.toJson<int>(reminderMonthlyDay),
+      'reminderMonthlyHour': serializer.toJson<int>(reminderMonthlyHour),
+      'reminderMonthlyMinute': serializer.toJson<int>(reminderMonthlyMinute),
+      'reminderExpenseEnabled': serializer.toJson<bool>(reminderExpenseEnabled),
+      'reminderExpenseHour': serializer.toJson<int>(reminderExpenseHour),
+      'reminderExpenseMinute': serializer.toJson<int>(reminderExpenseMinute),
+      'reminderMilestoneEnabled': serializer.toJson<bool>(
+        reminderMilestoneEnabled,
       ),
       'createdAt': serializer.toJson<String>(createdAt),
       'updatedAt': serializer.toJson<String>(updatedAt),
@@ -1567,12 +1839,20 @@ class Setting extends DataClass implements Insertable<Setting> {
     Value<int?> minimumLivingCost = const Value.absent(),
     Value<int?> currentLivingCost = const Value.absent(),
     double? defaultAnnualReturnPct,
-    bool? phaseLimitEnabled,
-    Value<int?> phaseLimitAmount = const Value.absent(),
+    bool? planLimitEnabled,
+    Value<int?> planLimitAmount = const Value.absent(),
     bool? onboardingDone,
     int? seedVersion,
     String? componentInputMode,
     Value<String?> quoteCardDismissedMonth = const Value.absent(),
+    bool? reminderMonthlyEnabled,
+    int? reminderMonthlyDay,
+    int? reminderMonthlyHour,
+    int? reminderMonthlyMinute,
+    bool? reminderExpenseEnabled,
+    int? reminderExpenseHour,
+    int? reminderExpenseMinute,
+    bool? reminderMilestoneEnabled,
     String? createdAt,
     String? updatedAt,
     String? syncStatus,
@@ -1592,16 +1872,27 @@ class Setting extends DataClass implements Insertable<Setting> {
         : this.currentLivingCost,
     defaultAnnualReturnPct:
         defaultAnnualReturnPct ?? this.defaultAnnualReturnPct,
-    phaseLimitEnabled: phaseLimitEnabled ?? this.phaseLimitEnabled,
-    phaseLimitAmount: phaseLimitAmount.present
-        ? phaseLimitAmount.value
-        : this.phaseLimitAmount,
+    planLimitEnabled: planLimitEnabled ?? this.planLimitEnabled,
+    planLimitAmount: planLimitAmount.present
+        ? planLimitAmount.value
+        : this.planLimitAmount,
     onboardingDone: onboardingDone ?? this.onboardingDone,
     seedVersion: seedVersion ?? this.seedVersion,
     componentInputMode: componentInputMode ?? this.componentInputMode,
     quoteCardDismissedMonth: quoteCardDismissedMonth.present
         ? quoteCardDismissedMonth.value
         : this.quoteCardDismissedMonth,
+    reminderMonthlyEnabled:
+        reminderMonthlyEnabled ?? this.reminderMonthlyEnabled,
+    reminderMonthlyDay: reminderMonthlyDay ?? this.reminderMonthlyDay,
+    reminderMonthlyHour: reminderMonthlyHour ?? this.reminderMonthlyHour,
+    reminderMonthlyMinute: reminderMonthlyMinute ?? this.reminderMonthlyMinute,
+    reminderExpenseEnabled:
+        reminderExpenseEnabled ?? this.reminderExpenseEnabled,
+    reminderExpenseHour: reminderExpenseHour ?? this.reminderExpenseHour,
+    reminderExpenseMinute: reminderExpenseMinute ?? this.reminderExpenseMinute,
+    reminderMilestoneEnabled:
+        reminderMilestoneEnabled ?? this.reminderMilestoneEnabled,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     syncStatus: syncStatus ?? this.syncStatus,
@@ -1624,12 +1915,12 @@ class Setting extends DataClass implements Insertable<Setting> {
       defaultAnnualReturnPct: data.defaultAnnualReturnPct.present
           ? data.defaultAnnualReturnPct.value
           : this.defaultAnnualReturnPct,
-      phaseLimitEnabled: data.phaseLimitEnabled.present
-          ? data.phaseLimitEnabled.value
-          : this.phaseLimitEnabled,
-      phaseLimitAmount: data.phaseLimitAmount.present
-          ? data.phaseLimitAmount.value
-          : this.phaseLimitAmount,
+      planLimitEnabled: data.planLimitEnabled.present
+          ? data.planLimitEnabled.value
+          : this.planLimitEnabled,
+      planLimitAmount: data.planLimitAmount.present
+          ? data.planLimitAmount.value
+          : this.planLimitAmount,
       onboardingDone: data.onboardingDone.present
           ? data.onboardingDone.value
           : this.onboardingDone,
@@ -1642,6 +1933,30 @@ class Setting extends DataClass implements Insertable<Setting> {
       quoteCardDismissedMonth: data.quoteCardDismissedMonth.present
           ? data.quoteCardDismissedMonth.value
           : this.quoteCardDismissedMonth,
+      reminderMonthlyEnabled: data.reminderMonthlyEnabled.present
+          ? data.reminderMonthlyEnabled.value
+          : this.reminderMonthlyEnabled,
+      reminderMonthlyDay: data.reminderMonthlyDay.present
+          ? data.reminderMonthlyDay.value
+          : this.reminderMonthlyDay,
+      reminderMonthlyHour: data.reminderMonthlyHour.present
+          ? data.reminderMonthlyHour.value
+          : this.reminderMonthlyHour,
+      reminderMonthlyMinute: data.reminderMonthlyMinute.present
+          ? data.reminderMonthlyMinute.value
+          : this.reminderMonthlyMinute,
+      reminderExpenseEnabled: data.reminderExpenseEnabled.present
+          ? data.reminderExpenseEnabled.value
+          : this.reminderExpenseEnabled,
+      reminderExpenseHour: data.reminderExpenseHour.present
+          ? data.reminderExpenseHour.value
+          : this.reminderExpenseHour,
+      reminderExpenseMinute: data.reminderExpenseMinute.present
+          ? data.reminderExpenseMinute.value
+          : this.reminderExpenseMinute,
+      reminderMilestoneEnabled: data.reminderMilestoneEnabled.present
+          ? data.reminderMilestoneEnabled.value
+          : this.reminderMilestoneEnabled,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       syncStatus: data.syncStatus.present
@@ -1661,12 +1976,20 @@ class Setting extends DataClass implements Insertable<Setting> {
           ..write('minimumLivingCost: $minimumLivingCost, ')
           ..write('currentLivingCost: $currentLivingCost, ')
           ..write('defaultAnnualReturnPct: $defaultAnnualReturnPct, ')
-          ..write('phaseLimitEnabled: $phaseLimitEnabled, ')
-          ..write('phaseLimitAmount: $phaseLimitAmount, ')
+          ..write('planLimitEnabled: $planLimitEnabled, ')
+          ..write('planLimitAmount: $planLimitAmount, ')
           ..write('onboardingDone: $onboardingDone, ')
           ..write('seedVersion: $seedVersion, ')
           ..write('componentInputMode: $componentInputMode, ')
           ..write('quoteCardDismissedMonth: $quoteCardDismissedMonth, ')
+          ..write('reminderMonthlyEnabled: $reminderMonthlyEnabled, ')
+          ..write('reminderMonthlyDay: $reminderMonthlyDay, ')
+          ..write('reminderMonthlyHour: $reminderMonthlyHour, ')
+          ..write('reminderMonthlyMinute: $reminderMonthlyMinute, ')
+          ..write('reminderExpenseEnabled: $reminderExpenseEnabled, ')
+          ..write('reminderExpenseHour: $reminderExpenseHour, ')
+          ..write('reminderExpenseMinute: $reminderExpenseMinute, ')
+          ..write('reminderMilestoneEnabled: $reminderMilestoneEnabled, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('syncStatus: $syncStatus, ')
@@ -1677,25 +2000,33 @@ class Setting extends DataClass implements Insertable<Setting> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     ownerId,
     monthlySalary,
     minimumLivingCost,
     currentLivingCost,
     defaultAnnualReturnPct,
-    phaseLimitEnabled,
-    phaseLimitAmount,
+    planLimitEnabled,
+    planLimitAmount,
     onboardingDone,
     seedVersion,
     componentInputMode,
     quoteCardDismissedMonth,
+    reminderMonthlyEnabled,
+    reminderMonthlyDay,
+    reminderMonthlyHour,
+    reminderMonthlyMinute,
+    reminderExpenseEnabled,
+    reminderExpenseHour,
+    reminderExpenseMinute,
+    reminderMilestoneEnabled,
     createdAt,
     updatedAt,
     syncStatus,
     remoteId,
     deletedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1706,12 +2037,20 @@ class Setting extends DataClass implements Insertable<Setting> {
           other.minimumLivingCost == this.minimumLivingCost &&
           other.currentLivingCost == this.currentLivingCost &&
           other.defaultAnnualReturnPct == this.defaultAnnualReturnPct &&
-          other.phaseLimitEnabled == this.phaseLimitEnabled &&
-          other.phaseLimitAmount == this.phaseLimitAmount &&
+          other.planLimitEnabled == this.planLimitEnabled &&
+          other.planLimitAmount == this.planLimitAmount &&
           other.onboardingDone == this.onboardingDone &&
           other.seedVersion == this.seedVersion &&
           other.componentInputMode == this.componentInputMode &&
           other.quoteCardDismissedMonth == this.quoteCardDismissedMonth &&
+          other.reminderMonthlyEnabled == this.reminderMonthlyEnabled &&
+          other.reminderMonthlyDay == this.reminderMonthlyDay &&
+          other.reminderMonthlyHour == this.reminderMonthlyHour &&
+          other.reminderMonthlyMinute == this.reminderMonthlyMinute &&
+          other.reminderExpenseEnabled == this.reminderExpenseEnabled &&
+          other.reminderExpenseHour == this.reminderExpenseHour &&
+          other.reminderExpenseMinute == this.reminderExpenseMinute &&
+          other.reminderMilestoneEnabled == this.reminderMilestoneEnabled &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.syncStatus == this.syncStatus &&
@@ -1726,12 +2065,20 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
   final Value<int?> minimumLivingCost;
   final Value<int?> currentLivingCost;
   final Value<double> defaultAnnualReturnPct;
-  final Value<bool> phaseLimitEnabled;
-  final Value<int?> phaseLimitAmount;
+  final Value<bool> planLimitEnabled;
+  final Value<int?> planLimitAmount;
   final Value<bool> onboardingDone;
   final Value<int> seedVersion;
   final Value<String> componentInputMode;
   final Value<String?> quoteCardDismissedMonth;
+  final Value<bool> reminderMonthlyEnabled;
+  final Value<int> reminderMonthlyDay;
+  final Value<int> reminderMonthlyHour;
+  final Value<int> reminderMonthlyMinute;
+  final Value<bool> reminderExpenseEnabled;
+  final Value<int> reminderExpenseHour;
+  final Value<int> reminderExpenseMinute;
+  final Value<bool> reminderMilestoneEnabled;
   final Value<String> createdAt;
   final Value<String> updatedAt;
   final Value<String> syncStatus;
@@ -1745,12 +2092,20 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     this.minimumLivingCost = const Value.absent(),
     this.currentLivingCost = const Value.absent(),
     this.defaultAnnualReturnPct = const Value.absent(),
-    this.phaseLimitEnabled = const Value.absent(),
-    this.phaseLimitAmount = const Value.absent(),
+    this.planLimitEnabled = const Value.absent(),
+    this.planLimitAmount = const Value.absent(),
     this.onboardingDone = const Value.absent(),
     this.seedVersion = const Value.absent(),
     this.componentInputMode = const Value.absent(),
     this.quoteCardDismissedMonth = const Value.absent(),
+    this.reminderMonthlyEnabled = const Value.absent(),
+    this.reminderMonthlyDay = const Value.absent(),
+    this.reminderMonthlyHour = const Value.absent(),
+    this.reminderMonthlyMinute = const Value.absent(),
+    this.reminderExpenseEnabled = const Value.absent(),
+    this.reminderExpenseHour = const Value.absent(),
+    this.reminderExpenseMinute = const Value.absent(),
+    this.reminderMilestoneEnabled = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.syncStatus = const Value.absent(),
@@ -1765,12 +2120,20 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     this.minimumLivingCost = const Value.absent(),
     this.currentLivingCost = const Value.absent(),
     this.defaultAnnualReturnPct = const Value.absent(),
-    this.phaseLimitEnabled = const Value.absent(),
-    this.phaseLimitAmount = const Value.absent(),
+    this.planLimitEnabled = const Value.absent(),
+    this.planLimitAmount = const Value.absent(),
     this.onboardingDone = const Value.absent(),
     this.seedVersion = const Value.absent(),
     this.componentInputMode = const Value.absent(),
     this.quoteCardDismissedMonth = const Value.absent(),
+    this.reminderMonthlyEnabled = const Value.absent(),
+    this.reminderMonthlyDay = const Value.absent(),
+    this.reminderMonthlyHour = const Value.absent(),
+    this.reminderMonthlyMinute = const Value.absent(),
+    this.reminderExpenseEnabled = const Value.absent(),
+    this.reminderExpenseHour = const Value.absent(),
+    this.reminderExpenseMinute = const Value.absent(),
+    this.reminderMilestoneEnabled = const Value.absent(),
     required String createdAt,
     required String updatedAt,
     this.syncStatus = const Value.absent(),
@@ -1788,12 +2151,20 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     Expression<int>? minimumLivingCost,
     Expression<int>? currentLivingCost,
     Expression<double>? defaultAnnualReturnPct,
-    Expression<bool>? phaseLimitEnabled,
-    Expression<int>? phaseLimitAmount,
+    Expression<bool>? planLimitEnabled,
+    Expression<int>? planLimitAmount,
     Expression<bool>? onboardingDone,
     Expression<int>? seedVersion,
     Expression<String>? componentInputMode,
     Expression<String>? quoteCardDismissedMonth,
+    Expression<bool>? reminderMonthlyEnabled,
+    Expression<int>? reminderMonthlyDay,
+    Expression<int>? reminderMonthlyHour,
+    Expression<int>? reminderMonthlyMinute,
+    Expression<bool>? reminderExpenseEnabled,
+    Expression<int>? reminderExpenseHour,
+    Expression<int>? reminderExpenseMinute,
+    Expression<bool>? reminderMilestoneEnabled,
     Expression<String>? createdAt,
     Expression<String>? updatedAt,
     Expression<String>? syncStatus,
@@ -1809,14 +2180,30 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
       if (currentLivingCost != null) 'current_living_cost': currentLivingCost,
       if (defaultAnnualReturnPct != null)
         'default_annual_return_pct': defaultAnnualReturnPct,
-      if (phaseLimitEnabled != null) 'phase_limit_enabled': phaseLimitEnabled,
-      if (phaseLimitAmount != null) 'phase_limit_amount': phaseLimitAmount,
+      if (planLimitEnabled != null) 'plan_limit_enabled': planLimitEnabled,
+      if (planLimitAmount != null) 'plan_limit_amount': planLimitAmount,
       if (onboardingDone != null) 'onboarding_done': onboardingDone,
       if (seedVersion != null) 'seed_version': seedVersion,
       if (componentInputMode != null)
         'component_input_mode': componentInputMode,
       if (quoteCardDismissedMonth != null)
         'quote_card_dismissed_month': quoteCardDismissedMonth,
+      if (reminderMonthlyEnabled != null)
+        'reminder_monthly_enabled': reminderMonthlyEnabled,
+      if (reminderMonthlyDay != null)
+        'reminder_monthly_day': reminderMonthlyDay,
+      if (reminderMonthlyHour != null)
+        'reminder_monthly_hour': reminderMonthlyHour,
+      if (reminderMonthlyMinute != null)
+        'reminder_monthly_minute': reminderMonthlyMinute,
+      if (reminderExpenseEnabled != null)
+        'reminder_expense_enabled': reminderExpenseEnabled,
+      if (reminderExpenseHour != null)
+        'reminder_expense_hour': reminderExpenseHour,
+      if (reminderExpenseMinute != null)
+        'reminder_expense_minute': reminderExpenseMinute,
+      if (reminderMilestoneEnabled != null)
+        'reminder_milestone_enabled': reminderMilestoneEnabled,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (syncStatus != null) 'sync_status': syncStatus,
@@ -1833,12 +2220,20 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     Value<int?>? minimumLivingCost,
     Value<int?>? currentLivingCost,
     Value<double>? defaultAnnualReturnPct,
-    Value<bool>? phaseLimitEnabled,
-    Value<int?>? phaseLimitAmount,
+    Value<bool>? planLimitEnabled,
+    Value<int?>? planLimitAmount,
     Value<bool>? onboardingDone,
     Value<int>? seedVersion,
     Value<String>? componentInputMode,
     Value<String?>? quoteCardDismissedMonth,
+    Value<bool>? reminderMonthlyEnabled,
+    Value<int>? reminderMonthlyDay,
+    Value<int>? reminderMonthlyHour,
+    Value<int>? reminderMonthlyMinute,
+    Value<bool>? reminderExpenseEnabled,
+    Value<int>? reminderExpenseHour,
+    Value<int>? reminderExpenseMinute,
+    Value<bool>? reminderMilestoneEnabled,
     Value<String>? createdAt,
     Value<String>? updatedAt,
     Value<String>? syncStatus,
@@ -1854,13 +2249,26 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
       currentLivingCost: currentLivingCost ?? this.currentLivingCost,
       defaultAnnualReturnPct:
           defaultAnnualReturnPct ?? this.defaultAnnualReturnPct,
-      phaseLimitEnabled: phaseLimitEnabled ?? this.phaseLimitEnabled,
-      phaseLimitAmount: phaseLimitAmount ?? this.phaseLimitAmount,
+      planLimitEnabled: planLimitEnabled ?? this.planLimitEnabled,
+      planLimitAmount: planLimitAmount ?? this.planLimitAmount,
       onboardingDone: onboardingDone ?? this.onboardingDone,
       seedVersion: seedVersion ?? this.seedVersion,
       componentInputMode: componentInputMode ?? this.componentInputMode,
       quoteCardDismissedMonth:
           quoteCardDismissedMonth ?? this.quoteCardDismissedMonth,
+      reminderMonthlyEnabled:
+          reminderMonthlyEnabled ?? this.reminderMonthlyEnabled,
+      reminderMonthlyDay: reminderMonthlyDay ?? this.reminderMonthlyDay,
+      reminderMonthlyHour: reminderMonthlyHour ?? this.reminderMonthlyHour,
+      reminderMonthlyMinute:
+          reminderMonthlyMinute ?? this.reminderMonthlyMinute,
+      reminderExpenseEnabled:
+          reminderExpenseEnabled ?? this.reminderExpenseEnabled,
+      reminderExpenseHour: reminderExpenseHour ?? this.reminderExpenseHour,
+      reminderExpenseMinute:
+          reminderExpenseMinute ?? this.reminderExpenseMinute,
+      reminderMilestoneEnabled:
+          reminderMilestoneEnabled ?? this.reminderMilestoneEnabled,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       syncStatus: syncStatus ?? this.syncStatus,
@@ -1893,11 +2301,11 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
         defaultAnnualReturnPct.value,
       );
     }
-    if (phaseLimitEnabled.present) {
-      map['phase_limit_enabled'] = Variable<bool>(phaseLimitEnabled.value);
+    if (planLimitEnabled.present) {
+      map['plan_limit_enabled'] = Variable<bool>(planLimitEnabled.value);
     }
-    if (phaseLimitAmount.present) {
-      map['phase_limit_amount'] = Variable<int>(phaseLimitAmount.value);
+    if (planLimitAmount.present) {
+      map['plan_limit_amount'] = Variable<int>(planLimitAmount.value);
     }
     if (onboardingDone.present) {
       map['onboarding_done'] = Variable<bool>(onboardingDone.value);
@@ -1911,6 +2319,40 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     if (quoteCardDismissedMonth.present) {
       map['quote_card_dismissed_month'] = Variable<String>(
         quoteCardDismissedMonth.value,
+      );
+    }
+    if (reminderMonthlyEnabled.present) {
+      map['reminder_monthly_enabled'] = Variable<bool>(
+        reminderMonthlyEnabled.value,
+      );
+    }
+    if (reminderMonthlyDay.present) {
+      map['reminder_monthly_day'] = Variable<int>(reminderMonthlyDay.value);
+    }
+    if (reminderMonthlyHour.present) {
+      map['reminder_monthly_hour'] = Variable<int>(reminderMonthlyHour.value);
+    }
+    if (reminderMonthlyMinute.present) {
+      map['reminder_monthly_minute'] = Variable<int>(
+        reminderMonthlyMinute.value,
+      );
+    }
+    if (reminderExpenseEnabled.present) {
+      map['reminder_expense_enabled'] = Variable<bool>(
+        reminderExpenseEnabled.value,
+      );
+    }
+    if (reminderExpenseHour.present) {
+      map['reminder_expense_hour'] = Variable<int>(reminderExpenseHour.value);
+    }
+    if (reminderExpenseMinute.present) {
+      map['reminder_expense_minute'] = Variable<int>(
+        reminderExpenseMinute.value,
+      );
+    }
+    if (reminderMilestoneEnabled.present) {
+      map['reminder_milestone_enabled'] = Variable<bool>(
+        reminderMilestoneEnabled.value,
       );
     }
     if (createdAt.present) {
@@ -1943,12 +2385,20 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
           ..write('minimumLivingCost: $minimumLivingCost, ')
           ..write('currentLivingCost: $currentLivingCost, ')
           ..write('defaultAnnualReturnPct: $defaultAnnualReturnPct, ')
-          ..write('phaseLimitEnabled: $phaseLimitEnabled, ')
-          ..write('phaseLimitAmount: $phaseLimitAmount, ')
+          ..write('planLimitEnabled: $planLimitEnabled, ')
+          ..write('planLimitAmount: $planLimitAmount, ')
           ..write('onboardingDone: $onboardingDone, ')
           ..write('seedVersion: $seedVersion, ')
           ..write('componentInputMode: $componentInputMode, ')
           ..write('quoteCardDismissedMonth: $quoteCardDismissedMonth, ')
+          ..write('reminderMonthlyEnabled: $reminderMonthlyEnabled, ')
+          ..write('reminderMonthlyDay: $reminderMonthlyDay, ')
+          ..write('reminderMonthlyHour: $reminderMonthlyHour, ')
+          ..write('reminderMonthlyMinute: $reminderMonthlyMinute, ')
+          ..write('reminderExpenseEnabled: $reminderExpenseEnabled, ')
+          ..write('reminderExpenseHour: $reminderExpenseHour, ')
+          ..write('reminderExpenseMinute: $reminderExpenseMinute, ')
+          ..write('reminderMilestoneEnabled: $reminderMilestoneEnabled, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('syncStatus: $syncStatus, ')
@@ -2534,14 +2984,8 @@ class Portfolio extends DataClass implements Insertable<Portfolio> {
   final String id;
   final String ownerId;
   final String name;
-
-  /// `cash`, `down_payment`, atau `no_target`
   final String category;
-
-  /// Enum generik: `aperd` | `broker` | `bank` | `ewallet` | `self_storage` | `other`
   final String? platformPreset;
-
-  /// Nama platform teks bebas tulisan pengguna sendiri
   final String? platformName;
   final int? fullPrice;
   final int? downPayment;
@@ -2550,8 +2994,6 @@ class Portfolio extends DataClass implements Insertable<Portfolio> {
   final String? targetDate;
   final int monthlyPlan;
   final double annualReturnPct;
-
-  /// `target_driven` atau `deposit_driven`
   final String calcMode;
   final String icon;
   final int color;
@@ -3308,6 +3750,29 @@ class $PortfolioComponentsTable extends PortfolioComponents
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _mechanismMeta = const VerificationMeta(
+    'mechanism',
+  );
+  @override
+  late final GeneratedColumn<String> mechanism = GeneratedColumn<String>(
+    'mechanism',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('nominal'),
+  );
+  static const VerificationMeta _legacyOpeningAmountMeta =
+      const VerificationMeta('legacyOpeningAmount');
+  @override
+  late final GeneratedColumn<int> legacyOpeningAmount = GeneratedColumn<int>(
+    'legacy_opening_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _codeNoteMeta = const VerificationMeta(
     'codeNote',
   );
@@ -3396,6 +3861,8 @@ class $PortfolioComponentsTable extends PortfolioComponents
     name,
     targetPercent,
     actualAmount,
+    mechanism,
+    legacyOpeningAmount,
     codeNote,
     sortOrder,
     createdAt,
@@ -3472,6 +3939,21 @@ class $PortfolioComponentsTable extends PortfolioComponents
         actualAmount.isAcceptableOrUnknown(
           data['actual_amount']!,
           _actualAmountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('mechanism')) {
+      context.handle(
+        _mechanismMeta,
+        mechanism.isAcceptableOrUnknown(data['mechanism']!, _mechanismMeta),
+      );
+    }
+    if (data.containsKey('legacy_opening_amount')) {
+      context.handle(
+        _legacyOpeningAmountMeta,
+        legacyOpeningAmount.isAcceptableOrUnknown(
+          data['legacy_opening_amount']!,
+          _legacyOpeningAmountMeta,
         ),
       );
     }
@@ -3558,6 +4040,14 @@ class $PortfolioComponentsTable extends PortfolioComponents
         DriftSqlType.int,
         data['${effectivePrefix}actual_amount'],
       )!,
+      mechanism: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mechanism'],
+      )!,
+      legacyOpeningAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}legacy_opening_amount'],
+      )!,
       codeNote: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}code_note'],
@@ -3602,12 +4092,10 @@ class PortfolioComponent extends DataClass
   final String ownerId;
   final String instrumentType;
   final String? name;
-
-  /// v2.2: Satu-satunya sumber kebenaran target alokasi komponen (0.00 - 100.00).
   final double targetPercent;
-
-  /// v2.2: Saldo aktual komponen (integer rupiah) dari setoran teralokasi.
   final int actualAmount;
+  final String mechanism;
+  final int legacyOpeningAmount;
   final String? codeNote;
   final int sortOrder;
   final String createdAt;
@@ -3623,6 +4111,8 @@ class PortfolioComponent extends DataClass
     this.name,
     required this.targetPercent,
     required this.actualAmount,
+    required this.mechanism,
+    required this.legacyOpeningAmount,
     this.codeNote,
     required this.sortOrder,
     required this.createdAt,
@@ -3643,6 +4133,8 @@ class PortfolioComponent extends DataClass
     }
     map['target_percent'] = Variable<double>(targetPercent);
     map['actual_amount'] = Variable<int>(actualAmount);
+    map['mechanism'] = Variable<String>(mechanism);
+    map['legacy_opening_amount'] = Variable<int>(legacyOpeningAmount);
     if (!nullToAbsent || codeNote != null) {
       map['code_note'] = Variable<String>(codeNote);
     }
@@ -3668,6 +4160,8 @@ class PortfolioComponent extends DataClass
       name: name == null && nullToAbsent ? const Value.absent() : Value(name),
       targetPercent: Value(targetPercent),
       actualAmount: Value(actualAmount),
+      mechanism: Value(mechanism),
+      legacyOpeningAmount: Value(legacyOpeningAmount),
       codeNote: codeNote == null && nullToAbsent
           ? const Value.absent()
           : Value(codeNote),
@@ -3697,6 +4191,10 @@ class PortfolioComponent extends DataClass
       name: serializer.fromJson<String?>(json['name']),
       targetPercent: serializer.fromJson<double>(json['targetPercent']),
       actualAmount: serializer.fromJson<int>(json['actualAmount']),
+      mechanism: serializer.fromJson<String>(json['mechanism']),
+      legacyOpeningAmount: serializer.fromJson<int>(
+        json['legacyOpeningAmount'],
+      ),
       codeNote: serializer.fromJson<String?>(json['codeNote']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       createdAt: serializer.fromJson<String>(json['createdAt']),
@@ -3717,6 +4215,8 @@ class PortfolioComponent extends DataClass
       'name': serializer.toJson<String?>(name),
       'targetPercent': serializer.toJson<double>(targetPercent),
       'actualAmount': serializer.toJson<int>(actualAmount),
+      'mechanism': serializer.toJson<String>(mechanism),
+      'legacyOpeningAmount': serializer.toJson<int>(legacyOpeningAmount),
       'codeNote': serializer.toJson<String?>(codeNote),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'createdAt': serializer.toJson<String>(createdAt),
@@ -3735,6 +4235,8 @@ class PortfolioComponent extends DataClass
     Value<String?> name = const Value.absent(),
     double? targetPercent,
     int? actualAmount,
+    String? mechanism,
+    int? legacyOpeningAmount,
     Value<String?> codeNote = const Value.absent(),
     int? sortOrder,
     String? createdAt,
@@ -3750,6 +4252,8 @@ class PortfolioComponent extends DataClass
     name: name.present ? name.value : this.name,
     targetPercent: targetPercent ?? this.targetPercent,
     actualAmount: actualAmount ?? this.actualAmount,
+    mechanism: mechanism ?? this.mechanism,
+    legacyOpeningAmount: legacyOpeningAmount ?? this.legacyOpeningAmount,
     codeNote: codeNote.present ? codeNote.value : this.codeNote,
     sortOrder: sortOrder ?? this.sortOrder,
     createdAt: createdAt ?? this.createdAt,
@@ -3775,6 +4279,10 @@ class PortfolioComponent extends DataClass
       actualAmount: data.actualAmount.present
           ? data.actualAmount.value
           : this.actualAmount,
+      mechanism: data.mechanism.present ? data.mechanism.value : this.mechanism,
+      legacyOpeningAmount: data.legacyOpeningAmount.present
+          ? data.legacyOpeningAmount.value
+          : this.legacyOpeningAmount,
       codeNote: data.codeNote.present ? data.codeNote.value : this.codeNote,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -3797,6 +4305,8 @@ class PortfolioComponent extends DataClass
           ..write('name: $name, ')
           ..write('targetPercent: $targetPercent, ')
           ..write('actualAmount: $actualAmount, ')
+          ..write('mechanism: $mechanism, ')
+          ..write('legacyOpeningAmount: $legacyOpeningAmount, ')
           ..write('codeNote: $codeNote, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
@@ -3817,6 +4327,8 @@ class PortfolioComponent extends DataClass
     name,
     targetPercent,
     actualAmount,
+    mechanism,
+    legacyOpeningAmount,
     codeNote,
     sortOrder,
     createdAt,
@@ -3836,6 +4348,8 @@ class PortfolioComponent extends DataClass
           other.name == this.name &&
           other.targetPercent == this.targetPercent &&
           other.actualAmount == this.actualAmount &&
+          other.mechanism == this.mechanism &&
+          other.legacyOpeningAmount == this.legacyOpeningAmount &&
           other.codeNote == this.codeNote &&
           other.sortOrder == this.sortOrder &&
           other.createdAt == this.createdAt &&
@@ -3853,6 +4367,8 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
   final Value<String?> name;
   final Value<double> targetPercent;
   final Value<int> actualAmount;
+  final Value<String> mechanism;
+  final Value<int> legacyOpeningAmount;
   final Value<String?> codeNote;
   final Value<int> sortOrder;
   final Value<String> createdAt;
@@ -3869,6 +4385,8 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
     this.name = const Value.absent(),
     this.targetPercent = const Value.absent(),
     this.actualAmount = const Value.absent(),
+    this.mechanism = const Value.absent(),
+    this.legacyOpeningAmount = const Value.absent(),
     this.codeNote = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -3886,6 +4404,8 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
     this.name = const Value.absent(),
     this.targetPercent = const Value.absent(),
     this.actualAmount = const Value.absent(),
+    this.mechanism = const Value.absent(),
+    this.legacyOpeningAmount = const Value.absent(),
     this.codeNote = const Value.absent(),
     this.sortOrder = const Value.absent(),
     required String createdAt,
@@ -3908,6 +4428,8 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
     Expression<String>? name,
     Expression<double>? targetPercent,
     Expression<int>? actualAmount,
+    Expression<String>? mechanism,
+    Expression<int>? legacyOpeningAmount,
     Expression<String>? codeNote,
     Expression<int>? sortOrder,
     Expression<String>? createdAt,
@@ -3925,6 +4447,9 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
       if (name != null) 'name': name,
       if (targetPercent != null) 'target_percent': targetPercent,
       if (actualAmount != null) 'actual_amount': actualAmount,
+      if (mechanism != null) 'mechanism': mechanism,
+      if (legacyOpeningAmount != null)
+        'legacy_opening_amount': legacyOpeningAmount,
       if (codeNote != null) 'code_note': codeNote,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (createdAt != null) 'created_at': createdAt,
@@ -3944,6 +4469,8 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
     Value<String?>? name,
     Value<double>? targetPercent,
     Value<int>? actualAmount,
+    Value<String>? mechanism,
+    Value<int>? legacyOpeningAmount,
     Value<String?>? codeNote,
     Value<int>? sortOrder,
     Value<String>? createdAt,
@@ -3961,6 +4488,8 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
       name: name ?? this.name,
       targetPercent: targetPercent ?? this.targetPercent,
       actualAmount: actualAmount ?? this.actualAmount,
+      mechanism: mechanism ?? this.mechanism,
+      legacyOpeningAmount: legacyOpeningAmount ?? this.legacyOpeningAmount,
       codeNote: codeNote ?? this.codeNote,
       sortOrder: sortOrder ?? this.sortOrder,
       createdAt: createdAt ?? this.createdAt,
@@ -3995,6 +4524,12 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
     }
     if (actualAmount.present) {
       map['actual_amount'] = Variable<int>(actualAmount.value);
+    }
+    if (mechanism.present) {
+      map['mechanism'] = Variable<String>(mechanism.value);
+    }
+    if (legacyOpeningAmount.present) {
+      map['legacy_opening_amount'] = Variable<int>(legacyOpeningAmount.value);
     }
     if (codeNote.present) {
       map['code_note'] = Variable<String>(codeNote.value);
@@ -4033,6 +4568,8 @@ class PortfolioComponentsCompanion extends UpdateCompanion<PortfolioComponent> {
           ..write('name: $name, ')
           ..write('targetPercent: $targetPercent, ')
           ..write('actualAmount: $actualAmount, ')
+          ..write('mechanism: $mechanism, ')
+          ..write('legacyOpeningAmount: $legacyOpeningAmount, ')
           ..write('codeNote: $codeNote, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
@@ -4127,6 +4664,27 @@ class $ContributionsTable extends Contributions
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _stockTransactionIdMeta =
+      const VerificationMeta('stockTransactionId');
+  @override
+  late final GeneratedColumn<String> stockTransactionId =
+      GeneratedColumn<String>(
+        'stock_transaction_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('manual'),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -4192,6 +4750,8 @@ class $ContributionsTable extends Contributions
     date,
     note,
     componentId,
+    stockTransactionId,
+    source,
     createdAt,
     updatedAt,
     syncStatus,
@@ -4265,6 +4825,21 @@ class $ContributionsTable extends Contributions
         ),
       );
     }
+    if (data.containsKey('stock_transaction_id')) {
+      context.handle(
+        _stockTransactionIdMeta,
+        stockTransactionId.isAcceptableOrUnknown(
+          data['stock_transaction_id']!,
+          _stockTransactionIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -4336,6 +4911,14 @@ class $ContributionsTable extends Contributions
         DriftSqlType.string,
         data['${effectivePrefix}component_id'],
       ),
+      stockTransactionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stock_transaction_id'],
+      ),
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}created_at'],
@@ -4372,9 +4955,9 @@ class Contribution extends DataClass implements Insertable<Contribution> {
   final int amount;
   final String date;
   final String? note;
-
-  /// v2.2: Opsional — ID komponen instrumen tujuan setoran ini.
   final String? componentId;
+  final String? stockTransactionId;
+  final String source;
   final String createdAt;
   final String updatedAt;
   final String syncStatus;
@@ -4388,6 +4971,8 @@ class Contribution extends DataClass implements Insertable<Contribution> {
     required this.date,
     this.note,
     this.componentId,
+    this.stockTransactionId,
+    required this.source,
     required this.createdAt,
     required this.updatedAt,
     required this.syncStatus,
@@ -4408,6 +4993,10 @@ class Contribution extends DataClass implements Insertable<Contribution> {
     if (!nullToAbsent || componentId != null) {
       map['component_id'] = Variable<String>(componentId);
     }
+    if (!nullToAbsent || stockTransactionId != null) {
+      map['stock_transaction_id'] = Variable<String>(stockTransactionId);
+    }
+    map['source'] = Variable<String>(source);
     map['created_at'] = Variable<String>(createdAt);
     map['updated_at'] = Variable<String>(updatedAt);
     map['sync_status'] = Variable<String>(syncStatus);
@@ -4431,6 +5020,10 @@ class Contribution extends DataClass implements Insertable<Contribution> {
       componentId: componentId == null && nullToAbsent
           ? const Value.absent()
           : Value(componentId),
+      stockTransactionId: stockTransactionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stockTransactionId),
+      source: Value(source),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       syncStatus: Value(syncStatus),
@@ -4456,6 +5049,10 @@ class Contribution extends DataClass implements Insertable<Contribution> {
       date: serializer.fromJson<String>(json['date']),
       note: serializer.fromJson<String?>(json['note']),
       componentId: serializer.fromJson<String?>(json['componentId']),
+      stockTransactionId: serializer.fromJson<String?>(
+        json['stockTransactionId'],
+      ),
+      source: serializer.fromJson<String>(json['source']),
       createdAt: serializer.fromJson<String>(json['createdAt']),
       updatedAt: serializer.fromJson<String>(json['updatedAt']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
@@ -4474,6 +5071,8 @@ class Contribution extends DataClass implements Insertable<Contribution> {
       'date': serializer.toJson<String>(date),
       'note': serializer.toJson<String?>(note),
       'componentId': serializer.toJson<String?>(componentId),
+      'stockTransactionId': serializer.toJson<String?>(stockTransactionId),
+      'source': serializer.toJson<String>(source),
       'createdAt': serializer.toJson<String>(createdAt),
       'updatedAt': serializer.toJson<String>(updatedAt),
       'syncStatus': serializer.toJson<String>(syncStatus),
@@ -4490,6 +5089,8 @@ class Contribution extends DataClass implements Insertable<Contribution> {
     String? date,
     Value<String?> note = const Value.absent(),
     Value<String?> componentId = const Value.absent(),
+    Value<String?> stockTransactionId = const Value.absent(),
+    String? source,
     String? createdAt,
     String? updatedAt,
     String? syncStatus,
@@ -4503,6 +5104,10 @@ class Contribution extends DataClass implements Insertable<Contribution> {
     date: date ?? this.date,
     note: note.present ? note.value : this.note,
     componentId: componentId.present ? componentId.value : this.componentId,
+    stockTransactionId: stockTransactionId.present
+        ? stockTransactionId.value
+        : this.stockTransactionId,
+    source: source ?? this.source,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     syncStatus: syncStatus ?? this.syncStatus,
@@ -4522,6 +5127,10 @@ class Contribution extends DataClass implements Insertable<Contribution> {
       componentId: data.componentId.present
           ? data.componentId.value
           : this.componentId,
+      stockTransactionId: data.stockTransactionId.present
+          ? data.stockTransactionId.value
+          : this.stockTransactionId,
+      source: data.source.present ? data.source.value : this.source,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       syncStatus: data.syncStatus.present
@@ -4542,6 +5151,8 @@ class Contribution extends DataClass implements Insertable<Contribution> {
           ..write('date: $date, ')
           ..write('note: $note, ')
           ..write('componentId: $componentId, ')
+          ..write('stockTransactionId: $stockTransactionId, ')
+          ..write('source: $source, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('syncStatus: $syncStatus, ')
@@ -4560,6 +5171,8 @@ class Contribution extends DataClass implements Insertable<Contribution> {
     date,
     note,
     componentId,
+    stockTransactionId,
+    source,
     createdAt,
     updatedAt,
     syncStatus,
@@ -4577,6 +5190,8 @@ class Contribution extends DataClass implements Insertable<Contribution> {
           other.date == this.date &&
           other.note == this.note &&
           other.componentId == this.componentId &&
+          other.stockTransactionId == this.stockTransactionId &&
+          other.source == this.source &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.syncStatus == this.syncStatus &&
@@ -4592,6 +5207,8 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
   final Value<String> date;
   final Value<String?> note;
   final Value<String?> componentId;
+  final Value<String?> stockTransactionId;
+  final Value<String> source;
   final Value<String> createdAt;
   final Value<String> updatedAt;
   final Value<String> syncStatus;
@@ -4606,6 +5223,8 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
     this.date = const Value.absent(),
     this.note = const Value.absent(),
     this.componentId = const Value.absent(),
+    this.stockTransactionId = const Value.absent(),
+    this.source = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.syncStatus = const Value.absent(),
@@ -4621,6 +5240,8 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
     required String date,
     this.note = const Value.absent(),
     this.componentId = const Value.absent(),
+    this.stockTransactionId = const Value.absent(),
+    this.source = const Value.absent(),
     required String createdAt,
     required String updatedAt,
     this.syncStatus = const Value.absent(),
@@ -4642,6 +5263,8 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
     Expression<String>? date,
     Expression<String>? note,
     Expression<String>? componentId,
+    Expression<String>? stockTransactionId,
+    Expression<String>? source,
     Expression<String>? createdAt,
     Expression<String>? updatedAt,
     Expression<String>? syncStatus,
@@ -4657,6 +5280,9 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
       if (date != null) 'date': date,
       if (note != null) 'note': note,
       if (componentId != null) 'component_id': componentId,
+      if (stockTransactionId != null)
+        'stock_transaction_id': stockTransactionId,
+      if (source != null) 'source': source,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (syncStatus != null) 'sync_status': syncStatus,
@@ -4674,6 +5300,8 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
     Value<String>? date,
     Value<String?>? note,
     Value<String?>? componentId,
+    Value<String?>? stockTransactionId,
+    Value<String>? source,
     Value<String>? createdAt,
     Value<String>? updatedAt,
     Value<String>? syncStatus,
@@ -4689,6 +5317,8 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
       date: date ?? this.date,
       note: note ?? this.note,
       componentId: componentId ?? this.componentId,
+      stockTransactionId: stockTransactionId ?? this.stockTransactionId,
+      source: source ?? this.source,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       syncStatus: syncStatus ?? this.syncStatus,
@@ -4722,6 +5352,12 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
     if (componentId.present) {
       map['component_id'] = Variable<String>(componentId.value);
     }
+    if (stockTransactionId.present) {
+      map['stock_transaction_id'] = Variable<String>(stockTransactionId.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<String>(createdAt.value);
     }
@@ -4753,6 +5389,8 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
           ..write('date: $date, ')
           ..write('note: $note, ')
           ..write('componentId: $componentId, ')
+          ..write('stockTransactionId: $stockTransactionId, ')
+          ..write('source: $source, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('syncStatus: $syncStatus, ')
@@ -4764,11 +5402,11 @@ class ContributionsCompanion extends UpdateCompanion<Contribution> {
   }
 }
 
-class $PhasesTable extends Phases with TableInfo<$PhasesTable, Phase> {
+class $PlansTable extends Plans with TableInfo<$PlansTable, Plan> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $PhasesTable(this.attachedDatabase, [this._alias]);
+  $PlansTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
@@ -4811,6 +5449,18 @@ class $PhasesTable extends Phases with TableInfo<$PhasesTable, Phase> {
     true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
+  );
+  static const VerificationMeta _totalAmountMeta = const VerificationMeta(
+    'totalAmount',
+  );
+  @override
+  late final GeneratedColumn<int> totalAmount = GeneratedColumn<int>(
+    'total_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
   );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
@@ -4901,6 +5551,7 @@ class $PhasesTable extends Phases with TableInfo<$PhasesTable, Phase> {
     ownerId,
     name,
     description,
+    totalAmount,
     isActive,
     sortOrder,
     createdAt,
@@ -4913,10 +5564,10 @@ class $PhasesTable extends Phases with TableInfo<$PhasesTable, Phase> {
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'phases';
+  static const String $name = 'plans';
   @override
   VerificationContext validateIntegrity(
-    Insertable<Phase> instance, {
+    Insertable<Plan> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -4948,6 +5599,15 @@ class $PhasesTable extends Phases with TableInfo<$PhasesTable, Phase> {
         description.isAcceptableOrUnknown(
           data['description']!,
           _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('total_amount')) {
+      context.handle(
+        _totalAmountMeta,
+        totalAmount.isAcceptableOrUnknown(
+          data['total_amount']!,
+          _totalAmountMeta,
         ),
       );
     }
@@ -5003,9 +5663,9 @@ class $PhasesTable extends Phases with TableInfo<$PhasesTable, Phase> {
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  Phase map(Map<String, dynamic> data, {String? tablePrefix}) {
+  Plan map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Phase(
+    return Plan(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -5022,6 +5682,10 @@ class $PhasesTable extends Phases with TableInfo<$PhasesTable, Phase> {
         DriftSqlType.string,
         data['${effectivePrefix}description'],
       ),
+      totalAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_amount'],
+      )!,
       isActive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
@@ -5054,16 +5718,17 @@ class $PhasesTable extends Phases with TableInfo<$PhasesTable, Phase> {
   }
 
   @override
-  $PhasesTable createAlias(String alias) {
-    return $PhasesTable(attachedDatabase, alias);
+  $PlansTable createAlias(String alias) {
+    return $PlansTable(attachedDatabase, alias);
   }
 }
 
-class Phase extends DataClass implements Insertable<Phase> {
+class Plan extends DataClass implements Insertable<Plan> {
   final String id;
   final String ownerId;
   final String name;
   final String? description;
+  final int totalAmount;
   final bool isActive;
   final int sortOrder;
   final String createdAt;
@@ -5071,11 +5736,12 @@ class Phase extends DataClass implements Insertable<Phase> {
   final String syncStatus;
   final String? remoteId;
   final String? deletedAt;
-  const Phase({
+  const Plan({
     required this.id,
     required this.ownerId,
     required this.name,
     this.description,
+    required this.totalAmount,
     required this.isActive,
     required this.sortOrder,
     required this.createdAt,
@@ -5093,6 +5759,7 @@ class Phase extends DataClass implements Insertable<Phase> {
     if (!nullToAbsent || description != null) {
       map['description'] = Variable<String>(description);
     }
+    map['total_amount'] = Variable<int>(totalAmount);
     map['is_active'] = Variable<bool>(isActive);
     map['sort_order'] = Variable<int>(sortOrder);
     map['created_at'] = Variable<String>(createdAt);
@@ -5107,14 +5774,15 @@ class Phase extends DataClass implements Insertable<Phase> {
     return map;
   }
 
-  PhasesCompanion toCompanion(bool nullToAbsent) {
-    return PhasesCompanion(
+  PlansCompanion toCompanion(bool nullToAbsent) {
+    return PlansCompanion(
       id: Value(id),
       ownerId: Value(ownerId),
       name: Value(name),
       description: description == null && nullToAbsent
           ? const Value.absent()
           : Value(description),
+      totalAmount: Value(totalAmount),
       isActive: Value(isActive),
       sortOrder: Value(sortOrder),
       createdAt: Value(createdAt),
@@ -5129,16 +5797,17 @@ class Phase extends DataClass implements Insertable<Phase> {
     );
   }
 
-  factory Phase.fromJson(
+  factory Plan.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Phase(
+    return Plan(
       id: serializer.fromJson<String>(json['id']),
       ownerId: serializer.fromJson<String>(json['ownerId']),
       name: serializer.fromJson<String>(json['name']),
       description: serializer.fromJson<String?>(json['description']),
+      totalAmount: serializer.fromJson<int>(json['totalAmount']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       createdAt: serializer.fromJson<String>(json['createdAt']),
@@ -5156,6 +5825,7 @@ class Phase extends DataClass implements Insertable<Phase> {
       'ownerId': serializer.toJson<String>(ownerId),
       'name': serializer.toJson<String>(name),
       'description': serializer.toJson<String?>(description),
+      'totalAmount': serializer.toJson<int>(totalAmount),
       'isActive': serializer.toJson<bool>(isActive),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'createdAt': serializer.toJson<String>(createdAt),
@@ -5166,11 +5836,12 @@ class Phase extends DataClass implements Insertable<Phase> {
     };
   }
 
-  Phase copyWith({
+  Plan copyWith({
     String? id,
     String? ownerId,
     String? name,
     Value<String?> description = const Value.absent(),
+    int? totalAmount,
     bool? isActive,
     int? sortOrder,
     String? createdAt,
@@ -5178,11 +5849,12 @@ class Phase extends DataClass implements Insertable<Phase> {
     String? syncStatus,
     Value<String?> remoteId = const Value.absent(),
     Value<String?> deletedAt = const Value.absent(),
-  }) => Phase(
+  }) => Plan(
     id: id ?? this.id,
     ownerId: ownerId ?? this.ownerId,
     name: name ?? this.name,
     description: description.present ? description.value : this.description,
+    totalAmount: totalAmount ?? this.totalAmount,
     isActive: isActive ?? this.isActive,
     sortOrder: sortOrder ?? this.sortOrder,
     createdAt: createdAt ?? this.createdAt,
@@ -5191,14 +5863,17 @@ class Phase extends DataClass implements Insertable<Phase> {
     remoteId: remoteId.present ? remoteId.value : this.remoteId,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
   );
-  Phase copyWithCompanion(PhasesCompanion data) {
-    return Phase(
+  Plan copyWithCompanion(PlansCompanion data) {
+    return Plan(
       id: data.id.present ? data.id.value : this.id,
       ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
       name: data.name.present ? data.name.value : this.name,
       description: data.description.present
           ? data.description.value
           : this.description,
+      totalAmount: data.totalAmount.present
+          ? data.totalAmount.value
+          : this.totalAmount,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -5213,11 +5888,12 @@ class Phase extends DataClass implements Insertable<Phase> {
 
   @override
   String toString() {
-    return (StringBuffer('Phase(')
+    return (StringBuffer('Plan(')
           ..write('id: $id, ')
           ..write('ownerId: $ownerId, ')
           ..write('name: $name, ')
           ..write('description: $description, ')
+          ..write('totalAmount: $totalAmount, ')
           ..write('isActive: $isActive, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
@@ -5235,6 +5911,7 @@ class Phase extends DataClass implements Insertable<Phase> {
     ownerId,
     name,
     description,
+    totalAmount,
     isActive,
     sortOrder,
     createdAt,
@@ -5246,11 +5923,12 @@ class Phase extends DataClass implements Insertable<Phase> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Phase &&
+      (other is Plan &&
           other.id == this.id &&
           other.ownerId == this.ownerId &&
           other.name == this.name &&
           other.description == this.description &&
+          other.totalAmount == this.totalAmount &&
           other.isActive == this.isActive &&
           other.sortOrder == this.sortOrder &&
           other.createdAt == this.createdAt &&
@@ -5260,11 +5938,12 @@ class Phase extends DataClass implements Insertable<Phase> {
           other.deletedAt == this.deletedAt);
 }
 
-class PhasesCompanion extends UpdateCompanion<Phase> {
+class PlansCompanion extends UpdateCompanion<Plan> {
   final Value<String> id;
   final Value<String> ownerId;
   final Value<String> name;
   final Value<String?> description;
+  final Value<int> totalAmount;
   final Value<bool> isActive;
   final Value<int> sortOrder;
   final Value<String> createdAt;
@@ -5273,11 +5952,12 @@ class PhasesCompanion extends UpdateCompanion<Phase> {
   final Value<String?> remoteId;
   final Value<String?> deletedAt;
   final Value<int> rowid;
-  const PhasesCompanion({
+  const PlansCompanion({
     this.id = const Value.absent(),
     this.ownerId = const Value.absent(),
     this.name = const Value.absent(),
     this.description = const Value.absent(),
+    this.totalAmount = const Value.absent(),
     this.isActive = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -5287,11 +5967,12 @@ class PhasesCompanion extends UpdateCompanion<Phase> {
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
-  PhasesCompanion.insert({
+  PlansCompanion.insert({
     required String id,
     required String ownerId,
     required String name,
     this.description = const Value.absent(),
+    this.totalAmount = const Value.absent(),
     this.isActive = const Value.absent(),
     this.sortOrder = const Value.absent(),
     required String createdAt,
@@ -5305,11 +5986,12 @@ class PhasesCompanion extends UpdateCompanion<Phase> {
        name = Value(name),
        createdAt = Value(createdAt),
        updatedAt = Value(updatedAt);
-  static Insertable<Phase> custom({
+  static Insertable<Plan> custom({
     Expression<String>? id,
     Expression<String>? ownerId,
     Expression<String>? name,
     Expression<String>? description,
+    Expression<int>? totalAmount,
     Expression<bool>? isActive,
     Expression<int>? sortOrder,
     Expression<String>? createdAt,
@@ -5324,6 +6006,7 @@ class PhasesCompanion extends UpdateCompanion<Phase> {
       if (ownerId != null) 'owner_id': ownerId,
       if (name != null) 'name': name,
       if (description != null) 'description': description,
+      if (totalAmount != null) 'total_amount': totalAmount,
       if (isActive != null) 'is_active': isActive,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (createdAt != null) 'created_at': createdAt,
@@ -5335,11 +6018,12 @@ class PhasesCompanion extends UpdateCompanion<Phase> {
     });
   }
 
-  PhasesCompanion copyWith({
+  PlansCompanion copyWith({
     Value<String>? id,
     Value<String>? ownerId,
     Value<String>? name,
     Value<String?>? description,
+    Value<int>? totalAmount,
     Value<bool>? isActive,
     Value<int>? sortOrder,
     Value<String>? createdAt,
@@ -5349,11 +6033,12 @@ class PhasesCompanion extends UpdateCompanion<Phase> {
     Value<String?>? deletedAt,
     Value<int>? rowid,
   }) {
-    return PhasesCompanion(
+    return PlansCompanion(
       id: id ?? this.id,
       ownerId: ownerId ?? this.ownerId,
       name: name ?? this.name,
       description: description ?? this.description,
+      totalAmount: totalAmount ?? this.totalAmount,
       isActive: isActive ?? this.isActive,
       sortOrder: sortOrder ?? this.sortOrder,
       createdAt: createdAt ?? this.createdAt,
@@ -5379,6 +6064,9 @@ class PhasesCompanion extends UpdateCompanion<Phase> {
     }
     if (description.present) {
       map['description'] = Variable<String>(description.value);
+    }
+    if (totalAmount.present) {
+      map['total_amount'] = Variable<int>(totalAmount.value);
     }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
@@ -5409,11 +6097,12 @@ class PhasesCompanion extends UpdateCompanion<Phase> {
 
   @override
   String toString() {
-    return (StringBuffer('PhasesCompanion(')
+    return (StringBuffer('PlansCompanion(')
           ..write('id: $id, ')
           ..write('ownerId: $ownerId, ')
           ..write('name: $name, ')
           ..write('description: $description, ')
+          ..write('totalAmount: $totalAmount, ')
           ..write('isActive: $isActive, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
@@ -5427,12 +6116,12 @@ class PhasesCompanion extends UpdateCompanion<Phase> {
   }
 }
 
-class $PhaseAllocationsTable extends PhaseAllocations
-    with TableInfo<$PhaseAllocationsTable, PhaseAllocation> {
+class $PlanAllocationsTable extends PlanAllocations
+    with TableInfo<$PlanAllocationsTable, PlanAllocation> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $PhaseAllocationsTable(this.attachedDatabase, [this._alias]);
+  $PlanAllocationsTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
@@ -5442,18 +6131,16 @@ class $PhaseAllocationsTable extends PhaseAllocations
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _phaseIdMeta = const VerificationMeta(
-    'phaseId',
-  );
+  static const VerificationMeta _planIdMeta = const VerificationMeta('planId');
   @override
-  late final GeneratedColumn<String> phaseId = GeneratedColumn<String>(
-    'phase_id',
+  late final GeneratedColumn<String> planId = GeneratedColumn<String>(
+    'plan_id',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES phases (id) ON DELETE CASCADE',
+      'REFERENCES plans (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _portfolioIdMeta = const VerificationMeta(
@@ -5484,12 +6171,12 @@ class $PhaseAllocationsTable extends PhaseAllocations
       'REFERENCES user_profiles (id)',
     ),
   );
-  static const VerificationMeta _monthlyAmountMeta = const VerificationMeta(
-    'monthlyAmount',
+  static const VerificationMeta _sharePercentX100Meta = const VerificationMeta(
+    'sharePercentX100',
   );
   @override
-  late final GeneratedColumn<int> monthlyAmount = GeneratedColumn<int>(
-    'monthly_amount',
+  late final GeneratedColumn<int> sharePercentX100 = GeneratedColumn<int>(
+    'share_percent_x100',
     aliasedName,
     false,
     type: DriftSqlType.int,
@@ -5555,10 +6242,10 @@ class $PhaseAllocationsTable extends PhaseAllocations
   @override
   List<GeneratedColumn> get $columns => [
     id,
-    phaseId,
+    planId,
     portfolioId,
     ownerId,
-    monthlyAmount,
+    sharePercentX100,
     createdAt,
     updatedAt,
     syncStatus,
@@ -5569,10 +6256,10 @@ class $PhaseAllocationsTable extends PhaseAllocations
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'phase_allocations';
+  static const String $name = 'plan_allocations';
   @override
   VerificationContext validateIntegrity(
-    Insertable<PhaseAllocation> instance, {
+    Insertable<PlanAllocation> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -5582,13 +6269,13 @@ class $PhaseAllocationsTable extends PhaseAllocations
     } else if (isInserting) {
       context.missing(_idMeta);
     }
-    if (data.containsKey('phase_id')) {
+    if (data.containsKey('plan_id')) {
       context.handle(
-        _phaseIdMeta,
-        phaseId.isAcceptableOrUnknown(data['phase_id']!, _phaseIdMeta),
+        _planIdMeta,
+        planId.isAcceptableOrUnknown(data['plan_id']!, _planIdMeta),
       );
     } else if (isInserting) {
-      context.missing(_phaseIdMeta);
+      context.missing(_planIdMeta);
     }
     if (data.containsKey('portfolio_id')) {
       context.handle(
@@ -5609,12 +6296,12 @@ class $PhaseAllocationsTable extends PhaseAllocations
     } else if (isInserting) {
       context.missing(_ownerIdMeta);
     }
-    if (data.containsKey('monthly_amount')) {
+    if (data.containsKey('share_percent_x100')) {
       context.handle(
-        _monthlyAmountMeta,
-        monthlyAmount.isAcceptableOrUnknown(
-          data['monthly_amount']!,
-          _monthlyAmountMeta,
+        _sharePercentX100Meta,
+        sharePercentX100.isAcceptableOrUnknown(
+          data['share_percent_x100']!,
+          _sharePercentX100Meta,
         ),
       );
     }
@@ -5659,19 +6346,19 @@ class $PhaseAllocationsTable extends PhaseAllocations
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
   List<Set<GeneratedColumn>> get uniqueKeys => [
-    {phaseId, portfolioId},
+    {planId, portfolioId},
   ];
   @override
-  PhaseAllocation map(Map<String, dynamic> data, {String? tablePrefix}) {
+  PlanAllocation map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return PhaseAllocation(
+    return PlanAllocation(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
-      phaseId: attachedDatabase.typeMapping.read(
+      planId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}phase_id'],
+        data['${effectivePrefix}plan_id'],
       )!,
       portfolioId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -5681,9 +6368,9 @@ class $PhaseAllocationsTable extends PhaseAllocations
         DriftSqlType.string,
         data['${effectivePrefix}owner_id'],
       )!,
-      monthlyAmount: attachedDatabase.typeMapping.read(
+      sharePercentX100: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
-        data['${effectivePrefix}monthly_amount'],
+        data['${effectivePrefix}share_percent_x100'],
       )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -5709,28 +6396,28 @@ class $PhaseAllocationsTable extends PhaseAllocations
   }
 
   @override
-  $PhaseAllocationsTable createAlias(String alias) {
-    return $PhaseAllocationsTable(attachedDatabase, alias);
+  $PlanAllocationsTable createAlias(String alias) {
+    return $PlanAllocationsTable(attachedDatabase, alias);
   }
 }
 
-class PhaseAllocation extends DataClass implements Insertable<PhaseAllocation> {
+class PlanAllocation extends DataClass implements Insertable<PlanAllocation> {
   final String id;
-  final String phaseId;
+  final String planId;
   final String portfolioId;
   final String ownerId;
-  final int monthlyAmount;
+  final int sharePercentX100;
   final String createdAt;
   final String updatedAt;
   final String syncStatus;
   final String? remoteId;
   final String? deletedAt;
-  const PhaseAllocation({
+  const PlanAllocation({
     required this.id,
-    required this.phaseId,
+    required this.planId,
     required this.portfolioId,
     required this.ownerId,
-    required this.monthlyAmount,
+    required this.sharePercentX100,
     required this.createdAt,
     required this.updatedAt,
     required this.syncStatus,
@@ -5741,10 +6428,10 @@ class PhaseAllocation extends DataClass implements Insertable<PhaseAllocation> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
-    map['phase_id'] = Variable<String>(phaseId);
+    map['plan_id'] = Variable<String>(planId);
     map['portfolio_id'] = Variable<String>(portfolioId);
     map['owner_id'] = Variable<String>(ownerId);
-    map['monthly_amount'] = Variable<int>(monthlyAmount);
+    map['share_percent_x100'] = Variable<int>(sharePercentX100);
     map['created_at'] = Variable<String>(createdAt);
     map['updated_at'] = Variable<String>(updatedAt);
     map['sync_status'] = Variable<String>(syncStatus);
@@ -5757,13 +6444,13 @@ class PhaseAllocation extends DataClass implements Insertable<PhaseAllocation> {
     return map;
   }
 
-  PhaseAllocationsCompanion toCompanion(bool nullToAbsent) {
-    return PhaseAllocationsCompanion(
+  PlanAllocationsCompanion toCompanion(bool nullToAbsent) {
+    return PlanAllocationsCompanion(
       id: Value(id),
-      phaseId: Value(phaseId),
+      planId: Value(planId),
       portfolioId: Value(portfolioId),
       ownerId: Value(ownerId),
-      monthlyAmount: Value(monthlyAmount),
+      sharePercentX100: Value(sharePercentX100),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       syncStatus: Value(syncStatus),
@@ -5776,17 +6463,17 @@ class PhaseAllocation extends DataClass implements Insertable<PhaseAllocation> {
     );
   }
 
-  factory PhaseAllocation.fromJson(
+  factory PlanAllocation.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return PhaseAllocation(
+    return PlanAllocation(
       id: serializer.fromJson<String>(json['id']),
-      phaseId: serializer.fromJson<String>(json['phaseId']),
+      planId: serializer.fromJson<String>(json['planId']),
       portfolioId: serializer.fromJson<String>(json['portfolioId']),
       ownerId: serializer.fromJson<String>(json['ownerId']),
-      monthlyAmount: serializer.fromJson<int>(json['monthlyAmount']),
+      sharePercentX100: serializer.fromJson<int>(json['sharePercentX100']),
       createdAt: serializer.fromJson<String>(json['createdAt']),
       updatedAt: serializer.fromJson<String>(json['updatedAt']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
@@ -5799,10 +6486,10 @@ class PhaseAllocation extends DataClass implements Insertable<PhaseAllocation> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
-      'phaseId': serializer.toJson<String>(phaseId),
+      'planId': serializer.toJson<String>(planId),
       'portfolioId': serializer.toJson<String>(portfolioId),
       'ownerId': serializer.toJson<String>(ownerId),
-      'monthlyAmount': serializer.toJson<int>(monthlyAmount),
+      'sharePercentX100': serializer.toJson<int>(sharePercentX100),
       'createdAt': serializer.toJson<String>(createdAt),
       'updatedAt': serializer.toJson<String>(updatedAt),
       'syncStatus': serializer.toJson<String>(syncStatus),
@@ -5811,40 +6498,40 @@ class PhaseAllocation extends DataClass implements Insertable<PhaseAllocation> {
     };
   }
 
-  PhaseAllocation copyWith({
+  PlanAllocation copyWith({
     String? id,
-    String? phaseId,
+    String? planId,
     String? portfolioId,
     String? ownerId,
-    int? monthlyAmount,
+    int? sharePercentX100,
     String? createdAt,
     String? updatedAt,
     String? syncStatus,
     Value<String?> remoteId = const Value.absent(),
     Value<String?> deletedAt = const Value.absent(),
-  }) => PhaseAllocation(
+  }) => PlanAllocation(
     id: id ?? this.id,
-    phaseId: phaseId ?? this.phaseId,
+    planId: planId ?? this.planId,
     portfolioId: portfolioId ?? this.portfolioId,
     ownerId: ownerId ?? this.ownerId,
-    monthlyAmount: monthlyAmount ?? this.monthlyAmount,
+    sharePercentX100: sharePercentX100 ?? this.sharePercentX100,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     syncStatus: syncStatus ?? this.syncStatus,
     remoteId: remoteId.present ? remoteId.value : this.remoteId,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
   );
-  PhaseAllocation copyWithCompanion(PhaseAllocationsCompanion data) {
-    return PhaseAllocation(
+  PlanAllocation copyWithCompanion(PlanAllocationsCompanion data) {
+    return PlanAllocation(
       id: data.id.present ? data.id.value : this.id,
-      phaseId: data.phaseId.present ? data.phaseId.value : this.phaseId,
+      planId: data.planId.present ? data.planId.value : this.planId,
       portfolioId: data.portfolioId.present
           ? data.portfolioId.value
           : this.portfolioId,
       ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
-      monthlyAmount: data.monthlyAmount.present
-          ? data.monthlyAmount.value
-          : this.monthlyAmount,
+      sharePercentX100: data.sharePercentX100.present
+          ? data.sharePercentX100.value
+          : this.sharePercentX100,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       syncStatus: data.syncStatus.present
@@ -5857,12 +6544,12 @@ class PhaseAllocation extends DataClass implements Insertable<PhaseAllocation> {
 
   @override
   String toString() {
-    return (StringBuffer('PhaseAllocation(')
+    return (StringBuffer('PlanAllocation(')
           ..write('id: $id, ')
-          ..write('phaseId: $phaseId, ')
+          ..write('planId: $planId, ')
           ..write('portfolioId: $portfolioId, ')
           ..write('ownerId: $ownerId, ')
-          ..write('monthlyAmount: $monthlyAmount, ')
+          ..write('sharePercentX100: $sharePercentX100, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('syncStatus: $syncStatus, ')
@@ -5875,10 +6562,10 @@ class PhaseAllocation extends DataClass implements Insertable<PhaseAllocation> {
   @override
   int get hashCode => Object.hash(
     id,
-    phaseId,
+    planId,
     portfolioId,
     ownerId,
-    monthlyAmount,
+    sharePercentX100,
     createdAt,
     updatedAt,
     syncStatus,
@@ -5888,12 +6575,12 @@ class PhaseAllocation extends DataClass implements Insertable<PhaseAllocation> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is PhaseAllocation &&
+      (other is PlanAllocation &&
           other.id == this.id &&
-          other.phaseId == this.phaseId &&
+          other.planId == this.planId &&
           other.portfolioId == this.portfolioId &&
           other.ownerId == this.ownerId &&
-          other.monthlyAmount == this.monthlyAmount &&
+          other.sharePercentX100 == this.sharePercentX100 &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.syncStatus == this.syncStatus &&
@@ -5901,24 +6588,24 @@ class PhaseAllocation extends DataClass implements Insertable<PhaseAllocation> {
           other.deletedAt == this.deletedAt);
 }
 
-class PhaseAllocationsCompanion extends UpdateCompanion<PhaseAllocation> {
+class PlanAllocationsCompanion extends UpdateCompanion<PlanAllocation> {
   final Value<String> id;
-  final Value<String> phaseId;
+  final Value<String> planId;
   final Value<String> portfolioId;
   final Value<String> ownerId;
-  final Value<int> monthlyAmount;
+  final Value<int> sharePercentX100;
   final Value<String> createdAt;
   final Value<String> updatedAt;
   final Value<String> syncStatus;
   final Value<String?> remoteId;
   final Value<String?> deletedAt;
   final Value<int> rowid;
-  const PhaseAllocationsCompanion({
+  const PlanAllocationsCompanion({
     this.id = const Value.absent(),
-    this.phaseId = const Value.absent(),
+    this.planId = const Value.absent(),
     this.portfolioId = const Value.absent(),
     this.ownerId = const Value.absent(),
-    this.monthlyAmount = const Value.absent(),
+    this.sharePercentX100 = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.syncStatus = const Value.absent(),
@@ -5926,12 +6613,12 @@ class PhaseAllocationsCompanion extends UpdateCompanion<PhaseAllocation> {
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
-  PhaseAllocationsCompanion.insert({
+  PlanAllocationsCompanion.insert({
     required String id,
-    required String phaseId,
+    required String planId,
     required String portfolioId,
     required String ownerId,
-    this.monthlyAmount = const Value.absent(),
+    this.sharePercentX100 = const Value.absent(),
     required String createdAt,
     required String updatedAt,
     this.syncStatus = const Value.absent(),
@@ -5939,17 +6626,17 @@ class PhaseAllocationsCompanion extends UpdateCompanion<PhaseAllocation> {
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
-       phaseId = Value(phaseId),
+       planId = Value(planId),
        portfolioId = Value(portfolioId),
        ownerId = Value(ownerId),
        createdAt = Value(createdAt),
        updatedAt = Value(updatedAt);
-  static Insertable<PhaseAllocation> custom({
+  static Insertable<PlanAllocation> custom({
     Expression<String>? id,
-    Expression<String>? phaseId,
+    Expression<String>? planId,
     Expression<String>? portfolioId,
     Expression<String>? ownerId,
-    Expression<int>? monthlyAmount,
+    Expression<int>? sharePercentX100,
     Expression<String>? createdAt,
     Expression<String>? updatedAt,
     Expression<String>? syncStatus,
@@ -5959,10 +6646,10 @@ class PhaseAllocationsCompanion extends UpdateCompanion<PhaseAllocation> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (phaseId != null) 'phase_id': phaseId,
+      if (planId != null) 'plan_id': planId,
       if (portfolioId != null) 'portfolio_id': portfolioId,
       if (ownerId != null) 'owner_id': ownerId,
-      if (monthlyAmount != null) 'monthly_amount': monthlyAmount,
+      if (sharePercentX100 != null) 'share_percent_x100': sharePercentX100,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (syncStatus != null) 'sync_status': syncStatus,
@@ -5972,12 +6659,12 @@ class PhaseAllocationsCompanion extends UpdateCompanion<PhaseAllocation> {
     });
   }
 
-  PhaseAllocationsCompanion copyWith({
+  PlanAllocationsCompanion copyWith({
     Value<String>? id,
-    Value<String>? phaseId,
+    Value<String>? planId,
     Value<String>? portfolioId,
     Value<String>? ownerId,
-    Value<int>? monthlyAmount,
+    Value<int>? sharePercentX100,
     Value<String>? createdAt,
     Value<String>? updatedAt,
     Value<String>? syncStatus,
@@ -5985,12 +6672,12 @@ class PhaseAllocationsCompanion extends UpdateCompanion<PhaseAllocation> {
     Value<String?>? deletedAt,
     Value<int>? rowid,
   }) {
-    return PhaseAllocationsCompanion(
+    return PlanAllocationsCompanion(
       id: id ?? this.id,
-      phaseId: phaseId ?? this.phaseId,
+      planId: planId ?? this.planId,
       portfolioId: portfolioId ?? this.portfolioId,
       ownerId: ownerId ?? this.ownerId,
-      monthlyAmount: monthlyAmount ?? this.monthlyAmount,
+      sharePercentX100: sharePercentX100 ?? this.sharePercentX100,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       syncStatus: syncStatus ?? this.syncStatus,
@@ -6006,8 +6693,8 @@ class PhaseAllocationsCompanion extends UpdateCompanion<PhaseAllocation> {
     if (id.present) {
       map['id'] = Variable<String>(id.value);
     }
-    if (phaseId.present) {
-      map['phase_id'] = Variable<String>(phaseId.value);
+    if (planId.present) {
+      map['plan_id'] = Variable<String>(planId.value);
     }
     if (portfolioId.present) {
       map['portfolio_id'] = Variable<String>(portfolioId.value);
@@ -6015,8 +6702,8 @@ class PhaseAllocationsCompanion extends UpdateCompanion<PhaseAllocation> {
     if (ownerId.present) {
       map['owner_id'] = Variable<String>(ownerId.value);
     }
-    if (monthlyAmount.present) {
-      map['monthly_amount'] = Variable<int>(monthlyAmount.value);
+    if (sharePercentX100.present) {
+      map['share_percent_x100'] = Variable<int>(sharePercentX100.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<String>(createdAt.value);
@@ -6041,12 +6728,12 @@ class PhaseAllocationsCompanion extends UpdateCompanion<PhaseAllocation> {
 
   @override
   String toString() {
-    return (StringBuffer('PhaseAllocationsCompanion(')
+    return (StringBuffer('PlanAllocationsCompanion(')
           ..write('id: $id, ')
-          ..write('phaseId: $phaseId, ')
+          ..write('planId: $planId, ')
           ..write('portfolioId: $portfolioId, ')
           ..write('ownerId: $ownerId, ')
-          ..write('monthlyAmount: $monthlyAmount, ')
+          ..write('sharePercentX100: $sharePercentX100, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('syncStatus: $syncStatus, ')
@@ -6811,6 +7498,976 @@ class PriceReferencesCompanion extends UpdateCompanion<PriceReference> {
   }
 }
 
+class $StockTransactionsTable extends StockTransactions
+    with TableInfo<$StockTransactionsTable, StockTransaction> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StockTransactionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES user_profiles (id)',
+    ),
+  );
+  static const VerificationMeta _componentIdMeta = const VerificationMeta(
+    'componentId',
+  );
+  @override
+  late final GeneratedColumn<String> componentId = GeneratedColumn<String>(
+    'component_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES portfolio_components (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _portfolioIdMeta = const VerificationMeta(
+    'portfolioId',
+  );
+  @override
+  late final GeneratedColumn<String> portfolioId = GeneratedColumn<String>(
+    'portfolio_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES portfolios (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _tickerMeta = const VerificationMeta('ticker');
+  @override
+  late final GeneratedColumn<String> ticker = GeneratedColumn<String>(
+    'ticker',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sideMeta = const VerificationMeta('side');
+  @override
+  late final GeneratedColumn<String> side = GeneratedColumn<String>(
+    'side',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lotsMeta = const VerificationMeta('lots');
+  @override
+  late final GeneratedColumn<int> lots = GeneratedColumn<int>(
+    'lots',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sharesMeta = const VerificationMeta('shares');
+  @override
+  late final GeneratedColumn<int> shares = GeneratedColumn<int>(
+    'shares',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pricePerShareMeta = const VerificationMeta(
+    'pricePerShare',
+  );
+  @override
+  late final GeneratedColumn<int> pricePerShare = GeneratedColumn<int>(
+    'price_per_share',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _totalAmountMeta = const VerificationMeta(
+    'totalAmount',
+  );
+  @override
+  late final GeneratedColumn<int> totalAmount = GeneratedColumn<int>(
+    'total_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _transactionDateMeta = const VerificationMeta(
+    'transactionDate',
+  );
+  @override
+  late final GeneratedColumn<String> transactionDate = GeneratedColumn<String>(
+    'transaction_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<String> createdAt = GeneratedColumn<String>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<String> updatedAt = GeneratedColumn<String>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('local_only'),
+  );
+  static const VerificationMeta _remoteIdMeta = const VerificationMeta(
+    'remoteId',
+  );
+  @override
+  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
+    'remote_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<String> deletedAt = GeneratedColumn<String>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    componentId,
+    portfolioId,
+    ticker,
+    side,
+    lots,
+    shares,
+    pricePerShare,
+    totalAmount,
+    transactionDate,
+    note,
+    createdAt,
+    updatedAt,
+    syncStatus,
+    remoteId,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'stock_transactions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StockTransaction> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('component_id')) {
+      context.handle(
+        _componentIdMeta,
+        componentId.isAcceptableOrUnknown(
+          data['component_id']!,
+          _componentIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_componentIdMeta);
+    }
+    if (data.containsKey('portfolio_id')) {
+      context.handle(
+        _portfolioIdMeta,
+        portfolioId.isAcceptableOrUnknown(
+          data['portfolio_id']!,
+          _portfolioIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_portfolioIdMeta);
+    }
+    if (data.containsKey('ticker')) {
+      context.handle(
+        _tickerMeta,
+        ticker.isAcceptableOrUnknown(data['ticker']!, _tickerMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tickerMeta);
+    }
+    if (data.containsKey('side')) {
+      context.handle(
+        _sideMeta,
+        side.isAcceptableOrUnknown(data['side']!, _sideMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sideMeta);
+    }
+    if (data.containsKey('lots')) {
+      context.handle(
+        _lotsMeta,
+        lots.isAcceptableOrUnknown(data['lots']!, _lotsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lotsMeta);
+    }
+    if (data.containsKey('shares')) {
+      context.handle(
+        _sharesMeta,
+        shares.isAcceptableOrUnknown(data['shares']!, _sharesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sharesMeta);
+    }
+    if (data.containsKey('price_per_share')) {
+      context.handle(
+        _pricePerShareMeta,
+        pricePerShare.isAcceptableOrUnknown(
+          data['price_per_share']!,
+          _pricePerShareMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_pricePerShareMeta);
+    }
+    if (data.containsKey('total_amount')) {
+      context.handle(
+        _totalAmountMeta,
+        totalAmount.isAcceptableOrUnknown(
+          data['total_amount']!,
+          _totalAmountMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_totalAmountMeta);
+    }
+    if (data.containsKey('transaction_date')) {
+      context.handle(
+        _transactionDateMeta,
+        transactionDate.isAcceptableOrUnknown(
+          data['transaction_date']!,
+          _transactionDateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_transactionDateMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('remote_id')) {
+      context.handle(
+        _remoteIdMeta,
+        remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  StockTransaction map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StockTransaction(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      componentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}component_id'],
+      )!,
+      portfolioId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}portfolio_id'],
+      )!,
+      ticker: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ticker'],
+      )!,
+      side: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}side'],
+      )!,
+      lots: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}lots'],
+      )!,
+      shares: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}shares'],
+      )!,
+      pricePerShare: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}price_per_share'],
+      )!,
+      totalAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_amount'],
+      )!,
+      transactionDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}transaction_date'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
+      remoteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}remote_id'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $StockTransactionsTable createAlias(String alias) {
+    return $StockTransactionsTable(attachedDatabase, alias);
+  }
+}
+
+class StockTransaction extends DataClass
+    implements Insertable<StockTransaction> {
+  final String id;
+  final String ownerId;
+  final String componentId;
+  final String portfolioId;
+  final String ticker;
+  final String side;
+  final int lots;
+  final int shares;
+  final int pricePerShare;
+  final int totalAmount;
+  final String transactionDate;
+  final String? note;
+  final String createdAt;
+  final String updatedAt;
+  final String syncStatus;
+  final String? remoteId;
+  final String? deletedAt;
+  const StockTransaction({
+    required this.id,
+    required this.ownerId,
+    required this.componentId,
+    required this.portfolioId,
+    required this.ticker,
+    required this.side,
+    required this.lots,
+    required this.shares,
+    required this.pricePerShare,
+    required this.totalAmount,
+    required this.transactionDate,
+    this.note,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.syncStatus,
+    this.remoteId,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['component_id'] = Variable<String>(componentId);
+    map['portfolio_id'] = Variable<String>(portfolioId);
+    map['ticker'] = Variable<String>(ticker);
+    map['side'] = Variable<String>(side);
+    map['lots'] = Variable<int>(lots);
+    map['shares'] = Variable<int>(shares);
+    map['price_per_share'] = Variable<int>(pricePerShare);
+    map['total_amount'] = Variable<int>(totalAmount);
+    map['transaction_date'] = Variable<String>(transactionDate);
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['created_at'] = Variable<String>(createdAt);
+    map['updated_at'] = Variable<String>(updatedAt);
+    map['sync_status'] = Variable<String>(syncStatus);
+    if (!nullToAbsent || remoteId != null) {
+      map['remote_id'] = Variable<String>(remoteId);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<String>(deletedAt);
+    }
+    return map;
+  }
+
+  StockTransactionsCompanion toCompanion(bool nullToAbsent) {
+    return StockTransactionsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      componentId: Value(componentId),
+      portfolioId: Value(portfolioId),
+      ticker: Value(ticker),
+      side: Value(side),
+      lots: Value(lots),
+      shares: Value(shares),
+      pricePerShare: Value(pricePerShare),
+      totalAmount: Value(totalAmount),
+      transactionDate: Value(transactionDate),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      syncStatus: Value(syncStatus),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory StockTransaction.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StockTransaction(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      componentId: serializer.fromJson<String>(json['componentId']),
+      portfolioId: serializer.fromJson<String>(json['portfolioId']),
+      ticker: serializer.fromJson<String>(json['ticker']),
+      side: serializer.fromJson<String>(json['side']),
+      lots: serializer.fromJson<int>(json['lots']),
+      shares: serializer.fromJson<int>(json['shares']),
+      pricePerShare: serializer.fromJson<int>(json['pricePerShare']),
+      totalAmount: serializer.fromJson<int>(json['totalAmount']),
+      transactionDate: serializer.fromJson<String>(json['transactionDate']),
+      note: serializer.fromJson<String?>(json['note']),
+      createdAt: serializer.fromJson<String>(json['createdAt']),
+      updatedAt: serializer.fromJson<String>(json['updatedAt']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      remoteId: serializer.fromJson<String?>(json['remoteId']),
+      deletedAt: serializer.fromJson<String?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'componentId': serializer.toJson<String>(componentId),
+      'portfolioId': serializer.toJson<String>(portfolioId),
+      'ticker': serializer.toJson<String>(ticker),
+      'side': serializer.toJson<String>(side),
+      'lots': serializer.toJson<int>(lots),
+      'shares': serializer.toJson<int>(shares),
+      'pricePerShare': serializer.toJson<int>(pricePerShare),
+      'totalAmount': serializer.toJson<int>(totalAmount),
+      'transactionDate': serializer.toJson<String>(transactionDate),
+      'note': serializer.toJson<String?>(note),
+      'createdAt': serializer.toJson<String>(createdAt),
+      'updatedAt': serializer.toJson<String>(updatedAt),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+      'remoteId': serializer.toJson<String?>(remoteId),
+      'deletedAt': serializer.toJson<String?>(deletedAt),
+    };
+  }
+
+  StockTransaction copyWith({
+    String? id,
+    String? ownerId,
+    String? componentId,
+    String? portfolioId,
+    String? ticker,
+    String? side,
+    int? lots,
+    int? shares,
+    int? pricePerShare,
+    int? totalAmount,
+    String? transactionDate,
+    Value<String?> note = const Value.absent(),
+    String? createdAt,
+    String? updatedAt,
+    String? syncStatus,
+    Value<String?> remoteId = const Value.absent(),
+    Value<String?> deletedAt = const Value.absent(),
+  }) => StockTransaction(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    componentId: componentId ?? this.componentId,
+    portfolioId: portfolioId ?? this.portfolioId,
+    ticker: ticker ?? this.ticker,
+    side: side ?? this.side,
+    lots: lots ?? this.lots,
+    shares: shares ?? this.shares,
+    pricePerShare: pricePerShare ?? this.pricePerShare,
+    totalAmount: totalAmount ?? this.totalAmount,
+    transactionDate: transactionDate ?? this.transactionDate,
+    note: note.present ? note.value : this.note,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    syncStatus: syncStatus ?? this.syncStatus,
+    remoteId: remoteId.present ? remoteId.value : this.remoteId,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  StockTransaction copyWithCompanion(StockTransactionsCompanion data) {
+    return StockTransaction(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      componentId: data.componentId.present
+          ? data.componentId.value
+          : this.componentId,
+      portfolioId: data.portfolioId.present
+          ? data.portfolioId.value
+          : this.portfolioId,
+      ticker: data.ticker.present ? data.ticker.value : this.ticker,
+      side: data.side.present ? data.side.value : this.side,
+      lots: data.lots.present ? data.lots.value : this.lots,
+      shares: data.shares.present ? data.shares.value : this.shares,
+      pricePerShare: data.pricePerShare.present
+          ? data.pricePerShare.value
+          : this.pricePerShare,
+      totalAmount: data.totalAmount.present
+          ? data.totalAmount.value
+          : this.totalAmount,
+      transactionDate: data.transactionDate.present
+          ? data.transactionDate.value
+          : this.transactionDate,
+      note: data.note.present ? data.note.value : this.note,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StockTransaction(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('componentId: $componentId, ')
+          ..write('portfolioId: $portfolioId, ')
+          ..write('ticker: $ticker, ')
+          ..write('side: $side, ')
+          ..write('lots: $lots, ')
+          ..write('shares: $shares, ')
+          ..write('pricePerShare: $pricePerShare, ')
+          ..write('totalAmount: $totalAmount, ')
+          ..write('transactionDate: $transactionDate, ')
+          ..write('note: $note, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    componentId,
+    portfolioId,
+    ticker,
+    side,
+    lots,
+    shares,
+    pricePerShare,
+    totalAmount,
+    transactionDate,
+    note,
+    createdAt,
+    updatedAt,
+    syncStatus,
+    remoteId,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StockTransaction &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.componentId == this.componentId &&
+          other.portfolioId == this.portfolioId &&
+          other.ticker == this.ticker &&
+          other.side == this.side &&
+          other.lots == this.lots &&
+          other.shares == this.shares &&
+          other.pricePerShare == this.pricePerShare &&
+          other.totalAmount == this.totalAmount &&
+          other.transactionDate == this.transactionDate &&
+          other.note == this.note &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.syncStatus == this.syncStatus &&
+          other.remoteId == this.remoteId &&
+          other.deletedAt == this.deletedAt);
+}
+
+class StockTransactionsCompanion extends UpdateCompanion<StockTransaction> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> componentId;
+  final Value<String> portfolioId;
+  final Value<String> ticker;
+  final Value<String> side;
+  final Value<int> lots;
+  final Value<int> shares;
+  final Value<int> pricePerShare;
+  final Value<int> totalAmount;
+  final Value<String> transactionDate;
+  final Value<String?> note;
+  final Value<String> createdAt;
+  final Value<String> updatedAt;
+  final Value<String> syncStatus;
+  final Value<String?> remoteId;
+  final Value<String?> deletedAt;
+  final Value<int> rowid;
+  const StockTransactionsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.componentId = const Value.absent(),
+    this.portfolioId = const Value.absent(),
+    this.ticker = const Value.absent(),
+    this.side = const Value.absent(),
+    this.lots = const Value.absent(),
+    this.shares = const Value.absent(),
+    this.pricePerShare = const Value.absent(),
+    this.totalAmount = const Value.absent(),
+    this.transactionDate = const Value.absent(),
+    this.note = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  StockTransactionsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String componentId,
+    required String portfolioId,
+    required String ticker,
+    required String side,
+    required int lots,
+    required int shares,
+    required int pricePerShare,
+    required int totalAmount,
+    required String transactionDate,
+    this.note = const Value.absent(),
+    required String createdAt,
+    required String updatedAt,
+    this.syncStatus = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       componentId = Value(componentId),
+       portfolioId = Value(portfolioId),
+       ticker = Value(ticker),
+       side = Value(side),
+       lots = Value(lots),
+       shares = Value(shares),
+       pricePerShare = Value(pricePerShare),
+       totalAmount = Value(totalAmount),
+       transactionDate = Value(transactionDate),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<StockTransaction> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? componentId,
+    Expression<String>? portfolioId,
+    Expression<String>? ticker,
+    Expression<String>? side,
+    Expression<int>? lots,
+    Expression<int>? shares,
+    Expression<int>? pricePerShare,
+    Expression<int>? totalAmount,
+    Expression<String>? transactionDate,
+    Expression<String>? note,
+    Expression<String>? createdAt,
+    Expression<String>? updatedAt,
+    Expression<String>? syncStatus,
+    Expression<String>? remoteId,
+    Expression<String>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (componentId != null) 'component_id': componentId,
+      if (portfolioId != null) 'portfolio_id': portfolioId,
+      if (ticker != null) 'ticker': ticker,
+      if (side != null) 'side': side,
+      if (lots != null) 'lots': lots,
+      if (shares != null) 'shares': shares,
+      if (pricePerShare != null) 'price_per_share': pricePerShare,
+      if (totalAmount != null) 'total_amount': totalAmount,
+      if (transactionDate != null) 'transaction_date': transactionDate,
+      if (note != null) 'note': note,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (remoteId != null) 'remote_id': remoteId,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  StockTransactionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? componentId,
+    Value<String>? portfolioId,
+    Value<String>? ticker,
+    Value<String>? side,
+    Value<int>? lots,
+    Value<int>? shares,
+    Value<int>? pricePerShare,
+    Value<int>? totalAmount,
+    Value<String>? transactionDate,
+    Value<String?>? note,
+    Value<String>? createdAt,
+    Value<String>? updatedAt,
+    Value<String>? syncStatus,
+    Value<String?>? remoteId,
+    Value<String?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return StockTransactionsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      componentId: componentId ?? this.componentId,
+      portfolioId: portfolioId ?? this.portfolioId,
+      ticker: ticker ?? this.ticker,
+      side: side ?? this.side,
+      lots: lots ?? this.lots,
+      shares: shares ?? this.shares,
+      pricePerShare: pricePerShare ?? this.pricePerShare,
+      totalAmount: totalAmount ?? this.totalAmount,
+      transactionDate: transactionDate ?? this.transactionDate,
+      note: note ?? this.note,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+      remoteId: remoteId ?? this.remoteId,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (componentId.present) {
+      map['component_id'] = Variable<String>(componentId.value);
+    }
+    if (portfolioId.present) {
+      map['portfolio_id'] = Variable<String>(portfolioId.value);
+    }
+    if (ticker.present) {
+      map['ticker'] = Variable<String>(ticker.value);
+    }
+    if (side.present) {
+      map['side'] = Variable<String>(side.value);
+    }
+    if (lots.present) {
+      map['lots'] = Variable<int>(lots.value);
+    }
+    if (shares.present) {
+      map['shares'] = Variable<int>(shares.value);
+    }
+    if (pricePerShare.present) {
+      map['price_per_share'] = Variable<int>(pricePerShare.value);
+    }
+    if (totalAmount.present) {
+      map['total_amount'] = Variable<int>(totalAmount.value);
+    }
+    if (transactionDate.present) {
+      map['transaction_date'] = Variable<String>(transactionDate.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<String>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<String>(updatedAt.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (remoteId.present) {
+      map['remote_id'] = Variable<String>(remoteId.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<String>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StockTransactionsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('componentId: $componentId, ')
+          ..write('portfolioId: $portfolioId, ')
+          ..write('ticker: $ticker, ')
+          ..write('side: $side, ')
+          ..write('lots: $lots, ')
+          ..write('shares: $shares, ')
+          ..write('pricePerShare: $pricePerShare, ')
+          ..write('totalAmount: $totalAmount, ')
+          ..write('transactionDate: $transactionDate, ')
+          ..write('note: $note, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6820,13 +8477,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PortfolioComponentsTable portfolioComponents =
       $PortfolioComponentsTable(this);
   late final $ContributionsTable contributions = $ContributionsTable(this);
-  late final $PhasesTable phases = $PhasesTable(this);
-  late final $PhaseAllocationsTable phaseAllocations = $PhaseAllocationsTable(
+  late final $PlansTable plans = $PlansTable(this);
+  late final $PlanAllocationsTable planAllocations = $PlanAllocationsTable(
     this,
   );
   late final $PriceReferencesTable priceReferences = $PriceReferencesTable(
     this,
   );
+  late final $StockTransactionsTable stockTransactions =
+      $StockTransactionsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6837,9 +8496,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     portfolios,
     portfolioComponents,
     contributions,
-    phases,
-    phaseAllocations,
+    plans,
+    planAllocations,
     priceReferences,
+    stockTransactions,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -6859,17 +8519,31 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
-        'phases',
+        'plans',
         limitUpdateKind: UpdateKind.delete,
       ),
-      result: [TableUpdate('phase_allocations', kind: UpdateKind.delete)],
+      result: [TableUpdate('plan_allocations', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
         'portfolios',
         limitUpdateKind: UpdateKind.delete,
       ),
-      result: [TableUpdate('phase_allocations', kind: UpdateKind.delete)],
+      result: [TableUpdate('plan_allocations', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'portfolio_components',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('stock_transactions', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'portfolios',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('stock_transactions', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -6998,39 +8672,39 @@ final class $$UserProfilesTableReferences
     );
   }
 
-  static MultiTypedResultKey<$PhasesTable, List<Phase>> _phasesRefsTable(
+  static MultiTypedResultKey<$PlansTable, List<Plan>> _plansRefsTable(
     _$AppDatabase db,
   ) => MultiTypedResultKey.fromTable(
-    db.phases,
-    aliasName: 'user_profiles__id__phases__owner_id',
+    db.plans,
+    aliasName: 'user_profiles__id__plans__owner_id',
   );
 
-  $$PhasesTableProcessedTableManager get phasesRefs {
-    final manager = $$PhasesTableTableManager(
+  $$PlansTableProcessedTableManager get plansRefs {
+    final manager = $$PlansTableTableManager(
       $_db,
-      $_db.phases,
+      $_db.plans,
     ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
 
-    final cache = $_typedResult.readTableOrNull(_phasesRefsTable($_db));
+    final cache = $_typedResult.readTableOrNull(_plansRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
 
-  static MultiTypedResultKey<$PhaseAllocationsTable, List<PhaseAllocation>>
-  _phaseAllocationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.phaseAllocations,
-    aliasName: 'user_profiles__id__phase_allocations__owner_id',
+  static MultiTypedResultKey<$PlanAllocationsTable, List<PlanAllocation>>
+  _planAllocationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.planAllocations,
+    aliasName: 'user_profiles__id__plan_allocations__owner_id',
   );
 
-  $$PhaseAllocationsTableProcessedTableManager get phaseAllocationsRefs {
-    final manager = $$PhaseAllocationsTableTableManager(
+  $$PlanAllocationsTableProcessedTableManager get planAllocationsRefs {
+    final manager = $$PlanAllocationsTableTableManager(
       $_db,
-      $_db.phaseAllocations,
+      $_db.planAllocations,
     ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(
-      _phaseAllocationsRefsTable($_db),
+      _planAllocationsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -7051,6 +8725,27 @@ final class $$UserProfilesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _priceReferencesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$StockTransactionsTable, List<StockTransaction>>
+  _stockTransactionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.stockTransactions,
+        aliasName: 'user_profiles__id__stock_transactions__owner_id',
+      );
+
+  $$StockTransactionsTableProcessedTableManager get stockTransactionsRefs {
+    final manager = $$StockTransactionsTableTableManager(
+      $_db,
+      $_db.stockTransactions,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _stockTransactionsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -7247,22 +8942,22 @@ class $$UserProfilesTableFilterComposer
     return f(composer);
   }
 
-  Expression<bool> phasesRefs(
-    Expression<bool> Function($$PhasesTableFilterComposer f) f,
+  Expression<bool> plansRefs(
+    Expression<bool> Function($$PlansTableFilterComposer f) f,
   ) {
-    final $$PhasesTableFilterComposer composer = $composerBuilder(
+    final $$PlansTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.phases,
+      referencedTable: $db.plans,
       getReferencedColumn: (t) => t.ownerId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$PhasesTableFilterComposer(
+          }) => $$PlansTableFilterComposer(
             $db: $db,
-            $table: $db.phases,
+            $table: $db.plans,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7272,22 +8967,22 @@ class $$UserProfilesTableFilterComposer
     return f(composer);
   }
 
-  Expression<bool> phaseAllocationsRefs(
-    Expression<bool> Function($$PhaseAllocationsTableFilterComposer f) f,
+  Expression<bool> planAllocationsRefs(
+    Expression<bool> Function($$PlanAllocationsTableFilterComposer f) f,
   ) {
-    final $$PhaseAllocationsTableFilterComposer composer = $composerBuilder(
+    final $$PlanAllocationsTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.phaseAllocations,
+      referencedTable: $db.planAllocations,
       getReferencedColumn: (t) => t.ownerId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$PhaseAllocationsTableFilterComposer(
+          }) => $$PlanAllocationsTableFilterComposer(
             $db: $db,
-            $table: $db.phaseAllocations,
+            $table: $db.planAllocations,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7313,6 +9008,31 @@ class $$UserProfilesTableFilterComposer
           }) => $$PriceReferencesTableFilterComposer(
             $db: $db,
             $table: $db.priceReferences,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> stockTransactionsRefs(
+    Expression<bool> Function($$StockTransactionsTableFilterComposer f) f,
+  ) {
+    final $$StockTransactionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.stockTransactions,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StockTransactionsTableFilterComposer(
+            $db: $db,
+            $table: $db.stockTransactions,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7585,22 +9305,22 @@ class $$UserProfilesTableAnnotationComposer
     return f(composer);
   }
 
-  Expression<T> phasesRefs<T extends Object>(
-    Expression<T> Function($$PhasesTableAnnotationComposer a) f,
+  Expression<T> plansRefs<T extends Object>(
+    Expression<T> Function($$PlansTableAnnotationComposer a) f,
   ) {
-    final $$PhasesTableAnnotationComposer composer = $composerBuilder(
+    final $$PlansTableAnnotationComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.phases,
+      referencedTable: $db.plans,
       getReferencedColumn: (t) => t.ownerId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$PhasesTableAnnotationComposer(
+          }) => $$PlansTableAnnotationComposer(
             $db: $db,
-            $table: $db.phases,
+            $table: $db.plans,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7610,22 +9330,22 @@ class $$UserProfilesTableAnnotationComposer
     return f(composer);
   }
 
-  Expression<T> phaseAllocationsRefs<T extends Object>(
-    Expression<T> Function($$PhaseAllocationsTableAnnotationComposer a) f,
+  Expression<T> planAllocationsRefs<T extends Object>(
+    Expression<T> Function($$PlanAllocationsTableAnnotationComposer a) f,
   ) {
-    final $$PhaseAllocationsTableAnnotationComposer composer = $composerBuilder(
+    final $$PlanAllocationsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.phaseAllocations,
+      referencedTable: $db.planAllocations,
       getReferencedColumn: (t) => t.ownerId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$PhaseAllocationsTableAnnotationComposer(
+          }) => $$PlanAllocationsTableAnnotationComposer(
             $db: $db,
-            $table: $db.phaseAllocations,
+            $table: $db.planAllocations,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7659,6 +9379,32 @@ class $$UserProfilesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> stockTransactionsRefs<T extends Object>(
+    Expression<T> Function($$StockTransactionsTableAnnotationComposer a) f,
+  ) {
+    final $$StockTransactionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.stockTransactions,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$StockTransactionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.stockTransactions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$UserProfilesTableTableManager
@@ -7679,9 +9425,10 @@ class $$UserProfilesTableTableManager
             bool portfoliosRefs,
             bool portfolioComponentsRefs,
             bool contributionsRefs,
-            bool phasesRefs,
-            bool phaseAllocationsRefs,
+            bool plansRefs,
+            bool planAllocationsRefs,
             bool priceReferencesRefs,
+            bool stockTransactionsRefs,
           })
         > {
   $$UserProfilesTableTableManager(_$AppDatabase db, $UserProfilesTable table)
@@ -7785,9 +9532,10 @@ class $$UserProfilesTableTableManager
                 portfoliosRefs = false,
                 portfolioComponentsRefs = false,
                 contributionsRefs = false,
-                phasesRefs = false,
-                phaseAllocationsRefs = false,
+                plansRefs = false,
+                planAllocationsRefs = false,
                 priceReferencesRefs = false,
+                stockTransactionsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -7796,9 +9544,10 @@ class $$UserProfilesTableTableManager
                     if (portfoliosRefs) db.portfolios,
                     if (portfolioComponentsRefs) db.portfolioComponents,
                     if (contributionsRefs) db.contributions,
-                    if (phasesRefs) db.phases,
-                    if (phaseAllocationsRefs) db.phaseAllocations,
+                    if (plansRefs) db.plans,
+                    if (planAllocationsRefs) db.planAllocations,
                     if (priceReferencesRefs) db.priceReferences,
+                    if (stockTransactionsRefs) db.stockTransactions,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -7883,42 +9632,42 @@ class $$UserProfilesTableTableManager
                           referencedColumn: 'owner_id',
                           typedResults: items,
                         ),
-                      if (phasesRefs)
+                      if (plansRefs)
                         await $_getPrefetchedDataByColumns<
                           UserProfile,
                           $UserProfilesTable,
-                          Phase,
-                          $PhasesTable
+                          Plan,
+                          $PlansTable
                         >(
                           currentTable: table,
                           referencedTable: $$UserProfilesTableReferences
-                              ._phasesRefsTable(db),
+                              ._plansRefsTable(db),
                           managerFromTypedResult: (p0) =>
                               $$UserProfilesTableReferences(
                                 db,
                                 table,
                                 p0,
-                              ).phasesRefs,
+                              ).plansRefs,
                           currentColumn: 'id',
                           referencedColumn: 'owner_id',
                           typedResults: items,
                         ),
-                      if (phaseAllocationsRefs)
+                      if (planAllocationsRefs)
                         await $_getPrefetchedDataByColumns<
                           UserProfile,
                           $UserProfilesTable,
-                          PhaseAllocation,
-                          $PhaseAllocationsTable
+                          PlanAllocation,
+                          $PlanAllocationsTable
                         >(
                           currentTable: table,
                           referencedTable: $$UserProfilesTableReferences
-                              ._phaseAllocationsRefsTable(db),
+                              ._planAllocationsRefsTable(db),
                           managerFromTypedResult: (p0) =>
                               $$UserProfilesTableReferences(
                                 db,
                                 table,
                                 p0,
-                              ).phaseAllocationsRefs,
+                              ).planAllocationsRefs,
                           currentColumn: 'id',
                           referencedColumn: 'owner_id',
                           typedResults: items,
@@ -7939,6 +9688,26 @@ class $$UserProfilesTableTableManager
                                 table,
                                 p0,
                               ).priceReferencesRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'owner_id',
+                          typedResults: items,
+                        ),
+                      if (stockTransactionsRefs)
+                        await $_getPrefetchedDataByColumns<
+                          UserProfile,
+                          $UserProfilesTable,
+                          StockTransaction,
+                          $StockTransactionsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UserProfilesTableReferences
+                              ._stockTransactionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UserProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).stockTransactionsRefs,
                           currentColumn: 'id',
                           referencedColumn: 'owner_id',
                           typedResults: items,
@@ -7968,9 +9737,10 @@ typedef $$UserProfilesTableProcessedTableManager =
         bool portfoliosRefs,
         bool portfolioComponentsRefs,
         bool contributionsRefs,
-        bool phasesRefs,
-        bool phaseAllocationsRefs,
+        bool plansRefs,
+        bool planAllocationsRefs,
         bool priceReferencesRefs,
+        bool stockTransactionsRefs,
       })
     >;
 typedef $$SettingsTableCreateCompanionBuilder = SettingsCompanion Function({
@@ -7980,12 +9750,20 @@ typedef $$SettingsTableCreateCompanionBuilder = SettingsCompanion Function({
   Value<int?> minimumLivingCost,
   Value<int?> currentLivingCost,
   Value<double> defaultAnnualReturnPct,
-  Value<bool> phaseLimitEnabled,
-  Value<int?> phaseLimitAmount,
+  Value<bool> planLimitEnabled,
+  Value<int?> planLimitAmount,
   Value<bool> onboardingDone,
   Value<int> seedVersion,
   Value<String> componentInputMode,
   Value<String?> quoteCardDismissedMonth,
+  Value<bool> reminderMonthlyEnabled,
+  Value<int> reminderMonthlyDay,
+  Value<int> reminderMonthlyHour,
+  Value<int> reminderMonthlyMinute,
+  Value<bool> reminderExpenseEnabled,
+  Value<int> reminderExpenseHour,
+  Value<int> reminderExpenseMinute,
+  Value<bool> reminderMilestoneEnabled,
   required String createdAt,
   required String updatedAt,
   Value<String> syncStatus,
@@ -8000,12 +9778,20 @@ typedef $$SettingsTableUpdateCompanionBuilder = SettingsCompanion Function({
   Value<int?> minimumLivingCost,
   Value<int?> currentLivingCost,
   Value<double> defaultAnnualReturnPct,
-  Value<bool> phaseLimitEnabled,
-  Value<int?> phaseLimitAmount,
+  Value<bool> planLimitEnabled,
+  Value<int?> planLimitAmount,
   Value<bool> onboardingDone,
   Value<int> seedVersion,
   Value<String> componentInputMode,
   Value<String?> quoteCardDismissedMonth,
+  Value<bool> reminderMonthlyEnabled,
+  Value<int> reminderMonthlyDay,
+  Value<int> reminderMonthlyHour,
+  Value<int> reminderMonthlyMinute,
+  Value<bool> reminderExpenseEnabled,
+  Value<int> reminderExpenseHour,
+  Value<int> reminderExpenseMinute,
+  Value<bool> reminderMilestoneEnabled,
   Value<String> createdAt,
   Value<String> updatedAt,
   Value<String> syncStatus,
@@ -8070,13 +9856,13 @@ class $$SettingsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<bool> get phaseLimitEnabled => $composableBuilder(
-    column: $table.phaseLimitEnabled,
+  ColumnFilters<bool> get planLimitEnabled => $composableBuilder(
+    column: $table.planLimitEnabled,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get phaseLimitAmount => $composableBuilder(
-    column: $table.phaseLimitAmount,
+  ColumnFilters<int> get planLimitAmount => $composableBuilder(
+    column: $table.planLimitAmount,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8097,6 +9883,46 @@ class $$SettingsTableFilterComposer
 
   ColumnFilters<String> get quoteCardDismissedMonth => $composableBuilder(
     column: $table.quoteCardDismissedMonth,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get reminderMonthlyEnabled => $composableBuilder(
+    column: $table.reminderMonthlyEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reminderMonthlyDay => $composableBuilder(
+    column: $table.reminderMonthlyDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reminderMonthlyHour => $composableBuilder(
+    column: $table.reminderMonthlyHour,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reminderMonthlyMinute => $composableBuilder(
+    column: $table.reminderMonthlyMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get reminderExpenseEnabled => $composableBuilder(
+    column: $table.reminderExpenseEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reminderExpenseHour => $composableBuilder(
+    column: $table.reminderExpenseHour,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reminderExpenseMinute => $composableBuilder(
+    column: $table.reminderExpenseMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get reminderMilestoneEnabled => $composableBuilder(
+    column: $table.reminderMilestoneEnabled,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8183,13 +10009,13 @@ class $$SettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get phaseLimitEnabled => $composableBuilder(
-    column: $table.phaseLimitEnabled,
+  ColumnOrderings<bool> get planLimitEnabled => $composableBuilder(
+    column: $table.planLimitEnabled,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get phaseLimitAmount => $composableBuilder(
-    column: $table.phaseLimitAmount,
+  ColumnOrderings<int> get planLimitAmount => $composableBuilder(
+    column: $table.planLimitAmount,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -8210,6 +10036,46 @@ class $$SettingsTableOrderingComposer
 
   ColumnOrderings<String> get quoteCardDismissedMonth => $composableBuilder(
     column: $table.quoteCardDismissedMonth,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get reminderMonthlyEnabled => $composableBuilder(
+    column: $table.reminderMonthlyEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get reminderMonthlyDay => $composableBuilder(
+    column: $table.reminderMonthlyDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get reminderMonthlyHour => $composableBuilder(
+    column: $table.reminderMonthlyHour,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get reminderMonthlyMinute => $composableBuilder(
+    column: $table.reminderMonthlyMinute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get reminderExpenseEnabled => $composableBuilder(
+    column: $table.reminderExpenseEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get reminderExpenseHour => $composableBuilder(
+    column: $table.reminderExpenseHour,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get reminderExpenseMinute => $composableBuilder(
+    column: $table.reminderExpenseMinute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get reminderMilestoneEnabled => $composableBuilder(
+    column: $table.reminderMilestoneEnabled,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -8294,13 +10160,13 @@ class $$SettingsTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<bool> get phaseLimitEnabled => $composableBuilder(
-    column: $table.phaseLimitEnabled,
+  GeneratedColumn<bool> get planLimitEnabled => $composableBuilder(
+    column: $table.planLimitEnabled,
     builder: (column) => column,
   );
 
-  GeneratedColumn<int> get phaseLimitAmount => $composableBuilder(
-    column: $table.phaseLimitAmount,
+  GeneratedColumn<int> get planLimitAmount => $composableBuilder(
+    column: $table.planLimitAmount,
     builder: (column) => column,
   );
 
@@ -8321,6 +10187,46 @@ class $$SettingsTableAnnotationComposer
 
   GeneratedColumn<String> get quoteCardDismissedMonth => $composableBuilder(
     column: $table.quoteCardDismissedMonth,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get reminderMonthlyEnabled => $composableBuilder(
+    column: $table.reminderMonthlyEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get reminderMonthlyDay => $composableBuilder(
+    column: $table.reminderMonthlyDay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get reminderMonthlyHour => $composableBuilder(
+    column: $table.reminderMonthlyHour,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get reminderMonthlyMinute => $composableBuilder(
+    column: $table.reminderMonthlyMinute,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get reminderExpenseEnabled => $composableBuilder(
+    column: $table.reminderExpenseEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get reminderExpenseHour => $composableBuilder(
+    column: $table.reminderExpenseHour,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get reminderExpenseMinute => $composableBuilder(
+    column: $table.reminderExpenseMinute,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get reminderMilestoneEnabled => $composableBuilder(
+    column: $table.reminderMilestoneEnabled,
     builder: (column) => column,
   );
 
@@ -8399,12 +10305,20 @@ class $$SettingsTableTableManager
                 Value<int?> minimumLivingCost = const Value.absent(),
                 Value<int?> currentLivingCost = const Value.absent(),
                 Value<double> defaultAnnualReturnPct = const Value.absent(),
-                Value<bool> phaseLimitEnabled = const Value.absent(),
-                Value<int?> phaseLimitAmount = const Value.absent(),
+                Value<bool> planLimitEnabled = const Value.absent(),
+                Value<int?> planLimitAmount = const Value.absent(),
                 Value<bool> onboardingDone = const Value.absent(),
                 Value<int> seedVersion = const Value.absent(),
                 Value<String> componentInputMode = const Value.absent(),
                 Value<String?> quoteCardDismissedMonth = const Value.absent(),
+                Value<bool> reminderMonthlyEnabled = const Value.absent(),
+                Value<int> reminderMonthlyDay = const Value.absent(),
+                Value<int> reminderMonthlyHour = const Value.absent(),
+                Value<int> reminderMonthlyMinute = const Value.absent(),
+                Value<bool> reminderExpenseEnabled = const Value.absent(),
+                Value<int> reminderExpenseHour = const Value.absent(),
+                Value<int> reminderExpenseMinute = const Value.absent(),
+                Value<bool> reminderMilestoneEnabled = const Value.absent(),
                 Value<String> createdAt = const Value.absent(),
                 Value<String> updatedAt = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
@@ -8418,12 +10332,20 @@ class $$SettingsTableTableManager
                 minimumLivingCost: minimumLivingCost,
                 currentLivingCost: currentLivingCost,
                 defaultAnnualReturnPct: defaultAnnualReturnPct,
-                phaseLimitEnabled: phaseLimitEnabled,
-                phaseLimitAmount: phaseLimitAmount,
+                planLimitEnabled: planLimitEnabled,
+                planLimitAmount: planLimitAmount,
                 onboardingDone: onboardingDone,
                 seedVersion: seedVersion,
                 componentInputMode: componentInputMode,
                 quoteCardDismissedMonth: quoteCardDismissedMonth,
+                reminderMonthlyEnabled: reminderMonthlyEnabled,
+                reminderMonthlyDay: reminderMonthlyDay,
+                reminderMonthlyHour: reminderMonthlyHour,
+                reminderMonthlyMinute: reminderMonthlyMinute,
+                reminderExpenseEnabled: reminderExpenseEnabled,
+                reminderExpenseHour: reminderExpenseHour,
+                reminderExpenseMinute: reminderExpenseMinute,
+                reminderMilestoneEnabled: reminderMilestoneEnabled,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 syncStatus: syncStatus,
@@ -8439,12 +10361,20 @@ class $$SettingsTableTableManager
                 Value<int?> minimumLivingCost = const Value.absent(),
                 Value<int?> currentLivingCost = const Value.absent(),
                 Value<double> defaultAnnualReturnPct = const Value.absent(),
-                Value<bool> phaseLimitEnabled = const Value.absent(),
-                Value<int?> phaseLimitAmount = const Value.absent(),
+                Value<bool> planLimitEnabled = const Value.absent(),
+                Value<int?> planLimitAmount = const Value.absent(),
                 Value<bool> onboardingDone = const Value.absent(),
                 Value<int> seedVersion = const Value.absent(),
                 Value<String> componentInputMode = const Value.absent(),
                 Value<String?> quoteCardDismissedMonth = const Value.absent(),
+                Value<bool> reminderMonthlyEnabled = const Value.absent(),
+                Value<int> reminderMonthlyDay = const Value.absent(),
+                Value<int> reminderMonthlyHour = const Value.absent(),
+                Value<int> reminderMonthlyMinute = const Value.absent(),
+                Value<bool> reminderExpenseEnabled = const Value.absent(),
+                Value<int> reminderExpenseHour = const Value.absent(),
+                Value<int> reminderExpenseMinute = const Value.absent(),
+                Value<bool> reminderMilestoneEnabled = const Value.absent(),
                 required String createdAt,
                 required String updatedAt,
                 Value<String> syncStatus = const Value.absent(),
@@ -8458,12 +10388,20 @@ class $$SettingsTableTableManager
                 minimumLivingCost: minimumLivingCost,
                 currentLivingCost: currentLivingCost,
                 defaultAnnualReturnPct: defaultAnnualReturnPct,
-                phaseLimitEnabled: phaseLimitEnabled,
-                phaseLimitAmount: phaseLimitAmount,
+                planLimitEnabled: planLimitEnabled,
+                planLimitAmount: planLimitAmount,
                 onboardingDone: onboardingDone,
                 seedVersion: seedVersion,
                 componentInputMode: componentInputMode,
                 quoteCardDismissedMonth: quoteCardDismissedMonth,
+                reminderMonthlyEnabled: reminderMonthlyEnabled,
+                reminderMonthlyDay: reminderMonthlyDay,
+                reminderMonthlyHour: reminderMonthlyHour,
+                reminderMonthlyMinute: reminderMonthlyMinute,
+                reminderExpenseEnabled: reminderExpenseEnabled,
+                reminderExpenseHour: reminderExpenseHour,
+                reminderExpenseMinute: reminderExpenseMinute,
+                reminderMilestoneEnabled: reminderMilestoneEnabled,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 syncStatus: syncStatus,
@@ -8652,20 +10590,41 @@ final class $$PortfoliosTableReferences
     );
   }
 
-  static MultiTypedResultKey<$PhaseAllocationsTable, List<PhaseAllocation>>
-  _phaseAllocationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.phaseAllocations,
-    aliasName: 'portfolios__id__phase_allocations__portfolio_id',
+  static MultiTypedResultKey<$PlanAllocationsTable, List<PlanAllocation>>
+  _planAllocationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.planAllocations,
+    aliasName: 'portfolios__id__plan_allocations__portfolio_id',
   );
 
-  $$PhaseAllocationsTableProcessedTableManager get phaseAllocationsRefs {
-    final manager = $$PhaseAllocationsTableTableManager(
+  $$PlanAllocationsTableProcessedTableManager get planAllocationsRefs {
+    final manager = $$PlanAllocationsTableTableManager(
       $_db,
-      $_db.phaseAllocations,
+      $_db.planAllocations,
     ).filter((f) => f.portfolioId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(
-      _phaseAllocationsRefsTable($_db),
+      _planAllocationsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$StockTransactionsTable, List<StockTransaction>>
+  _stockTransactionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.stockTransactions,
+        aliasName: 'portfolios__id__stock_transactions__portfolio_id',
+      );
+
+  $$StockTransactionsTableProcessedTableManager get stockTransactionsRefs {
+    final manager = $$StockTransactionsTableTableManager(
+      $_db,
+      $_db.stockTransactions,
+    ).filter((f) => f.portfolioId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _stockTransactionsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -8865,22 +10824,47 @@ class $$PortfoliosTableFilterComposer
     return f(composer);
   }
 
-  Expression<bool> phaseAllocationsRefs(
-    Expression<bool> Function($$PhaseAllocationsTableFilterComposer f) f,
+  Expression<bool> planAllocationsRefs(
+    Expression<bool> Function($$PlanAllocationsTableFilterComposer f) f,
   ) {
-    final $$PhaseAllocationsTableFilterComposer composer = $composerBuilder(
+    final $$PlanAllocationsTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.phaseAllocations,
+      referencedTable: $db.planAllocations,
       getReferencedColumn: (t) => t.portfolioId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$PhaseAllocationsTableFilterComposer(
+          }) => $$PlanAllocationsTableFilterComposer(
             $db: $db,
-            $table: $db.phaseAllocations,
+            $table: $db.planAllocations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> stockTransactionsRefs(
+    Expression<bool> Function($$StockTransactionsTableFilterComposer f) f,
+  ) {
+    final $$StockTransactionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.stockTransactions,
+      getReferencedColumn: (t) => t.portfolioId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StockTransactionsTableFilterComposer(
+            $db: $db,
+            $table: $db.stockTransactions,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -9199,28 +11183,54 @@ class $$PortfoliosTableAnnotationComposer
     return f(composer);
   }
 
-  Expression<T> phaseAllocationsRefs<T extends Object>(
-    Expression<T> Function($$PhaseAllocationsTableAnnotationComposer a) f,
+  Expression<T> planAllocationsRefs<T extends Object>(
+    Expression<T> Function($$PlanAllocationsTableAnnotationComposer a) f,
   ) {
-    final $$PhaseAllocationsTableAnnotationComposer composer = $composerBuilder(
+    final $$PlanAllocationsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.phaseAllocations,
+      referencedTable: $db.planAllocations,
       getReferencedColumn: (t) => t.portfolioId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$PhaseAllocationsTableAnnotationComposer(
+          }) => $$PlanAllocationsTableAnnotationComposer(
             $db: $db,
-            $table: $db.phaseAllocations,
+            $table: $db.planAllocations,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<T> stockTransactionsRefs<T extends Object>(
+    Expression<T> Function($$StockTransactionsTableAnnotationComposer a) f,
+  ) {
+    final $$StockTransactionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.stockTransactions,
+          getReferencedColumn: (t) => t.portfolioId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$StockTransactionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.stockTransactions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 }
@@ -9242,7 +11252,8 @@ class $$PortfoliosTableTableManager
             bool ownerId,
             bool portfolioComponentsRefs,
             bool contributionsRefs,
-            bool phaseAllocationsRefs,
+            bool planAllocationsRefs,
+            bool stockTransactionsRefs,
           })
         > {
   $$PortfoliosTableTableManager(_$AppDatabase db, $PortfoliosTable table)
@@ -9373,14 +11384,16 @@ class $$PortfoliosTableTableManager
                 ownerId = false,
                 portfolioComponentsRefs = false,
                 contributionsRefs = false,
-                phaseAllocationsRefs = false,
+                planAllocationsRefs = false,
+                stockTransactionsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (portfolioComponentsRefs) db.portfolioComponents,
                     if (contributionsRefs) db.contributions,
-                    if (phaseAllocationsRefs) db.phaseAllocations,
+                    if (planAllocationsRefs) db.planAllocations,
+                    if (stockTransactionsRefs) db.stockTransactions,
                   ],
                   addJoins:
                       <
@@ -9454,22 +11467,42 @@ class $$PortfoliosTableTableManager
                           referencedColumn: 'portfolio_id',
                           typedResults: items,
                         ),
-                      if (phaseAllocationsRefs)
+                      if (planAllocationsRefs)
                         await $_getPrefetchedDataByColumns<
                           Portfolio,
                           $PortfoliosTable,
-                          PhaseAllocation,
-                          $PhaseAllocationsTable
+                          PlanAllocation,
+                          $PlanAllocationsTable
                         >(
                           currentTable: table,
                           referencedTable: $$PortfoliosTableReferences
-                              ._phaseAllocationsRefsTable(db),
+                              ._planAllocationsRefsTable(db),
                           managerFromTypedResult: (p0) =>
                               $$PortfoliosTableReferences(
                                 db,
                                 table,
                                 p0,
-                              ).phaseAllocationsRefs,
+                              ).planAllocationsRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'portfolio_id',
+                          typedResults: items,
+                        ),
+                      if (stockTransactionsRefs)
+                        await $_getPrefetchedDataByColumns<
+                          Portfolio,
+                          $PortfoliosTable,
+                          StockTransaction,
+                          $StockTransactionsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PortfoliosTableReferences
+                              ._stockTransactionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PortfoliosTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).stockTransactionsRefs,
                           currentColumn: 'id',
                           referencedColumn: 'portfolio_id',
                           typedResults: items,
@@ -9498,7 +11531,8 @@ typedef $$PortfoliosTableProcessedTableManager =
         bool ownerId,
         bool portfolioComponentsRefs,
         bool contributionsRefs,
-        bool phaseAllocationsRefs,
+        bool planAllocationsRefs,
+        bool stockTransactionsRefs,
       })
     >;
 typedef $$PortfolioComponentsTableCreateCompanionBuilder =
@@ -9510,6 +11544,8 @@ typedef $$PortfolioComponentsTableCreateCompanionBuilder =
       Value<String?> name,
       Value<double> targetPercent,
       Value<int> actualAmount,
+      Value<String> mechanism,
+      Value<int> legacyOpeningAmount,
       Value<String?> codeNote,
       Value<int> sortOrder,
       required String createdAt,
@@ -9528,6 +11564,8 @@ typedef $$PortfolioComponentsTableUpdateCompanionBuilder =
       Value<String?> name,
       Value<double> targetPercent,
       Value<int> actualAmount,
+      Value<String> mechanism,
+      Value<int> legacyOpeningAmount,
       Value<String?> codeNote,
       Value<int> sortOrder,
       Value<String> createdAt,
@@ -9584,6 +11622,27 @@ final class $$PortfolioComponentsTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<$StockTransactionsTable, List<StockTransaction>>
+  _stockTransactionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.stockTransactions,
+        aliasName: 'portfolio_components__id__stock_transactions__component_id',
+      );
+
+  $$StockTransactionsTableProcessedTableManager get stockTransactionsRefs {
+    final manager = $$StockTransactionsTableTableManager(
+      $_db,
+      $_db.stockTransactions,
+    ).filter((f) => f.componentId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _stockTransactionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$PortfolioComponentsTableFilterComposer
@@ -9617,6 +11676,16 @@ class $$PortfolioComponentsTableFilterComposer
 
   ColumnFilters<int> get actualAmount => $composableBuilder(
     column: $table.actualAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mechanism => $composableBuilder(
+    column: $table.mechanism,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get legacyOpeningAmount => $composableBuilder(
+    column: $table.legacyOpeningAmount,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9700,6 +11769,31 @@ class $$PortfolioComponentsTableFilterComposer
     );
     return composer;
   }
+
+  Expression<bool> stockTransactionsRefs(
+    Expression<bool> Function($$StockTransactionsTableFilterComposer f) f,
+  ) {
+    final $$StockTransactionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.stockTransactions,
+      getReferencedColumn: (t) => t.componentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StockTransactionsTableFilterComposer(
+            $db: $db,
+            $table: $db.stockTransactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$PortfolioComponentsTableOrderingComposer
@@ -9733,6 +11827,16 @@ class $$PortfolioComponentsTableOrderingComposer
 
   ColumnOrderings<int> get actualAmount => $composableBuilder(
     column: $table.actualAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mechanism => $composableBuilder(
+    column: $table.mechanism,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get legacyOpeningAmount => $composableBuilder(
+    column: $table.legacyOpeningAmount,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -9848,6 +11952,14 @@ class $$PortfolioComponentsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get mechanism =>
+      $composableBuilder(column: $table.mechanism, builder: (column) => column);
+
+  GeneratedColumn<int> get legacyOpeningAmount => $composableBuilder(
+    column: $table.legacyOpeningAmount,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get codeNote =>
       $composableBuilder(column: $table.codeNote, builder: (column) => column);
 
@@ -9916,6 +12028,32 @@ class $$PortfolioComponentsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> stockTransactionsRefs<T extends Object>(
+    Expression<T> Function($$StockTransactionsTableAnnotationComposer a) f,
+  ) {
+    final $$StockTransactionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.stockTransactions,
+          getReferencedColumn: (t) => t.componentId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$StockTransactionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.stockTransactions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$PortfolioComponentsTableTableManager
@@ -9931,7 +12069,11 @@ class $$PortfolioComponentsTableTableManager
           $$PortfolioComponentsTableUpdateCompanionBuilder,
           (PortfolioComponent, $$PortfolioComponentsTableReferences),
           PortfolioComponent,
-          PrefetchHooks Function({bool portfolioId, bool ownerId})
+          PrefetchHooks Function({
+            bool portfolioId,
+            bool ownerId,
+            bool stockTransactionsRefs,
+          })
         > {
   $$PortfolioComponentsTableTableManager(
     _$AppDatabase db,
@@ -9961,6 +12103,8 @@ class $$PortfolioComponentsTableTableManager
                 Value<String?> name = const Value.absent(),
                 Value<double> targetPercent = const Value.absent(),
                 Value<int> actualAmount = const Value.absent(),
+                Value<String> mechanism = const Value.absent(),
+                Value<int> legacyOpeningAmount = const Value.absent(),
                 Value<String?> codeNote = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<String> createdAt = const Value.absent(),
@@ -9977,6 +12121,8 @@ class $$PortfolioComponentsTableTableManager
                 name: name,
                 targetPercent: targetPercent,
                 actualAmount: actualAmount,
+                mechanism: mechanism,
+                legacyOpeningAmount: legacyOpeningAmount,
                 codeNote: codeNote,
                 sortOrder: sortOrder,
                 createdAt: createdAt,
@@ -9995,6 +12141,8 @@ class $$PortfolioComponentsTableTableManager
                 Value<String?> name = const Value.absent(),
                 Value<double> targetPercent = const Value.absent(),
                 Value<int> actualAmount = const Value.absent(),
+                Value<String> mechanism = const Value.absent(),
+                Value<int> legacyOpeningAmount = const Value.absent(),
                 Value<String?> codeNote = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 required String createdAt,
@@ -10011,6 +12159,8 @@ class $$PortfolioComponentsTableTableManager
                 name: name,
                 targetPercent: targetPercent,
                 actualAmount: actualAmount,
+                mechanism: mechanism,
+                legacyOpeningAmount: legacyOpeningAmount,
                 codeNote: codeNote,
                 sortOrder: sortOrder,
                 createdAt: createdAt,
@@ -10030,56 +12180,88 @@ class $$PortfolioComponentsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({portfolioId = false, ownerId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (portfolioId) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.portfolioId,
-                        referencedTable: $$PortfolioComponentsTableReferences
-                            ._portfolioIdTable(db),
-                        referencedColumn: $$PortfolioComponentsTableReferences
-                            ._portfolioIdTable(db)
-                            .id,
-                      ) as T;
-                    }
-                    if (ownerId) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.ownerId,
-                        referencedTable: $$PortfolioComponentsTableReferences
-                            ._ownerIdTable(db),
-                        referencedColumn: $$PortfolioComponentsTableReferences
-                            ._ownerIdTable(db)
-                            .id,
-                      ) as T;
-                    }
+          prefetchHooksCallback:
+              ({
+                portfolioId = false,
+                ownerId = false,
+                stockTransactionsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (stockTransactionsRefs) db.stockTransactions,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (portfolioId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.portfolioId,
+                            referencedTable:
+                                $$PortfolioComponentsTableReferences
+                                    ._portfolioIdTable(db),
+                            referencedColumn:
+                                $$PortfolioComponentsTableReferences
+                                    ._portfolioIdTable(db)
+                                    .id,
+                          ) as T;
+                        }
+                        if (ownerId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.ownerId,
+                            referencedTable:
+                                $$PortfolioComponentsTableReferences
+                                    ._ownerIdTable(db),
+                            referencedColumn:
+                                $$PortfolioComponentsTableReferences
+                                    ._ownerIdTable(db)
+                                    .id,
+                          ) as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (stockTransactionsRefs)
+                        await $_getPrefetchedDataByColumns<
+                          PortfolioComponent,
+                          $PortfolioComponentsTable,
+                          StockTransaction,
+                          $StockTransactionsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PortfolioComponentsTableReferences
+                              ._stockTransactionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PortfolioComponentsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).stockTransactionsRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'component_id',
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -10096,7 +12278,11 @@ typedef $$PortfolioComponentsTableProcessedTableManager =
       $$PortfolioComponentsTableUpdateCompanionBuilder,
       (PortfolioComponent, $$PortfolioComponentsTableReferences),
       PortfolioComponent,
-      PrefetchHooks Function({bool portfolioId, bool ownerId})
+      PrefetchHooks Function({
+        bool portfolioId,
+        bool ownerId,
+        bool stockTransactionsRefs,
+      })
     >;
 typedef $$ContributionsTableCreateCompanionBuilder =
     ContributionsCompanion Function({
@@ -10107,6 +12293,8 @@ typedef $$ContributionsTableCreateCompanionBuilder =
       required String date,
       Value<String?> note,
       Value<String?> componentId,
+      Value<String?> stockTransactionId,
+      Value<String> source,
       required String createdAt,
       required String updatedAt,
       Value<String> syncStatus,
@@ -10123,6 +12311,8 @@ typedef $$ContributionsTableUpdateCompanionBuilder =
       Value<String> date,
       Value<String?> note,
       Value<String?> componentId,
+      Value<String?> stockTransactionId,
+      Value<String> source,
       Value<String> createdAt,
       Value<String> updatedAt,
       Value<String> syncStatus,
@@ -10205,6 +12395,16 @@ class $$ContributionsTableFilterComposer
 
   ColumnFilters<String> get componentId => $composableBuilder(
     column: $table.componentId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stockTransactionId => $composableBuilder(
+    column: $table.stockTransactionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10314,6 +12514,16 @@ class $$ContributionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get stockTransactionId => $composableBuilder(
+    column: $table.stockTransactionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -10411,6 +12621,14 @@ class $$ContributionsTableAnnotationComposer
     column: $table.componentId,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get stockTransactionId => $composableBuilder(
+    column: $table.stockTransactionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
 
   GeneratedColumn<String> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -10511,6 +12729,8 @@ class $$ContributionsTableTableManager
                 Value<String> date = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<String?> componentId = const Value.absent(),
+                Value<String?> stockTransactionId = const Value.absent(),
+                Value<String> source = const Value.absent(),
                 Value<String> createdAt = const Value.absent(),
                 Value<String> updatedAt = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
@@ -10525,6 +12745,8 @@ class $$ContributionsTableTableManager
                 date: date,
                 note: note,
                 componentId: componentId,
+                stockTransactionId: stockTransactionId,
+                source: source,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 syncStatus: syncStatus,
@@ -10541,6 +12763,8 @@ class $$ContributionsTableTableManager
                 required String date,
                 Value<String?> note = const Value.absent(),
                 Value<String?> componentId = const Value.absent(),
+                Value<String?> stockTransactionId = const Value.absent(),
+                Value<String> source = const Value.absent(),
                 required String createdAt,
                 required String updatedAt,
                 Value<String> syncStatus = const Value.absent(),
@@ -10555,6 +12779,8 @@ class $$ContributionsTableTableManager
                 date: date,
                 note: note,
                 componentId: componentId,
+                stockTransactionId: stockTransactionId,
+                source: source,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 syncStatus: syncStatus,
@@ -10638,11 +12864,12 @@ typedef $$ContributionsTableProcessedTableManager =
       Contribution,
       PrefetchHooks Function({bool portfolioId, bool ownerId})
     >;
-typedef $$PhasesTableCreateCompanionBuilder = PhasesCompanion Function({
+typedef $$PlansTableCreateCompanionBuilder = PlansCompanion Function({
   required String id,
   required String ownerId,
   required String name,
   Value<String?> description,
+  Value<int> totalAmount,
   Value<bool> isActive,
   Value<int> sortOrder,
   required String createdAt,
@@ -10652,11 +12879,12 @@ typedef $$PhasesTableCreateCompanionBuilder = PhasesCompanion Function({
   Value<String?> deletedAt,
   Value<int> rowid,
 });
-typedef $$PhasesTableUpdateCompanionBuilder = PhasesCompanion Function({
+typedef $$PlansTableUpdateCompanionBuilder = PlansCompanion Function({
   Value<String> id,
   Value<String> ownerId,
   Value<String> name,
   Value<String?> description,
+  Value<int> totalAmount,
   Value<bool> isActive,
   Value<int> sortOrder,
   Value<String> createdAt,
@@ -10667,12 +12895,12 @@ typedef $$PhasesTableUpdateCompanionBuilder = PhasesCompanion Function({
   Value<int> rowid,
 });
 
-final class $$PhasesTableReferences
-    extends BaseReferences<_$AppDatabase, $PhasesTable, Phase> {
-  $$PhasesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+final class $$PlansTableReferences
+    extends BaseReferences<_$AppDatabase, $PlansTable, Plan> {
+  $$PlansTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $UserProfilesTable _ownerIdTable(_$AppDatabase db) =>
-      db.userProfiles.createAlias('phases__owner_id__user_profiles__id');
+      db.userProfiles.createAlias('plans__owner_id__user_profiles__id');
 
   $$UserProfilesTableProcessedTableManager get ownerId {
     final $_column = $_itemColumn<String>('owner_id')!;
@@ -10688,20 +12916,20 @@ final class $$PhasesTableReferences
     );
   }
 
-  static MultiTypedResultKey<$PhaseAllocationsTable, List<PhaseAllocation>>
-  _phaseAllocationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.phaseAllocations,
-    aliasName: 'phases__id__phase_allocations__phase_id',
+  static MultiTypedResultKey<$PlanAllocationsTable, List<PlanAllocation>>
+  _planAllocationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.planAllocations,
+    aliasName: 'plans__id__plan_allocations__plan_id',
   );
 
-  $$PhaseAllocationsTableProcessedTableManager get phaseAllocationsRefs {
-    final manager = $$PhaseAllocationsTableTableManager(
+  $$PlanAllocationsTableProcessedTableManager get planAllocationsRefs {
+    final manager = $$PlanAllocationsTableTableManager(
       $_db,
-      $_db.phaseAllocations,
-    ).filter((f) => f.phaseId.id.sqlEquals($_itemColumn<String>('id')!));
+      $_db.planAllocations,
+    ).filter((f) => f.planId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(
-      _phaseAllocationsRefsTable($_db),
+      _planAllocationsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -10709,9 +12937,8 @@ final class $$PhasesTableReferences
   }
 }
 
-class $$PhasesTableFilterComposer
-    extends Composer<_$AppDatabase, $PhasesTable> {
-  $$PhasesTableFilterComposer({
+class $$PlansTableFilterComposer extends Composer<_$AppDatabase, $PlansTable> {
+  $$PlansTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -10730,6 +12957,11 @@ class $$PhasesTableFilterComposer
 
   ColumnFilters<String> get description => $composableBuilder(
     column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalAmount => $composableBuilder(
+    column: $table.totalAmount,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10791,22 +13023,22 @@ class $$PhasesTableFilterComposer
     return composer;
   }
 
-  Expression<bool> phaseAllocationsRefs(
-    Expression<bool> Function($$PhaseAllocationsTableFilterComposer f) f,
+  Expression<bool> planAllocationsRefs(
+    Expression<bool> Function($$PlanAllocationsTableFilterComposer f) f,
   ) {
-    final $$PhaseAllocationsTableFilterComposer composer = $composerBuilder(
+    final $$PlanAllocationsTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.phaseAllocations,
-      getReferencedColumn: (t) => t.phaseId,
+      referencedTable: $db.planAllocations,
+      getReferencedColumn: (t) => t.planId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$PhaseAllocationsTableFilterComposer(
+          }) => $$PlanAllocationsTableFilterComposer(
             $db: $db,
-            $table: $db.phaseAllocations,
+            $table: $db.planAllocations,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -10817,9 +13049,9 @@ class $$PhasesTableFilterComposer
   }
 }
 
-class $$PhasesTableOrderingComposer
-    extends Composer<_$AppDatabase, $PhasesTable> {
-  $$PhasesTableOrderingComposer({
+class $$PlansTableOrderingComposer
+    extends Composer<_$AppDatabase, $PlansTable> {
+  $$PlansTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -10838,6 +13070,11 @@ class $$PhasesTableOrderingComposer
 
   ColumnOrderings<String> get description => $composableBuilder(
     column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalAmount => $composableBuilder(
+    column: $table.totalAmount,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -10900,9 +13137,9 @@ class $$PhasesTableOrderingComposer
   }
 }
 
-class $$PhasesTableAnnotationComposer
-    extends Composer<_$AppDatabase, $PhasesTable> {
-  $$PhasesTableAnnotationComposer({
+class $$PlansTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PlansTable> {
+  $$PlansTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -10917,6 +13154,11 @@ class $$PhasesTableAnnotationComposer
 
   GeneratedColumn<String> get description => $composableBuilder(
     column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get totalAmount => $composableBuilder(
+    column: $table.totalAmount,
     builder: (column) => column,
   );
 
@@ -10966,22 +13208,22 @@ class $$PhasesTableAnnotationComposer
     return composer;
   }
 
-  Expression<T> phaseAllocationsRefs<T extends Object>(
-    Expression<T> Function($$PhaseAllocationsTableAnnotationComposer a) f,
+  Expression<T> planAllocationsRefs<T extends Object>(
+    Expression<T> Function($$PlanAllocationsTableAnnotationComposer a) f,
   ) {
-    final $$PhaseAllocationsTableAnnotationComposer composer = $composerBuilder(
+    final $$PlanAllocationsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.phaseAllocations,
-      getReferencedColumn: (t) => t.phaseId,
+      referencedTable: $db.planAllocations,
+      getReferencedColumn: (t) => t.planId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$PhaseAllocationsTableAnnotationComposer(
+          }) => $$PlanAllocationsTableAnnotationComposer(
             $db: $db,
-            $table: $db.phaseAllocations,
+            $table: $db.planAllocations,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -10992,38 +13234,39 @@ class $$PhasesTableAnnotationComposer
   }
 }
 
-class $$PhasesTableTableManager
+class $$PlansTableTableManager
     extends
         RootTableManager<
           _$AppDatabase,
-          $PhasesTable,
-          Phase,
-          $$PhasesTableFilterComposer,
-          $$PhasesTableOrderingComposer,
-          $$PhasesTableAnnotationComposer,
-          $$PhasesTableCreateCompanionBuilder,
-          $$PhasesTableUpdateCompanionBuilder,
-          (Phase, $$PhasesTableReferences),
-          Phase,
-          PrefetchHooks Function({bool ownerId, bool phaseAllocationsRefs})
+          $PlansTable,
+          Plan,
+          $$PlansTableFilterComposer,
+          $$PlansTableOrderingComposer,
+          $$PlansTableAnnotationComposer,
+          $$PlansTableCreateCompanionBuilder,
+          $$PlansTableUpdateCompanionBuilder,
+          (Plan, $$PlansTableReferences),
+          Plan,
+          PrefetchHooks Function({bool ownerId, bool planAllocationsRefs})
         > {
-  $$PhasesTableTableManager(_$AppDatabase db, $PhasesTable table)
+  $$PlansTableTableManager(_$AppDatabase db, $PlansTable table)
     : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$PhasesTableFilterComposer($db: db, $table: table),
+              $$PlansTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$PhasesTableOrderingComposer($db: db, $table: table),
+              $$PlansTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$PhasesTableAnnotationComposer($db: db, $table: table),
+              $$PlansTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> ownerId = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String?> description = const Value.absent(),
+                Value<int> totalAmount = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<String> createdAt = const Value.absent(),
@@ -11032,11 +13275,12 @@ class $$PhasesTableTableManager
                 Value<String?> remoteId = const Value.absent(),
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => PhasesCompanion(
+              }) => PlansCompanion(
                 id: id,
                 ownerId: ownerId,
                 name: name,
                 description: description,
+                totalAmount: totalAmount,
                 isActive: isActive,
                 sortOrder: sortOrder,
                 createdAt: createdAt,
@@ -11052,6 +13296,7 @@ class $$PhasesTableTableManager
                 required String ownerId,
                 required String name,
                 Value<String?> description = const Value.absent(),
+                Value<int> totalAmount = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 required String createdAt,
@@ -11060,11 +13305,12 @@ class $$PhasesTableTableManager
                 Value<String?> remoteId = const Value.absent(),
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => PhasesCompanion.insert(
+              }) => PlansCompanion.insert(
                 id: id,
                 ownerId: ownerId,
                 name: name,
                 description: description,
+                totalAmount: totalAmount,
                 isActive: isActive,
                 sortOrder: sortOrder,
                 createdAt: createdAt,
@@ -11077,17 +13323,17 @@ class $$PhasesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable<$PhasesTable, Phase>(table),
-                  $$PhasesTableReferences(db, table, e),
+                  e.readTable<$PlansTable, Plan>(table),
+                  $$PlansTableReferences(db, table, e),
                 ),
               )
               .toList(),
           prefetchHooksCallback:
-              ({ownerId = false, phaseAllocationsRefs = false}) {
+              ({ownerId = false, planAllocationsRefs = false}) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
-                    if (phaseAllocationsRefs) db.phaseAllocations,
+                    if (planAllocationsRefs) db.planAllocations,
                   ],
                   addJoins:
                       <
@@ -11109,9 +13355,9 @@ class $$PhasesTableTableManager
                           state = state.withJoin(
                             currentTable: table,
                             currentColumn: table.ownerId,
-                            referencedTable: $$PhasesTableReferences
+                            referencedTable: $$PlansTableReferences
                                 ._ownerIdTable(db),
-                            referencedColumn: $$PhasesTableReferences
+                            referencedColumn: $$PlansTableReferences
                                 ._ownerIdTable(db)
                                 .id,
                           ) as T;
@@ -11121,24 +13367,24 @@ class $$PhasesTableTableManager
                       },
                   getPrefetchedDataCallback: (items) async {
                     return [
-                      if (phaseAllocationsRefs)
+                      if (planAllocationsRefs)
                         await $_getPrefetchedDataByColumns<
-                          Phase,
-                          $PhasesTable,
-                          PhaseAllocation,
-                          $PhaseAllocationsTable
+                          Plan,
+                          $PlansTable,
+                          PlanAllocation,
+                          $PlanAllocationsTable
                         >(
                           currentTable: table,
-                          referencedTable: $$PhasesTableReferences
-                              ._phaseAllocationsRefsTable(db),
+                          referencedTable: $$PlansTableReferences
+                              ._planAllocationsRefsTable(db),
                           managerFromTypedResult: (p0) =>
-                              $$PhasesTableReferences(
+                              $$PlansTableReferences(
                                 db,
                                 table,
                                 p0,
-                              ).phaseAllocationsRefs,
+                              ).planAllocationsRefs,
                           currentColumn: 'id',
-                          referencedColumn: 'phase_id',
+                          referencedColumn: 'plan_id',
                           typedResults: items,
                         ),
                     ];
@@ -11149,27 +13395,27 @@ class $$PhasesTableTableManager
       );
 }
 
-typedef $$PhasesTableProcessedTableManager =
+typedef $$PlansTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $PhasesTable,
-      Phase,
-      $$PhasesTableFilterComposer,
-      $$PhasesTableOrderingComposer,
-      $$PhasesTableAnnotationComposer,
-      $$PhasesTableCreateCompanionBuilder,
-      $$PhasesTableUpdateCompanionBuilder,
-      (Phase, $$PhasesTableReferences),
-      Phase,
-      PrefetchHooks Function({bool ownerId, bool phaseAllocationsRefs})
+      $PlansTable,
+      Plan,
+      $$PlansTableFilterComposer,
+      $$PlansTableOrderingComposer,
+      $$PlansTableAnnotationComposer,
+      $$PlansTableCreateCompanionBuilder,
+      $$PlansTableUpdateCompanionBuilder,
+      (Plan, $$PlansTableReferences),
+      Plan,
+      PrefetchHooks Function({bool ownerId, bool planAllocationsRefs})
     >;
-typedef $$PhaseAllocationsTableCreateCompanionBuilder =
-    PhaseAllocationsCompanion Function({
+typedef $$PlanAllocationsTableCreateCompanionBuilder =
+    PlanAllocationsCompanion Function({
       required String id,
-      required String phaseId,
+      required String planId,
       required String portfolioId,
       required String ownerId,
-      Value<int> monthlyAmount,
+      Value<int> sharePercentX100,
       required String createdAt,
       required String updatedAt,
       Value<String> syncStatus,
@@ -11177,13 +13423,13 @@ typedef $$PhaseAllocationsTableCreateCompanionBuilder =
       Value<String?> deletedAt,
       Value<int> rowid,
     });
-typedef $$PhaseAllocationsTableUpdateCompanionBuilder =
-    PhaseAllocationsCompanion Function({
+typedef $$PlanAllocationsTableUpdateCompanionBuilder =
+    PlanAllocationsCompanion Function({
       Value<String> id,
-      Value<String> phaseId,
+      Value<String> planId,
       Value<String> portfolioId,
       Value<String> ownerId,
-      Value<int> monthlyAmount,
+      Value<int> sharePercentX100,
       Value<String> createdAt,
       Value<String> updatedAt,
       Value<String> syncStatus,
@@ -11192,26 +13438,26 @@ typedef $$PhaseAllocationsTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-final class $$PhaseAllocationsTableReferences
+final class $$PlanAllocationsTableReferences
     extends
-        BaseReferences<_$AppDatabase, $PhaseAllocationsTable, PhaseAllocation> {
-  $$PhaseAllocationsTableReferences(
+        BaseReferences<_$AppDatabase, $PlanAllocationsTable, PlanAllocation> {
+  $$PlanAllocationsTableReferences(
     super.$_db,
     super.$_table,
     super.$_typedResult,
   );
 
-  static $PhasesTable _phaseIdTable(_$AppDatabase db) =>
-      db.phases.createAlias('phase_allocations__phase_id__phases__id');
+  static $PlansTable _planIdTable(_$AppDatabase db) =>
+      db.plans.createAlias('plan_allocations__plan_id__plans__id');
 
-  $$PhasesTableProcessedTableManager get phaseId {
-    final $_column = $_itemColumn<String>('phase_id')!;
+  $$PlansTableProcessedTableManager get planId {
+    final $_column = $_itemColumn<String>('plan_id')!;
 
-    final manager = $$PhasesTableTableManager(
+    final manager = $$PlansTableTableManager(
       $_db,
-      $_db.phases,
+      $_db.plans,
     ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_phaseIdTable($_db));
+    final item = $_typedResult.readTableOrNull(_planIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -11219,7 +13465,7 @@ final class $$PhaseAllocationsTableReferences
   }
 
   static $PortfoliosTable _portfolioIdTable(_$AppDatabase db) => db.portfolios
-      .createAlias('phase_allocations__portfolio_id__portfolios__id');
+      .createAlias('plan_allocations__portfolio_id__portfolios__id');
 
   $$PortfoliosTableProcessedTableManager get portfolioId {
     final $_column = $_itemColumn<String>('portfolio_id')!;
@@ -11236,7 +13482,7 @@ final class $$PhaseAllocationsTableReferences
   }
 
   static $UserProfilesTable _ownerIdTable(_$AppDatabase db) => db.userProfiles
-      .createAlias('phase_allocations__owner_id__user_profiles__id');
+      .createAlias('plan_allocations__owner_id__user_profiles__id');
 
   $$UserProfilesTableProcessedTableManager get ownerId {
     final $_column = $_itemColumn<String>('owner_id')!;
@@ -11253,9 +13499,9 @@ final class $$PhaseAllocationsTableReferences
   }
 }
 
-class $$PhaseAllocationsTableFilterComposer
-    extends Composer<_$AppDatabase, $PhaseAllocationsTable> {
-  $$PhaseAllocationsTableFilterComposer({
+class $$PlanAllocationsTableFilterComposer
+    extends Composer<_$AppDatabase, $PlanAllocationsTable> {
+  $$PlanAllocationsTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -11267,8 +13513,8 @@ class $$PhaseAllocationsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get monthlyAmount => $composableBuilder(
-    column: $table.monthlyAmount,
+  ColumnFilters<int> get sharePercentX100 => $composableBuilder(
+    column: $table.sharePercentX100,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11297,20 +13543,20 @@ class $$PhaseAllocationsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  $$PhasesTableFilterComposer get phaseId {
-    final $$PhasesTableFilterComposer composer = $composerBuilder(
+  $$PlansTableFilterComposer get planId {
+    final $$PlansTableFilterComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.phaseId,
-      referencedTable: $db.phases,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.plans,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$PhasesTableFilterComposer(
+          }) => $$PlansTableFilterComposer(
             $db: $db,
-            $table: $db.phases,
+            $table: $db.plans,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -11367,9 +13613,9 @@ class $$PhaseAllocationsTableFilterComposer
   }
 }
 
-class $$PhaseAllocationsTableOrderingComposer
-    extends Composer<_$AppDatabase, $PhaseAllocationsTable> {
-  $$PhaseAllocationsTableOrderingComposer({
+class $$PlanAllocationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PlanAllocationsTable> {
+  $$PlanAllocationsTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -11381,8 +13627,8 @@ class $$PhaseAllocationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get monthlyAmount => $composableBuilder(
-    column: $table.monthlyAmount,
+  ColumnOrderings<int> get sharePercentX100 => $composableBuilder(
+    column: $table.sharePercentX100,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -11411,20 +13657,20 @@ class $$PhaseAllocationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  $$PhasesTableOrderingComposer get phaseId {
-    final $$PhasesTableOrderingComposer composer = $composerBuilder(
+  $$PlansTableOrderingComposer get planId {
+    final $$PlansTableOrderingComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.phaseId,
-      referencedTable: $db.phases,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.plans,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$PhasesTableOrderingComposer(
+          }) => $$PlansTableOrderingComposer(
             $db: $db,
-            $table: $db.phases,
+            $table: $db.plans,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -11481,9 +13727,9 @@ class $$PhaseAllocationsTableOrderingComposer
   }
 }
 
-class $$PhaseAllocationsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $PhaseAllocationsTable> {
-  $$PhaseAllocationsTableAnnotationComposer({
+class $$PlanAllocationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PlanAllocationsTable> {
+  $$PlanAllocationsTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -11493,8 +13739,8 @@ class $$PhaseAllocationsTableAnnotationComposer
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<int> get monthlyAmount => $composableBuilder(
-    column: $table.monthlyAmount,
+  GeneratedColumn<int> get sharePercentX100 => $composableBuilder(
+    column: $table.sharePercentX100,
     builder: (column) => column,
   );
 
@@ -11515,20 +13761,20 @@ class $$PhaseAllocationsTableAnnotationComposer
   GeneratedColumn<String> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
 
-  $$PhasesTableAnnotationComposer get phaseId {
-    final $$PhasesTableAnnotationComposer composer = $composerBuilder(
+  $$PlansTableAnnotationComposer get planId {
+    final $$PlansTableAnnotationComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.phaseId,
-      referencedTable: $db.phases,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.plans,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$PhasesTableAnnotationComposer(
+          }) => $$PlansTableAnnotationComposer(
             $db: $db,
-            $table: $db.phases,
+            $table: $db.plans,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -11585,53 +13831,53 @@ class $$PhaseAllocationsTableAnnotationComposer
   }
 }
 
-class $$PhaseAllocationsTableTableManager
+class $$PlanAllocationsTableTableManager
     extends
         RootTableManager<
           _$AppDatabase,
-          $PhaseAllocationsTable,
-          PhaseAllocation,
-          $$PhaseAllocationsTableFilterComposer,
-          $$PhaseAllocationsTableOrderingComposer,
-          $$PhaseAllocationsTableAnnotationComposer,
-          $$PhaseAllocationsTableCreateCompanionBuilder,
-          $$PhaseAllocationsTableUpdateCompanionBuilder,
-          (PhaseAllocation, $$PhaseAllocationsTableReferences),
-          PhaseAllocation,
-          PrefetchHooks Function({bool phaseId, bool portfolioId, bool ownerId})
+          $PlanAllocationsTable,
+          PlanAllocation,
+          $$PlanAllocationsTableFilterComposer,
+          $$PlanAllocationsTableOrderingComposer,
+          $$PlanAllocationsTableAnnotationComposer,
+          $$PlanAllocationsTableCreateCompanionBuilder,
+          $$PlanAllocationsTableUpdateCompanionBuilder,
+          (PlanAllocation, $$PlanAllocationsTableReferences),
+          PlanAllocation,
+          PrefetchHooks Function({bool planId, bool portfolioId, bool ownerId})
         > {
-  $$PhaseAllocationsTableTableManager(
+  $$PlanAllocationsTableTableManager(
     _$AppDatabase db,
-    $PhaseAllocationsTable table,
+    $PlanAllocationsTable table,
   ) : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$PhaseAllocationsTableFilterComposer($db: db, $table: table),
+              $$PlanAllocationsTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$PhaseAllocationsTableOrderingComposer($db: db, $table: table),
+              $$PlanAllocationsTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$PhaseAllocationsTableAnnotationComposer($db: db, $table: table),
+              $$PlanAllocationsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
-                Value<String> phaseId = const Value.absent(),
+                Value<String> planId = const Value.absent(),
                 Value<String> portfolioId = const Value.absent(),
                 Value<String> ownerId = const Value.absent(),
-                Value<int> monthlyAmount = const Value.absent(),
+                Value<int> sharePercentX100 = const Value.absent(),
                 Value<String> createdAt = const Value.absent(),
                 Value<String> updatedAt = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<String?> remoteId = const Value.absent(),
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => PhaseAllocationsCompanion(
+              }) => PlanAllocationsCompanion(
                 id: id,
-                phaseId: phaseId,
+                planId: planId,
                 portfolioId: portfolioId,
                 ownerId: ownerId,
-                monthlyAmount: monthlyAmount,
+                sharePercentX100: sharePercentX100,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 syncStatus: syncStatus,
@@ -11642,22 +13888,22 @@ class $$PhaseAllocationsTableTableManager
           createCompanionCallback:
               ({
                 required String id,
-                required String phaseId,
+                required String planId,
                 required String portfolioId,
                 required String ownerId,
-                Value<int> monthlyAmount = const Value.absent(),
+                Value<int> sharePercentX100 = const Value.absent(),
                 required String createdAt,
                 required String updatedAt,
                 Value<String> syncStatus = const Value.absent(),
                 Value<String?> remoteId = const Value.absent(),
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => PhaseAllocationsCompanion.insert(
+              }) => PlanAllocationsCompanion.insert(
                 id: id,
-                phaseId: phaseId,
+                planId: planId,
                 portfolioId: portfolioId,
                 ownerId: ownerId,
-                monthlyAmount: monthlyAmount,
+                sharePercentX100: sharePercentX100,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 syncStatus: syncStatus,
@@ -11668,13 +13914,13 @@ class $$PhaseAllocationsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable<$PhaseAllocationsTable, PhaseAllocation>(table),
-                  $$PhaseAllocationsTableReferences(db, table, e),
+                  e.readTable<$PlanAllocationsTable, PlanAllocation>(table),
+                  $$PlanAllocationsTableReferences(db, table, e),
                 ),
               )
               .toList(),
           prefetchHooksCallback:
-              ({phaseId = false, portfolioId = false, ownerId = false}) {
+              ({planId = false, portfolioId = false, ownerId = false}) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [],
@@ -11694,14 +13940,14 @@ class $$PhaseAllocationsTableTableManager
                           dynamic
                         >
                       >(state) {
-                        if (phaseId) {
+                        if (planId) {
                           state = state.withJoin(
                             currentTable: table,
-                            currentColumn: table.phaseId,
-                            referencedTable: $$PhaseAllocationsTableReferences
-                                ._phaseIdTable(db),
-                            referencedColumn: $$PhaseAllocationsTableReferences
-                                ._phaseIdTable(db)
+                            currentColumn: table.planId,
+                            referencedTable: $$PlanAllocationsTableReferences
+                                ._planIdTable(db),
+                            referencedColumn: $$PlanAllocationsTableReferences
+                                ._planIdTable(db)
                                 .id,
                           ) as T;
                         }
@@ -11709,9 +13955,9 @@ class $$PhaseAllocationsTableTableManager
                           state = state.withJoin(
                             currentTable: table,
                             currentColumn: table.portfolioId,
-                            referencedTable: $$PhaseAllocationsTableReferences
+                            referencedTable: $$PlanAllocationsTableReferences
                                 ._portfolioIdTable(db),
-                            referencedColumn: $$PhaseAllocationsTableReferences
+                            referencedColumn: $$PlanAllocationsTableReferences
                                 ._portfolioIdTable(db)
                                 .id,
                           ) as T;
@@ -11720,9 +13966,9 @@ class $$PhaseAllocationsTableTableManager
                           state = state.withJoin(
                             currentTable: table,
                             currentColumn: table.ownerId,
-                            referencedTable: $$PhaseAllocationsTableReferences
+                            referencedTable: $$PlanAllocationsTableReferences
                                 ._ownerIdTable(db),
-                            referencedColumn: $$PhaseAllocationsTableReferences
+                            referencedColumn: $$PlanAllocationsTableReferences
                                 ._ownerIdTable(db)
                                 .id,
                           ) as T;
@@ -11739,19 +13985,19 @@ class $$PhaseAllocationsTableTableManager
       );
 }
 
-typedef $$PhaseAllocationsTableProcessedTableManager =
+typedef $$PlanAllocationsTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $PhaseAllocationsTable,
-      PhaseAllocation,
-      $$PhaseAllocationsTableFilterComposer,
-      $$PhaseAllocationsTableOrderingComposer,
-      $$PhaseAllocationsTableAnnotationComposer,
-      $$PhaseAllocationsTableCreateCompanionBuilder,
-      $$PhaseAllocationsTableUpdateCompanionBuilder,
-      (PhaseAllocation, $$PhaseAllocationsTableReferences),
-      PhaseAllocation,
-      PrefetchHooks Function({bool phaseId, bool portfolioId, bool ownerId})
+      $PlanAllocationsTable,
+      PlanAllocation,
+      $$PlanAllocationsTableFilterComposer,
+      $$PlanAllocationsTableOrderingComposer,
+      $$PlanAllocationsTableAnnotationComposer,
+      $$PlanAllocationsTableCreateCompanionBuilder,
+      $$PlanAllocationsTableUpdateCompanionBuilder,
+      (PlanAllocation, $$PlanAllocationsTableReferences),
+      PlanAllocation,
+      PrefetchHooks Function({bool planId, bool portfolioId, bool ownerId})
     >;
 typedef $$PriceReferencesTableCreateCompanionBuilder =
     PriceReferencesCompanion Function({
@@ -12231,6 +14477,748 @@ typedef $$PriceReferencesTableProcessedTableManager =
       PriceReference,
       PrefetchHooks Function({bool ownerId})
     >;
+typedef $$StockTransactionsTableCreateCompanionBuilder =
+    StockTransactionsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String componentId,
+      required String portfolioId,
+      required String ticker,
+      required String side,
+      required int lots,
+      required int shares,
+      required int pricePerShare,
+      required int totalAmount,
+      required String transactionDate,
+      Value<String?> note,
+      required String createdAt,
+      required String updatedAt,
+      Value<String> syncStatus,
+      Value<String?> remoteId,
+      Value<String?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$StockTransactionsTableUpdateCompanionBuilder =
+    StockTransactionsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> componentId,
+      Value<String> portfolioId,
+      Value<String> ticker,
+      Value<String> side,
+      Value<int> lots,
+      Value<int> shares,
+      Value<int> pricePerShare,
+      Value<int> totalAmount,
+      Value<String> transactionDate,
+      Value<String?> note,
+      Value<String> createdAt,
+      Value<String> updatedAt,
+      Value<String> syncStatus,
+      Value<String?> remoteId,
+      Value<String?> deletedAt,
+      Value<int> rowid,
+    });
+
+final class $$StockTransactionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $StockTransactionsTable,
+          StockTransaction
+        > {
+  $$StockTransactionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $UserProfilesTable _ownerIdTable(_$AppDatabase db) => db.userProfiles
+      .createAlias('stock_transactions__owner_id__user_profiles__id');
+
+  $$UserProfilesTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$UserProfilesTableTableManager(
+      $_db,
+      $_db.userProfiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $PortfolioComponentsTable _componentIdTable(_$AppDatabase db) =>
+      db.portfolioComponents.createAlias(
+        'stock_transactions__component_id__portfolio_components__id',
+      );
+
+  $$PortfolioComponentsTableProcessedTableManager get componentId {
+    final $_column = $_itemColumn<String>('component_id')!;
+
+    final manager = $$PortfolioComponentsTableTableManager(
+      $_db,
+      $_db.portfolioComponents,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_componentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $PortfoliosTable _portfolioIdTable(_$AppDatabase db) => db.portfolios
+      .createAlias('stock_transactions__portfolio_id__portfolios__id');
+
+  $$PortfoliosTableProcessedTableManager get portfolioId {
+    final $_column = $_itemColumn<String>('portfolio_id')!;
+
+    final manager = $$PortfoliosTableTableManager(
+      $_db,
+      $_db.portfolios,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_portfolioIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$StockTransactionsTableFilterComposer
+    extends Composer<_$AppDatabase, $StockTransactionsTable> {
+  $$StockTransactionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ticker => $composableBuilder(
+    column: $table.ticker,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get side => $composableBuilder(
+    column: $table.side,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lots => $composableBuilder(
+    column: $table.lots,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get shares => $composableBuilder(
+    column: $table.shares,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pricePerShare => $composableBuilder(
+    column: $table.pricePerShare,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalAmount => $composableBuilder(
+    column: $table.totalAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get transactionDate => $composableBuilder(
+    column: $table.transactionDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$UserProfilesTableFilterComposer get ownerId {
+    final $$UserProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.userProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.userProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PortfolioComponentsTableFilterComposer get componentId {
+    final $$PortfolioComponentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.componentId,
+      referencedTable: $db.portfolioComponents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortfolioComponentsTableFilterComposer(
+            $db: $db,
+            $table: $db.portfolioComponents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PortfoliosTableFilterComposer get portfolioId {
+    final $$PortfoliosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portfolioId,
+      referencedTable: $db.portfolios,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortfoliosTableFilterComposer(
+            $db: $db,
+            $table: $db.portfolios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StockTransactionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $StockTransactionsTable> {
+  $$StockTransactionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ticker => $composableBuilder(
+    column: $table.ticker,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get side => $composableBuilder(
+    column: $table.side,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lots => $composableBuilder(
+    column: $table.lots,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get shares => $composableBuilder(
+    column: $table.shares,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get pricePerShare => $composableBuilder(
+    column: $table.pricePerShare,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalAmount => $composableBuilder(
+    column: $table.totalAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get transactionDate => $composableBuilder(
+    column: $table.transactionDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$UserProfilesTableOrderingComposer get ownerId {
+    final $$UserProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.userProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.userProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PortfolioComponentsTableOrderingComposer get componentId {
+    final $$PortfolioComponentsTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.componentId,
+          referencedTable: $db.portfolioComponents,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$PortfolioComponentsTableOrderingComposer(
+                $db: $db,
+                $table: $db.portfolioComponents,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$PortfoliosTableOrderingComposer get portfolioId {
+    final $$PortfoliosTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portfolioId,
+      referencedTable: $db.portfolios,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortfoliosTableOrderingComposer(
+            $db: $db,
+            $table: $db.portfolios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StockTransactionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StockTransactionsTable> {
+  $$StockTransactionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get ticker =>
+      $composableBuilder(column: $table.ticker, builder: (column) => column);
+
+  GeneratedColumn<String> get side =>
+      $composableBuilder(column: $table.side, builder: (column) => column);
+
+  GeneratedColumn<int> get lots =>
+      $composableBuilder(column: $table.lots, builder: (column) => column);
+
+  GeneratedColumn<int> get shares =>
+      $composableBuilder(column: $table.shares, builder: (column) => column);
+
+  GeneratedColumn<int> get pricePerShare => $composableBuilder(
+    column: $table.pricePerShare,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get totalAmount => $composableBuilder(
+    column: $table.totalAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get transactionDate => $composableBuilder(
+    column: $table.transactionDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get remoteId =>
+      $composableBuilder(column: $table.remoteId, builder: (column) => column);
+
+  GeneratedColumn<String> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  $$UserProfilesTableAnnotationComposer get ownerId {
+    final $$UserProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.userProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PortfolioComponentsTableAnnotationComposer get componentId {
+    final $$PortfolioComponentsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.componentId,
+          referencedTable: $db.portfolioComponents,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$PortfolioComponentsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.portfolioComponents,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$PortfoliosTableAnnotationComposer get portfolioId {
+    final $$PortfoliosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portfolioId,
+      referencedTable: $db.portfolios,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortfoliosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.portfolios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StockTransactionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StockTransactionsTable,
+          StockTransaction,
+          $$StockTransactionsTableFilterComposer,
+          $$StockTransactionsTableOrderingComposer,
+          $$StockTransactionsTableAnnotationComposer,
+          $$StockTransactionsTableCreateCompanionBuilder,
+          $$StockTransactionsTableUpdateCompanionBuilder,
+          (StockTransaction, $$StockTransactionsTableReferences),
+          StockTransaction,
+          PrefetchHooks Function({
+            bool ownerId,
+            bool componentId,
+            bool portfolioId,
+          })
+        > {
+  $$StockTransactionsTableTableManager(
+    _$AppDatabase db,
+    $StockTransactionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StockTransactionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$StockTransactionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$StockTransactionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> componentId = const Value.absent(),
+                Value<String> portfolioId = const Value.absent(),
+                Value<String> ticker = const Value.absent(),
+                Value<String> side = const Value.absent(),
+                Value<int> lots = const Value.absent(),
+                Value<int> shares = const Value.absent(),
+                Value<int> pricePerShare = const Value.absent(),
+                Value<int> totalAmount = const Value.absent(),
+                Value<String> transactionDate = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<String> createdAt = const Value.absent(),
+                Value<String> updatedAt = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<String?> remoteId = const Value.absent(),
+                Value<String?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StockTransactionsCompanion(
+                id: id,
+                ownerId: ownerId,
+                componentId: componentId,
+                portfolioId: portfolioId,
+                ticker: ticker,
+                side: side,
+                lots: lots,
+                shares: shares,
+                pricePerShare: pricePerShare,
+                totalAmount: totalAmount,
+                transactionDate: transactionDate,
+                note: note,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                syncStatus: syncStatus,
+                remoteId: remoteId,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String componentId,
+                required String portfolioId,
+                required String ticker,
+                required String side,
+                required int lots,
+                required int shares,
+                required int pricePerShare,
+                required int totalAmount,
+                required String transactionDate,
+                Value<String?> note = const Value.absent(),
+                required String createdAt,
+                required String updatedAt,
+                Value<String> syncStatus = const Value.absent(),
+                Value<String?> remoteId = const Value.absent(),
+                Value<String?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StockTransactionsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                componentId: componentId,
+                portfolioId: portfolioId,
+                ticker: ticker,
+                side: side,
+                lots: lots,
+                shares: shares,
+                pricePerShare: pricePerShare,
+                totalAmount: totalAmount,
+                transactionDate: transactionDate,
+                note: note,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                syncStatus: syncStatus,
+                remoteId: remoteId,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$StockTransactionsTable, StockTransaction>(table),
+                  $$StockTransactionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({ownerId = false, componentId = false, portfolioId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (ownerId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.ownerId,
+                            referencedTable: $$StockTransactionsTableReferences
+                                ._ownerIdTable(db),
+                            referencedColumn: $$StockTransactionsTableReferences
+                                ._ownerIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (componentId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.componentId,
+                            referencedTable: $$StockTransactionsTableReferences
+                                ._componentIdTable(db),
+                            referencedColumn: $$StockTransactionsTableReferences
+                                ._componentIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (portfolioId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.portfolioId,
+                            referencedTable: $$StockTransactionsTableReferences
+                                ._portfolioIdTable(db),
+                            referencedColumn: $$StockTransactionsTableReferences
+                                ._portfolioIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$StockTransactionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StockTransactionsTable,
+      StockTransaction,
+      $$StockTransactionsTableFilterComposer,
+      $$StockTransactionsTableOrderingComposer,
+      $$StockTransactionsTableAnnotationComposer,
+      $$StockTransactionsTableCreateCompanionBuilder,
+      $$StockTransactionsTableUpdateCompanionBuilder,
+      (StockTransaction, $$StockTransactionsTableReferences),
+      StockTransaction,
+      PrefetchHooks Function({bool ownerId, bool componentId, bool portfolioId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -12245,10 +15233,12 @@ class $AppDatabaseManager {
       $$PortfolioComponentsTableTableManager(_db, _db.portfolioComponents);
   $$ContributionsTableTableManager get contributions =>
       $$ContributionsTableTableManager(_db, _db.contributions);
-  $$PhasesTableTableManager get phases =>
-      $$PhasesTableTableManager(_db, _db.phases);
-  $$PhaseAllocationsTableTableManager get phaseAllocations =>
-      $$PhaseAllocationsTableTableManager(_db, _db.phaseAllocations);
+  $$PlansTableTableManager get plans =>
+      $$PlansTableTableManager(_db, _db.plans);
+  $$PlanAllocationsTableTableManager get planAllocations =>
+      $$PlanAllocationsTableTableManager(_db, _db.planAllocations);
   $$PriceReferencesTableTableManager get priceReferences =>
       $$PriceReferencesTableTableManager(_db, _db.priceReferences);
+  $$StockTransactionsTableTableManager get stockTransactions =>
+      $$StockTransactionsTableTableManager(_db, _db.stockTransactions);
 }

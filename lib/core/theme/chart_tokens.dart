@@ -56,6 +56,17 @@ class PlanoraChartTokens {
     return hsl.withLightness((hsl.lightness + 0.10).clamp(0.0, 0.88)).toColor();
   }
 
+  static Color stockTickerColor(int index, {bool isDark = false}) {
+    final baseHsl = HSLColor.fromColor(chartStock);
+    const lightOffsets = [0.0, 0.12, -0.10, 0.22, -0.18, 0.30];
+    const satOffsets = [0.0, -0.06, -0.04, -0.12, -0.10, -0.16];
+    final idx = index % lightOffsets.length;
+    final baseLight = isDark ? baseHsl.lightness + 0.08 : baseHsl.lightness;
+    final nextLight = (baseLight + lightOffsets[idx]).clamp(0.24, 0.82);
+    final nextSat = (baseHsl.saturation + satOffsets[idx]).clamp(0.35, 0.90);
+    return baseHsl.withLightness(nextLight).withSaturation(nextSat).toColor();
+  }
+
   static IconData iconForInstrument(String instrument) {
     final norm = instrument.trim().toLowerCase();
     if (norm.contains('rdpu') || norm.contains('pasar uang')) {

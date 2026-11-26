@@ -47,10 +47,15 @@ class PlanoraColors {
     0xFFB3402A,
   ];
 
-  static const Color darkBg = Color(0xFF0F1413);
-  static const Color darkCard = Color(0xFF18201E);
-  static const Color darkBorder = Color(0xFF2B3835);
-  static const Color darkInkPrimary = Color(0xFFF3F4F6);
-  static const Color darkInkSecondary = Color(0xFF9CA3AF);
+  static const Color darkBg = Color(0xFF101613);
+  static const Color darkCard = Color(0xFF1A211C);
+  static const Color darkBorder = Color(0xFF2E3A32);
+  static const Color darkInkPrimary = Color(0xFFE8EFEA);
+  static const Color darkInkSecondary = Color(0xFFB9C6BD);
+  static const Color darkPrimary = Color(0xFF7FC8A9);
+  static const Color darkOnPrimary = Color(0xFF06382A);
+  static const Color darkPrimaryContainer = Color(0xFF14402F);
+  static const Color darkGold = Color(0xFFE3B34C);
+  static const Color darkDanger = Color(0xFFF08A7D);
 }
 

@@ -135,7 +135,7 @@ class _PortfoliosScreenState extends ConsumerState<PortfoliosScreen> {
                                   padding:
                                       const EdgeInsets.fromLTRB(16, 0, 16, 8),
                                   child: Text(
-                                    'Tahan dan seret kartu untuk mengubah urutan tampil di Porto, Beranda, Fase, dan Checklist.',
+                                    'Tahan dan seret kartu untuk mengubah urutan tampil di Porto, Beranda, Plan, dan Setoran Bulan Ini.',
                                     style: AppTheme.manrope(
                                       size: 12,
                                       color: cs.onSurfaceVariant,
@@ -353,19 +353,27 @@ class _PortfolioCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '${AppFormatters.rupiah(p.monthlyPlan)}/bln',
-                style: AppTheme.manrope(
-                  size: 11.5,
-                  color: cs.onSurfaceVariant,
-                  tabular: true,
+              Flexible(
+                child: Text(
+                  '${AppFormatters.rupiah(p.monthlyPlan)}/bln',
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.manrope(
+                    size: 11.5,
+                    color: cs.onSurfaceVariant,
+                    tabular: true,
+                  ),
                 ),
               ),
-              Text(
-                rightFooter,
-                style: AppTheme.manrope(
-                  size: 11.5,
-                  color: cs.onSurfaceVariant,
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  rightFooter,
+                  textAlign: TextAlign.right,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.manrope(
+                    size: 11.5,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],

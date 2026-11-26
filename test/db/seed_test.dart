@@ -31,15 +31,15 @@ void main() {
     expect(settingsRows.first.monthlySalary, isNull);
     expect(settingsRows.first.minimumLivingCost, isNull);
     expect(settingsRows.first.defaultAnnualReturnPct, 5.0);
-    expect(settingsRows.first.phaseLimitEnabled, isFalse);
+    expect(settingsRows.first.planLimitEnabled, isFalse);
     expect(settingsRows.first.onboardingDone, isFalse);
     expect(settingsRows.first.seedVersion, 3);
 
     expect(await db.select(db.portfolios).get(), isEmpty);
     expect(await db.select(db.portfolioComponents).get(), isEmpty);
     expect(await db.select(db.contributions).get(), isEmpty);
-    expect(await db.select(db.phases).get(), isEmpty);
-    expect(await db.select(db.phaseAllocations).get(), isEmpty);
+    expect(await db.select(db.plans).get(), isEmpty);
+    expect(await db.select(db.planAllocations).get(), isEmpty);
     expect(await db.select(db.priceReferences).get(), isEmpty);
   });
 }

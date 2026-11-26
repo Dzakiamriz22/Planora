@@ -1,13 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:planora/core/calc/plan_percent_calc.dart';
 import 'package:planora/core/calc/planora_calc.dart';
 import 'package:planora/core/calc/planora_v22_calc.dart';
+import 'package:planora/core/calc/stock_lot_calc.dart';
 import 'package:planora/core/format/formatters.dart';
 import 'package:planora/data/db/app_database.dart';
-import 'package:planora/data/repositories/phase_repository.dart';
+import 'package:planora/data/repositories/plan_repository.dart';
 import 'package:planora/data/repositories/portfolio_repository.dart';
 import 'package:planora/data/repositories/profile_repository.dart';
 import 'package:planora/data/repositories/settings_repository.dart';
+import 'package:planora/data/repositories/stock_repository.dart';
 import 'package:planora/widgets/planora_charts.dart';
 
 final userProfileStreamProvider = StreamProvider<UserProfile>((ref) {
@@ -45,18 +48,57 @@ final portfolioComponentsProvider =
       .watchComponentsForPortfolio(portfolioId);
 });
 
-final phasesStreamProvider = StreamProvider<List<Phase>>((ref) {
-  return ref.watch(phaseRepositoryProvider).watchPhases();
+final plansStreamProvider = StreamProvider<List<Plan>>((ref) {
+  return ref.watch(planRepositoryProvider).watchPlans();
 });
 
-final phaseAllocationsStreamProvider =
-    StreamProvider<List<PhaseAllocation>>((ref) {
-  return ref.watch(phaseRepositoryProvider).watchAllAllocations();
+final planAllocationsStreamProvider =
+    StreamProvider<List<PlanAllocation>>((ref) {
+  return ref.watch(planRepositoryProvider).watchAllAllocations();
 });
 
 final priceReferencesStreamProvider =
     StreamProvider<List<PriceReference>>((ref) {
   return ref.watch(settingsRepositoryProvider).watchPriceReferences();
+});
+
+final allStockTransactionsStreamProvider =
+    StreamProvider<List<StockTransaction>>((ref) {
+  return ref.watch(stockRepositoryProvider).watchAllTransactions();
+});
+
+final componentStockTransactionsProvider =
+    StreamProvider.family<List<StockTransaction>, String>((ref, componentId) {
+  return ref
+      .watch(stockRepositoryProvider)
+      .watchTransactionsForComponent(componentId);
+});
+
+final knownStockTickersProvider = StreamProvider<List<String>>((ref) {
+  return ref.watch(stockRepositoryProvider).watchKnownTickers();
+});
+
+final componentStockLedgerProvider =
+    Provider.family<StockLedgerComputation, String>((ref, componentId) {
+  final txs =
+      ref.watch(componentStockTransactionsProvider(componentId)).value ??
+          const <StockTransaction>[];
+  return StockLotCalc.computeLedger(
+    txs.map(
+      (tx) => StockTxRecord(
+        id: tx.id,
+        ticker: tx.ticker,
+        side: tx.side,
+        lots: tx.lots,
+        shares: tx.shares,
+        pricePerShare: tx.pricePerShare,
+        totalAmount: tx.totalAmount,
+        transactionDate: tx.transactionDate,
+        createdAt: tx.createdAt,
+      ),
+    ),
+    validateStrict: false,
+  );
 });
 
 class PortfolioSnapshot {
@@ -220,8 +262,8 @@ class FinancialSummary {
     required this.ceiling,
     required this.totalMonthlyPlan,
     required this.defaultAnnualReturnPct,
-    required this.phaseLimitEnabled,
-    required this.phaseLimitAmount,
+    required this.planLimitEnabled,
+    required this.planLimitAmount,
     required this.componentInputMode,
     required this.quoteCardDismissedMonth,
   });
@@ -237,8 +279,8 @@ class FinancialSummary {
   final int? ceiling;
   final int totalMonthlyPlan;
   final double defaultAnnualReturnPct;
-  final bool phaseLimitEnabled;
-  final int? phaseLimitAmount;
+  final bool planLimitEnabled;
+  final int? planLimitAmount;
   final String componentInputMode;
   final String? quoteCardDismissedMonth;
 
@@ -298,8 +340,8 @@ final financialSummaryProvider = Provider<FinancialSummary>((ref) {
     ceiling: ceiling,
     totalMonthlyPlan: totalPlan,
     defaultAnnualReturnPct: defaultReturn,
-    phaseLimitEnabled: settings?.phaseLimitEnabled ?? false,
-    phaseLimitAmount: settings?.phaseLimitAmount,
+    planLimitEnabled: settings?.planLimitEnabled ?? false,
+    planLimitAmount: settings?.planLimitAmount,
     componentInputMode: settings?.componentInputMode ?? 'percent',
     quoteCardDismissedMonth: settings?.quoteCardDismissedMonth,
   );
@@ -314,8 +356,8 @@ class DashboardDataV22 {
     required this.avg3MonthsDeposit,
     required this.streakMonths,
     required this.daysRemainingInMonth,
-    required this.activePhaseName,
-    required this.activePhaseTotal,
+    required this.activePlanName,
+    required this.activePlanTotal,
     required this.balanceSeries6m,
     required this.balanceSeries12m,
     required this.stackedBars6m,
@@ -332,8 +374,8 @@ class DashboardDataV22 {
   final int avg3MonthsDeposit;
   final int streakMonths;
   final int daysRemainingInMonth;
-  final String? activePhaseName;
-  final int activePhaseTotal;
+  final String? activePlanName;
+  final int activePlanTotal;
   final List<MonthlyBalancePoint> balanceSeries6m;
   final List<MonthlyBalancePoint> balanceSeries12m;
   final List<MonthlyStackedBarData> stackedBars6m;
@@ -348,7 +390,7 @@ final dashboardDataProvider = Provider<DashboardDataV22>((ref) {
   final snapshots = ref.watch(portfolioSnapshotsProvider);
   final contributions =
       ref.watch(contributionsStreamProvider).value ?? const [];
-  final phases = ref.watch(phasesWithAllocationsProvider);
+  final plans = ref.watch(plansWithAllocationsProvider);
   final summary = ref.watch(financialSummaryProvider);
   final now = DateTime.now();
 
@@ -366,6 +408,7 @@ final dashboardDataProvider = Provider<DashboardDataV22>((ref) {
   var thisMonthDeposit = 0;
   var lastMonthDeposit = 0;
   for (final d in parsedDeposits) {
+    if (d.amount <= 0) continue;
     if (d.date.year == thisMonthStart.year &&
         d.date.month == thisMonthStart.month) {
       thisMonthDeposit += d.amount;
@@ -385,16 +428,17 @@ final dashboardDataProvider = Provider<DashboardDataV22>((ref) {
     now: now,
   );
   final streak = PlanoraV22Calc.calculateMonthlyStreak(
-    depositDates: parsedDeposits.map((e) => e.date),
+    depositDates:
+        parsedDeposits.where((e) => e.amount > 0).map((e) => e.date),
     now: now,
   );
 
   final lastDayOfMonth = DateTime(now.year, now.month + 1, 0).day;
   final daysRemaining = (lastDayOfMonth - now.day).clamp(0, 31);
 
-  final activePhase = phases.where((p) => p.phase.isActive).firstOrNull;
-  final activePhaseTotal = activePhase != null
-      ? activePhase.allocations.values.fold<int>(0, (s, v) => s + v)
+  final activePlan = plans.where((p) => p.plan.isActive).firstOrNull;
+  final activePlanTotal = activePlan != null
+      ? activePlan.totalMonthly
       : summary.totalMonthlyPlan;
 
   final series6m = PlanoraV22Calc.buildMonthlyBalanceSeries(
@@ -413,6 +457,7 @@ final dashboardDataProvider = Provider<DashboardDataV22>((ref) {
     final m = DateTime(now.year, now.month - i, 1);
     final byPorto = <String, int>{};
     for (final d in parsedDeposits) {
+      if (d.amount <= 0) continue;
       if (d.date.year == m.year && d.date.month == m.month) {
         byPorto[d.portfolioId] = (byPorto[d.portfolioId] ?? 0) + d.amount;
       }
@@ -451,8 +496,8 @@ final dashboardDataProvider = Provider<DashboardDataV22>((ref) {
         )
         .toList(),
     hasDepositThisMonth: thisMonthDeposit > 0,
-    activePhaseName: activePhase?.phase.name,
-    activePhaseTotal: activePhaseTotal,
+    activePhaseName: activePlan?.plan.name,
+    activePhaseTotal: activePlanTotal,
     streakMonths: streak,
     now: now,
     formatRupiah: AppFormatters.rupiah,
@@ -474,8 +519,8 @@ final dashboardDataProvider = Provider<DashboardDataV22>((ref) {
     avg3MonthsDeposit: avg3m,
     streakMonths: streak,
     daysRemainingInMonth: daysRemaining,
-    activePhaseName: activePhase?.phase.name,
-    activePhaseTotal: activePhaseTotal,
+    activePlanName: activePlan?.plan.name,
+    activePlanTotal: activePlanTotal,
     balanceSeries6m: series6m,
     balanceSeries12m: series12m,
     stackedBars6m: stackedBars,
@@ -509,6 +554,7 @@ final monthlyChecklistProvider =
 
   final depositedByPortfolio = <String, int>{};
   for (final c in contributions) {
+    if (c.amount <= 0) continue;
     final dt = AppFormatters.parseIsoDate(c.date);
     if (dt == null) continue;
     if (dt.year == month.year && dt.month == month.month) {
@@ -529,25 +575,29 @@ final monthlyChecklistProvider =
       .toList();
 });
 
-final phasesWithAllocationsProvider =
-    Provider<List<PhaseWithAllocations>>((ref) {
-  final phases = ref.watch(phasesStreamProvider).value ?? const [];
+final plansWithAllocationsProvider =
+    Provider<List<PlanWithAllocations>>((ref) {
+  final plans = ref.watch(plansStreamProvider).value ?? const [];
   final allocations =
-      ref.watch(phaseAllocationsStreamProvider).value ?? const [];
+      ref.watch(planAllocationsStreamProvider).value ?? const [];
 
-  final byPhase = <String, Map<String, int>>{};
+  final byPlan = <String, Map<String, int>>{};
   for (final a in allocations) {
-    byPhase.putIfAbsent(a.phaseId, () => <String, int>{})[a.portfolioId] =
-        a.monthlyAmount;
+    byPlan.putIfAbsent(a.planId, () => <String, int>{})[a.portfolioId] =
+        a.sharePercentX100;
   }
 
-  return phases
-      .map(
-        (ph) => PhaseWithAllocations(
-          phase: ph,
-          allocations: byPhase[ph.id] ?? const {},
-        ),
-      )
-      .toList();
+  return plans.map((pl) {
+    final shareMap = byPlan[pl.id] ?? const <String, int>{};
+    final derived = PlanPercentCalc.computeAmountsFromPercents(
+      totalAmount: pl.totalAmount,
+      sharePercentX100ById: shareMap,
+    );
+    return PlanWithAllocations(
+      plan: pl,
+      sharePercentX100ByPortfolioId: shareMap,
+      derivedAmountsByPortfolioId: derived,
+    );
+  }).toList();
 });
 

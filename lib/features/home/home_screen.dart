@@ -6,10 +6,12 @@ import 'package:material_ui/material_ui.dart';
 import 'package:planora/core/calc/planora_calc.dart';
 import 'package:planora/core/calc/planora_v22_calc.dart';
 import 'package:planora/core/format/formatters.dart';
+import 'package:planora/core/notifications/reminder_service.dart';
 import 'package:planora/core/theme/app_theme.dart';
 import 'package:planora/core/theme/chart_tokens.dart';
 import 'package:planora/core/theme/planora_colors.dart';
 import 'package:planora/data/db/app_database.dart';
+import 'package:planora/data/repositories/plan_repository.dart';
 import 'package:planora/data/repositories/portfolio_repository.dart';
 import 'package:planora/data/repositories/settings_repository.dart';
 import 'package:planora/features/portfolios/contribution_sheet.dart';
@@ -72,10 +74,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       for (final ch in result.changes) ch.id: ch.newAmount,
     };
     await ref.read(portfolioRepositoryProvider).applyMonthlyPlans(updatedPlans);
+    await ref.read(planRepositoryProvider).scaleActivePlanToCeiling(ceiling);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Rencana setoran berhasil disesuaikan ke batas nabung.'),
+          content: Text('Rencana setoran berhasil disesuaikan ke batas aman.'),
         ),
       );
     }
@@ -87,6 +90,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final snapshots = ref.watch(portfolioSnapshotsProvider);
     final dashboard = ref.watch(dashboardDataProvider);
     final profile = ref.watch(userProfileStreamProvider).value;
+    final setting = ref.watch(settingsStreamProvider).value;
+    final notifAllowed =
+        ref.watch(notificationPermissionStatusProvider).value ?? false;
     final checklist = ref.watch(monthlyChecklistProvider(_selectedMonth));
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -287,6 +293,52 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
 
+            if (setting != null &&
+                setting.reminderMonthlyEnabled &&
+                !notifAllowed) ...[
+              const SizedBox(height: 12),
+              PlanoraNoteBox(
+                isWarning: true,
+                child: Row(
+                  key: const Key('in_app_reminder_card'),
+                  children: [
+                    const Icon(
+                      Icons.notifications_off_outlined,
+                      size: 18,
+                      color: PlanoraColors.gold,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Pengingat Setoran Bulanan',
+                            style: AppTheme.manrope(
+                              size: 12.5,
+                              weight: FontWeight.w800,
+                              color: cs.onSurface,
+                            ),
+                          ),
+                          Text(
+                            'Jadwal tanggal ${setting.reminderMonthlyDay} pukul ${setting.reminderMonthlyHour.toString().padLeft(2, '0')}.${setting.reminderMonthlyMinute.toString().padLeft(2, '0')} · Notifikasi belum aktif, tampil di sini.',
+                            style: AppTheme.manrope(
+                              size: 12,
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => context.go('/settings'),
+                      child: const Text('Atur'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             if (dashboard.insights.isNotEmpty) ...[
               const SizedBox(height: 12),
               _InsightsSection(
@@ -324,7 +376,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          dashboard.activePhaseName ?? 'Target setoran bulanan',
+                          dashboard.activePlanName ?? 'Plan — pembagian setoran bulan ini',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppTheme.manrope(
@@ -335,7 +387,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '${AppFormatters.rupiah(dashboard.thisMonthDeposit)} / ${AppFormatters.rupiah(dashboard.activePhaseTotal)}',
+                        '${AppFormatters.rupiah(dashboard.thisMonthDeposit)} / ${AppFormatters.rupiah(dashboard.activePlanTotal)}',
                         style: AppTheme.manrope(
                           size: 12,
                           weight: FontWeight.w800,
@@ -347,14 +399,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   const SizedBox(height: 8),
                   PlanoraProgressBar(
-                    value: dashboard.activePhaseTotal > 0
+                    value: dashboard.activePlanTotal > 0
                         ? (dashboard.thisMonthDeposit /
-                                dashboard.activePhaseTotal)
+                                dashboard.activePlanTotal)
                             .clamp(0.0, 1.0)
                         : (dashboard.thisMonthDeposit > 0 ? 1.0 : 0.0),
                     color: dashboard.thisMonthDeposit >=
-                                dashboard.activePhaseTotal &&
-                            dashboard.activePhaseTotal > 0
+                                dashboard.activePlanTotal &&
+                            dashboard.activePlanTotal > 0
                         ? PlanoraChartTokens.chartMoney
                         : PlanoraColors.primary,
                     height: 7,
@@ -364,7 +416,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          'Batas Nabung',
+                          'Batas aman setoran (plafon)',
                           style: AppTheme.manrope(
                             size: 12,
                             weight: FontWeight.w700,
@@ -674,13 +726,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ),
                             ),
                             Text(
-                              '+ ${AppFormatters.rupiah(dashboard.recentActivities[i].contribution.amount)}',
+                              dashboard.recentActivities[i].contribution.amount < 0
+                                  ? '− ${AppFormatters.rupiah(dashboard.recentActivities[i].contribution.amount.abs())}'
+                                  : '+ ${AppFormatters.rupiah(dashboard.recentActivities[i].contribution.amount)}',
                               style: AppTheme.manrope(
                                 size: 12.5,
                                 weight: FontWeight.w800,
-                                color: isDark
-                                    ? PlanoraChartTokens.chartMoney
-                                    : PlanoraColors.primary,
+                                color: dashboard.recentActivities[i]
+                                            .contribution.amount <
+                                        0
+                                    ? PlanoraColors.danger
+                                    : (isDark
+                                        ? PlanoraChartTokens.chartMoney
+                                        : PlanoraColors.primary),
                                 tabular: true,
                               ),
                             ),
@@ -906,13 +964,17 @@ class _TotalBalanceCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'TOTAL SALDO PORTOFOLIO',
-                      style: AppTheme.uppercaseLabel(
-                        color: PlanoraColors.balanceLabel,
+                    Flexible(
+                      child: Text(
+                        'TOTAL SALDO PORTOFOLIO',
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.uppercaseLabel(
+                          color: PlanoraColors.balanceLabel,
+                        ),
                       ),
                     ),
-                    if (totalTarget > 0)
+                    if (totalTarget > 0) ...[
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
@@ -932,6 +994,7 @@ class _TotalBalanceCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 4),

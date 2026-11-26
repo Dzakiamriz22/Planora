@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:planora/core/calc/planora_v22_calc.dart';
+import 'package:planora/core/calc/stock_lot_calc.dart';
 import 'package:planora/core/format/formatters.dart';
 import 'package:planora/core/theme/app_theme.dart';
 import 'package:planora/core/theme/chart_tokens.dart';
@@ -15,6 +16,9 @@ class EditableComponentRow {
     required this.instrumentType,
     required this.targetPercent,
     this.actualAmount = 0,
+    this.mechanism,
+    this.totalStockLots = 0,
+    this.isLocked = false,
     this.name,
     this.codeNote,
   });
@@ -24,8 +28,16 @@ class EditableComponentRow {
   final String instrumentType;
   double targetPercent;
   final int actualAmount;
+  final String? mechanism;
+  final int totalStockLots;
+  final bool isLocked;
   final String? name;
   final String? codeNote;
+
+  bool get isLotBased =>
+      (mechanism ??
+          StockLotCalc.defaultMechanismForInstrument(instrumentType)) ==
+      StockLotCalc.mechanismLotBased;
 
   EditableComponentRow copyWith({
     String? key,
@@ -33,6 +45,9 @@ class EditableComponentRow {
     String? instrumentType,
     double? targetPercent,
     int? actualAmount,
+    String? mechanism,
+    int? totalStockLots,
+    bool? isLocked,
     String? name,
     String? codeNote,
   }) {
@@ -42,6 +57,9 @@ class EditableComponentRow {
       instrumentType: instrumentType ?? this.instrumentType,
       targetPercent: targetPercent ?? this.targetPercent,
       actualAmount: actualAmount ?? this.actualAmount,
+      mechanism: mechanism ?? this.mechanism,
+      totalStockLots: totalStockLots ?? this.totalStockLots,
+      isLocked: isLocked ?? this.isLocked,
       name: name ?? this.name,
       codeNote: codeNote ?? this.codeNote,
     );
@@ -550,15 +568,42 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      row.instrumentType,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTheme.manrope(
-                        size: 13.5,
-                        weight: FontWeight.w700,
-                        color: cs.onSurface,
-                      ),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          row.instrumentType,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTheme.manrope(
+                            size: 13.5,
+                            weight: FontWeight.w700,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                        if (row.isLotBased)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: PlanoraChartTokens.chartStock
+                                  .withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'Mekanisme Lot',
+                              style: AppTheme.manrope(
+                                size: 10,
+                                weight: FontWeight.w800,
+                                color: PlanoraChartTokens.chartStock,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     Text(
                       isNominalMode
@@ -572,6 +617,15 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
                         tabular: true,
                       ),
                     ),
+                    if (row.isLotBased)
+                      Text(
+                        'Tertanam saat ini ${AppFormatters.rupiah(row.actualAmount)} dari ${row.totalStockLots} lot',
+                        style: AppTheme.manrope(
+                          size: 10.5,
+                          color: cs.onSurfaceVariant,
+                          tabular: true,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -623,14 +677,19 @@ class _ComponentAllocationEditorState extends State<ComponentAllocationEditor> {
                 ),
               ),
               IconButton(
-                tooltip: 'Hapus ${row.instrumentType}',
-                onPressed: () {
-                  final next =
-                      widget.rows.where((e) => e.key != row.key).toList();
-                  _emit(next);
-                },
+                tooltip: row.isLocked
+                    ? 'Komponen dengan transaksi lot atau saldo awal tidak dapat dihapus'
+                    : 'Hapus ${row.instrumentType}',
+                onPressed: row.isLocked
+                    ? null
+                    : () {
+                        final next = widget.rows
+                            .where((e) => e.key != row.key)
+                            .toList();
+                        _emit(next);
+                      },
                 icon: Icon(
-                  Icons.close_rounded,
+                  row.isLocked ? Icons.lock_outline_rounded : Icons.close_rounded,
                   size: 18,
                   color: cs.onSurfaceVariant,
                 ),
