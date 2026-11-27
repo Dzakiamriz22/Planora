@@ -235,7 +235,7 @@ class FlutterLocalNotificationGateway implements NotificationGateway {
 class ReminderService {
   ReminderService(this._gateway);
 
-  static const bool expenseModuleEnabled = false;
+  static const bool expenseModuleEnabled = true;
   static const int monthlyReminderId = 1001;
   static const int dailyExpenseReminderId = 1002;
   static const int milestoneBaseId = 2000;
@@ -298,8 +298,8 @@ class ReminderService {
     if (expenseModuleEnabled && setting.reminderExpenseEnabled) {
       await _gateway.scheduleDaily(
         id: dailyExpenseReminderId,
-        title: 'Catat pengeluaran hari ini',
-        body: 'Luangkan sebentar untuk mencatat pengeluaran harianmu.',
+        title: 'Catat arus kas hari ini',
+        body: 'Luangkan sebentar untuk mencatat pemasukan atau pengeluaran hari ini.',
         hour: setting.reminderExpenseHour.clamp(0, 23),
         minute: setting.reminderExpenseMinute.clamp(0, 59),
       );

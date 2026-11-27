@@ -276,3 +276,47 @@ class StockTransactions extends Table {
   @override
   Set<Column<Object>> get primaryKey => {id};
 }
+
+
+class CashFlowCategories extends Table {
+  TextColumn get id => text()();
+  TextColumn get ownerId => text().references(UserProfiles, #id)();
+  TextColumn get type => text()(); // 'income' | 'expense'
+  TextColumn get name => text()();
+  TextColumn get icon => text().withDefault(const Constant('category'))();
+  IntColumn get color => integer().withDefault(const Constant(0xFF0E7C66))();
+  BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  BoolColumn get isHidden => boolean().withDefault(const Constant(false))();
+
+  TextColumn get createdAt => text()();
+  TextColumn get updatedAt => text()();
+  TextColumn get syncStatus => text().withDefault(const Constant('local'))();
+  TextColumn get remoteId => text().nullable()();
+  TextColumn get deletedAt => text().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+class CashFlowTransactions extends Table {
+  TextColumn get id => text()();
+  TextColumn get ownerId => text().references(UserProfiles, #id)();
+  TextColumn get type => text()(); // 'income' | 'expense'
+  TextColumn get transactionDate => text()(); // YYYY-MM-DD
+  IntColumn get amount => integer()();
+  TextColumn get categoryId => text().references(
+        CashFlowCategories,
+        #id,
+      )();
+  TextColumn get note => text().nullable()();
+
+  TextColumn get createdAt => text()();
+  TextColumn get updatedAt => text()();
+  TextColumn get syncStatus => text().withDefault(const Constant('local'))();
+  TextColumn get remoteId => text().nullable()();
+  TextColumn get deletedAt => text().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}

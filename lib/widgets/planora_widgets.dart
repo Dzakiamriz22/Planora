@@ -477,6 +477,7 @@ class PlanoraBottomNavBar extends StatelessWidget {
       (icon: Icons.home_outlined, label: 'Beranda'),
       (icon: Icons.account_balance_wallet_outlined, label: 'Porto'),
       (icon: Icons.checklist_rounded, label: 'Plan'),
+      (icon: Icons.swap_vert_rounded, label: 'Arus Kas'),
       (icon: Icons.settings_outlined, label: 'Pengaturan'),
     ];
 
@@ -526,8 +527,10 @@ class PlanoraBottomNavBar extends StatelessWidget {
                         const SizedBox(height: 3),
                         Text(
                           items[i].label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: AppTheme.manrope(
-                            size: 12,
+                            size: 11,
                             weight: FontWeight.w700,
                             color: i == currentIndex
                                 ? (isDark

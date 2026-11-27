@@ -15,6 +15,7 @@ import 'package:planora/data/db/app_database.dart';
 import 'package:planora/data/repositories/plan_repository.dart';
 import 'package:planora/data/repositories/portfolio_repository.dart';
 import 'package:planora/data/repositories/settings_repository.dart';
+import 'package:planora/features/cashflow/cash_flow_entry_sheet.dart';
 import 'package:planora/features/home/global_composition_card.dart';
 import 'package:planora/features/portfolios/contribution_sheet.dart';
 import 'package:planora/features/shared/planora_providers.dart';
@@ -106,6 +107,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final snapshots = ref.watch(portfolioSnapshotsProvider);
     final dashboard = ref.watch(dashboardDataProvider);
     final globalComp = ref.watch(globalCompositionProvider);
+    final cashFlowNow = ref.watch(currentMonthCashFlowProvider);
     final hideAmounts = ref.watch(hideAmountsProvider);
     final profile = ref.watch(userProfileStreamProvider).value;
     final setting = ref.watch(settingsStreamProvider).value;
@@ -260,6 +262,124 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 onTapPortfolio: (pid) => context.push('/portfolios/$pid'),
               ),
             ],
+
+            const SizedBox(height: 12),
+
+            // Kartu kecil Arus Kas Bulan Ini (v3.3)
+            PlanoraCard(
+              key: const Key('home_cashflow_card'),
+              onTap: () => context.go('/cashflow'),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Arus Kas Bulan Ini',
+                          style: AppTheme.manrope(
+                            size: 13.5,
+                            weight: FontWeight.w800,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => showCashFlowEntrySheet(context),
+                        icon: const Icon(Icons.add, size: 16),
+                        label: const Text('Catat'),
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Masuk',
+                              style: AppTheme.manrope(
+                                size: 11,
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                            Text(
+                              AppFormatters.rupiah(cashFlowNow.incomeActual),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTheme.manrope(
+                                size: 12.5,
+                                weight: FontWeight.w800,
+                                color: PlanoraColors.primary,
+                                tabular: true,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Keluar',
+                              style: AppTheme.manrope(
+                                size: 11,
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                            Text(
+                              AppFormatters.rupiah(cashFlowNow.expenseActual),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTheme.manrope(
+                                size: 12.5,
+                                weight: FontWeight.w800,
+                                color: PlanoraColors.danger,
+                                tabular: true,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'Sisa Kas',
+                              style: AppTheme.manrope(
+                                size: 11,
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                            Text(
+                              AppFormatters.rupiah(cashFlowNow.remainingCash),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTheme.manrope(
+                                size: 12.5,
+                                weight: FontWeight.w800,
+                                color: cashFlowNow.remainingCash < 0
+                                    ? PlanoraColors.danger
+                                    : cs.onSurface,
+                                tabular: true,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
 
             const SizedBox(height: 12),
 

@@ -24,13 +24,15 @@ part 'app_database.g.dart';
     PlanAllocations,
     PriceReferences,
     StockTransactions,
+    CashFlowCategories,
+    CashFlowTransactions,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -317,6 +319,10 @@ class AppDatabase extends _$AppDatabase {
 
           if (from < 5) {
             await migrateToV31PlanPercent(m);
+          }
+
+          if (from < 6) {
+            await migrateToV33CashFlow(m);
           }
         },
         beforeOpen: (details) async {
@@ -687,6 +693,73 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
+  Future<void> migrateToV33CashFlow([Migrator? m]) async {
+    await customStatement('PRAGMA foreign_keys = OFF');
+    try {
+      if (!await _hasTable('cash_flow_categories')) {
+        if (m != null) {
+          await m.createTable(cashFlowCategories);
+        } else {
+          await customStatement(
+            '''
+            CREATE TABLE IF NOT EXISTS cash_flow_categories (
+              id TEXT NOT NULL PRIMARY KEY,
+              owner_id TEXT NOT NULL REFERENCES user_profiles(id),
+              type TEXT NOT NULL,
+              name TEXT NOT NULL,
+              icon TEXT NOT NULL DEFAULT 'category',
+              color INTEGER NOT NULL DEFAULT 4279139430,
+              is_default INTEGER NOT NULL DEFAULT 0,
+              sort_order INTEGER NOT NULL DEFAULT 0,
+              is_hidden INTEGER NOT NULL DEFAULT 0,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL,
+              sync_status TEXT NOT NULL DEFAULT 'local',
+              remote_id TEXT,
+              deleted_at TEXT
+            )
+            ''',
+          );
+        }
+      }
+
+      if (!await _hasTable('cash_flow_transactions')) {
+        if (m != null) {
+          await m.createTable(cashFlowTransactions);
+        } else {
+          await customStatement(
+            '''
+            CREATE TABLE IF NOT EXISTS cash_flow_transactions (
+              id TEXT NOT NULL PRIMARY KEY,
+              owner_id TEXT NOT NULL REFERENCES user_profiles(id),
+              type TEXT NOT NULL,
+              transaction_date TEXT NOT NULL,
+              amount INTEGER NOT NULL,
+              category_id TEXT NOT NULL REFERENCES cash_flow_categories(id),
+              note TEXT,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL,
+              sync_status TEXT NOT NULL DEFAULT 'local',
+              remote_id TEXT,
+              deleted_at TEXT
+            )
+            ''',
+          );
+        }
+      }
+
+      final profiles = await select(userProfiles).get();
+      if (profiles.isNotEmpty) {
+        await ensureDefaultCashFlowCategories(
+          this,
+          ownerId: profiles.first.id,
+        );
+      }
+    } finally {
+      await customStatement('PRAGMA foreign_keys = ON');
+    }
+  }
+
   Future<void> ensureInitialized({DateTime? now}) async {
     await ensureEmptyInitialState(this, now: now);
   }
@@ -703,6 +776,8 @@ class AppDatabase extends _$AppDatabase {
     }
 
     await transaction(() async {
+      await delete(cashFlowTransactions).go();
+      await delete(cashFlowCategories).go();
       await delete(stockTransactions).go();
       await delete(planAllocations).go();
       await delete(portfolioComponents).go();

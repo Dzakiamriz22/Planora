@@ -1197,7 +1197,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               key: const Key('reminder_expense_switch'),
                               contentPadding: EdgeInsets.zero,
                               title: Text(
-                                'Catat pengeluaran harian',
+                                'Catat arus kas harian',
                                 style: AppTheme.manrope(
                                   size: 13,
                                   weight: FontWeight.w700,
@@ -1218,6 +1218,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 expense: v,
                               ),
                             ),
+                            if (setting.reminderExpenseEnabled) ...[
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: OutlinedButton(
+                                  onPressed: () => _pickReminderTime(
+                                    setting,
+                                    isMonthly: false,
+                                  ),
+                                  child: Text(
+                                    'Jam ${_formatTime(setting.reminderExpenseHour, setting.reminderExpenseMinute)}',
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                            ],
                           ],
                           const Divider(),
                           SwitchListTile(
@@ -1355,7 +1370,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   ),
                                 ),
                                 Text(
-                                  'Versi 3.2.0 · Penyimpanan lokal, tanpa internet',
+                                  'Versi 3.3.0 · Penyimpanan lokal, tanpa internet',
                                   style: AppTheme.manrope(
                                     size: 11.5,
                                     color: cs.onSurfaceVariant,

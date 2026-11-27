@@ -7,6 +7,7 @@ import 'package:planora/core/calc/planora_v22_calc.dart';
 import 'package:planora/core/calc/stock_lot_calc.dart';
 import 'package:planora/data/db/app_database.dart';
 import 'package:planora/data/db/database_provider.dart';
+import 'package:planora/data/db/seed_data.dart';
 import 'package:uuid/uuid.dart';
 
 class SettingsRepository {
@@ -226,6 +227,20 @@ class SettingsRepository {
             (t) => OrderingTerm.asc(t.createdAt),
           ]))
         .get();
+    final cfCategories = await (_db.select(_db.cashFlowCategories)
+          ..where((t) => t.deletedAt.isNull())
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.sortOrder),
+            (t) => OrderingTerm.asc(t.createdAt),
+          ]))
+        .get();
+    final cfTransactions = await (_db.select(_db.cashFlowTransactions)
+          ..where((t) => t.deletedAt.isNull())
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.transactionDate),
+            (t) => OrderingTerm.asc(t.createdAt),
+          ]))
+        .get();
 
     final compsByPorto = <String, List<PortfolioComponent>>{};
     for (final c in components) {
@@ -399,6 +414,36 @@ class SettingsRepository {
             },
           )
           .toList(),
+      'cash_flow_categories': cfCategories
+          .map(
+            (c) => {
+              'id': c.id,
+              'type': c.type,
+              'name': c.name,
+              'icon': c.icon,
+              'color': c.color,
+              'is_default': c.isDefault,
+              'sort_order': c.sortOrder,
+              'is_hidden': c.isHidden,
+              'created_at': c.createdAt,
+              'updated_at': c.updatedAt,
+            },
+          )
+          .toList(),
+      'cash_flow_transactions': cfTransactions
+          .map(
+            (t) => {
+              'id': t.id,
+              'type': t.type,
+              'transaction_date': t.transactionDate,
+              'amount': t.amount,
+              'category_id': t.categoryId,
+              'note': t.note,
+              'created_at': t.createdAt,
+              'updated_at': t.updatedAt,
+            },
+          )
+          .toList(),
     };
 
     return const JsonEncoder.withIndent('  ').convert(payload);
@@ -450,6 +495,8 @@ class SettingsRepository {
         .cast<Map<String, dynamic>>();
 
     await _db.transaction(() async {
+      await _db.delete(_db.cashFlowTransactions).go();
+      await _db.delete(_db.cashFlowCategories).go();
       await _db.delete(_db.stockTransactions).go();
       await _db.delete(_db.planAllocations).go();
       await _db.delete(_db.portfolioComponents).go();
@@ -991,6 +1038,57 @@ class SettingsRepository {
                 createdAt: nowIso,
                 updatedAt: nowIso,
               ),
+            );
+      }
+
+      final cfCatsJson = ((decoded['cash_flow_categories'] as List?) ?? const [])
+          .cast<Map<String, dynamic>>();
+      final cfTxsJson =
+          ((decoded['cash_flow_transactions'] as List?) ?? const [])
+              .cast<Map<String, dynamic>>();
+
+      final importedCatIds = <String>{};
+      for (final c in cfCatsJson) {
+        final cid = (c['id'] as String?) ?? _uuid.v4();
+        importedCatIds.add(cid);
+        await _db.into(_db.cashFlowCategories).insert(
+              CashFlowCategoriesCompanion.insert(
+                id: cid,
+                ownerId: ownerId,
+                type: (c['type'] as String?) == 'income' ? 'income' : 'expense',
+                name: (c['name'] as String?) ?? 'Lainnya',
+                icon: Value((c['icon'] as String?) ?? 'category'),
+                color: Value((c['color'] as num?)?.toInt() ?? 0xFF0E7C66),
+                isDefault: Value((c['is_default'] as bool?) ?? false),
+                sortOrder: Value((c['sort_order'] as num?)?.toInt() ?? 0),
+                isHidden: Value((c['is_hidden'] as bool?) ?? false),
+                createdAt: (c['created_at'] as String?) ?? nowIso,
+                updatedAt: (c['updated_at'] as String?) ?? nowIso,
+              ),
+              mode: InsertMode.insertOrIgnore,
+            );
+      }
+
+      await ensureDefaultCashFlowCategories(_db, ownerId: ownerId);
+
+      for (final tx in cfTxsJson) {
+        final cid = tx['category_id'] as String?;
+        final amt = (tx['amount'] as num?)?.toInt() ?? 0;
+        if (cid == null || !importedCatIds.contains(cid) || amt <= 0) continue;
+        await _db.into(_db.cashFlowTransactions).insert(
+              CashFlowTransactionsCompanion.insert(
+                id: (tx['id'] as String?) ?? _uuid.v4(),
+                ownerId: ownerId,
+                type: (tx['type'] as String?) == 'income' ? 'income' : 'expense',
+                transactionDate: (tx['transaction_date'] as String?) ??
+                    nowIso.substring(0, 10),
+                amount: amt,
+                categoryId: cid,
+                note: Value(tx['note'] as String?),
+                createdAt: (tx['created_at'] as String?) ?? nowIso,
+                updatedAt: (tx['updated_at'] as String?) ?? nowIso,
+              ),
+              mode: InsertMode.insertOrIgnore,
             );
       }
     });

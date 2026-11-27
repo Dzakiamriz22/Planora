@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:planora/core/calc/cash_flow_calc.dart';
 import 'package:planora/core/calc/global_composition_calc.dart';
 import 'package:planora/core/calc/plan_percent_calc.dart';
 import 'package:planora/core/calc/planora_calc.dart';
@@ -7,6 +8,7 @@ import 'package:planora/core/calc/planora_v22_calc.dart';
 import 'package:planora/core/calc/stock_lot_calc.dart';
 import 'package:planora/core/format/formatters.dart';
 import 'package:planora/data/db/app_database.dart';
+import 'package:planora/data/repositories/cash_flow_repository.dart';
 import 'package:planora/data/repositories/plan_repository.dart';
 import 'package:planora/data/repositories/portfolio_repository.dart';
 import 'package:planora/data/repositories/profile_repository.dart';
@@ -671,6 +673,84 @@ final globalCompositionProvider = Provider<GlobalCompositionSummary>((ref) {
   return GlobalCompositionCalc.compute(
     components: inputs,
     allStockTransactions: txRecords,
+  );
+});
+
+final cashFlowCategoriesStreamProvider =
+    StreamProvider<List<CashFlowCategory>>((ref) {
+  return ref.watch(cashFlowRepositoryProvider).watchCategories();
+});
+
+final cashFlowTransactionsStreamProvider =
+    StreamProvider<List<CashFlowTransaction>>((ref) {
+  return ref.watch(cashFlowRepositoryProvider).watchTransactions();
+});
+
+final cashFlowTxInputsProvider = Provider<List<CashFlowTxInput>>((ref) {
+  final txs = ref.watch(cashFlowTransactionsStreamProvider).value ?? const [];
+  final cats = ref.watch(cashFlowCategoriesStreamProvider).value ?? const [];
+  final catById = {for (final c in cats) c.id: c};
+
+  return txs.map((t) {
+    final cat = catById[t.categoryId];
+    return CashFlowTxInput(
+      id: t.id,
+      type: t.type,
+      transactionDate: t.transactionDate,
+      amount: t.amount,
+      categoryId: t.categoryId,
+      categoryName: cat?.name ?? 'Lainnya',
+      categoryColor: cat?.color ?? 0xFF64748B,
+      categoryIcon: cat?.icon ?? 'category',
+      note: t.note,
+    );
+  }).toList();
+});
+
+final cashFlowMonthlySummaryProvider =
+    Provider.family<CashFlowMonthlySummary, DateTime>((ref, month) {
+  final allTxs = ref.watch(cashFlowTxInputsProvider);
+  final contributions =
+      ref.watch(contributionsStreamProvider).value ?? const [];
+  final setting = ref.watch(settingsStreamProvider).value;
+
+  final deposits = <({DateTime date, int amount})>[];
+  for (final c in contributions) {
+    if (c.amount <= 0) continue;
+    final dt = AppFormatters.parseIsoDate(c.date);
+    if (dt != null) deposits.add((date: dt, amount: c.amount));
+  }
+
+  return CashFlowCalc.computeMonthlySummary(
+    month: month,
+    allTransactions: allTxs,
+    allPortfolioDeposits: deposits,
+    plannedMonthlySalary: setting?.monthlySalary,
+    currentLivingCost: setting?.currentLivingCost,
+    minimumLivingCost: setting?.minimumLivingCost,
+  );
+});
+
+final cashFlowMonthlyBars6mProvider =
+    Provider.family<List<CashFlowMonthlyBar>, DateTime>((ref, month) {
+  final allTxs = ref.watch(cashFlowTxInputsProvider);
+  final setting = ref.watch(settingsStreamProvider).value;
+  final budget = CashFlowCalc.resolveExpenseBudget(
+    currentLivingCost: setting?.currentLivingCost,
+    minimumLivingCost: setting?.minimumLivingCost,
+  ).amount;
+
+  return CashFlowCalc.computeMonthlyBars6m(
+    anchorMonth: month,
+    allTransactions: allTxs,
+    budgetAmount: budget,
+  );
+});
+
+final currentMonthCashFlowProvider = Provider<CashFlowMonthlySummary>((ref) {
+  final now = DateTime.now();
+  return ref.watch(
+    cashFlowMonthlySummaryProvider(DateTime(now.year, now.month)),
   );
 });
 

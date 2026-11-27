@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planora/core/theme/app_theme.dart';
+import 'package:planora/features/cashflow/cash_flow_screen.dart';
 import 'package:planora/features/home/home_screen.dart';
 import 'package:planora/features/onboarding/onboarding_screen.dart';
 import 'package:planora/features/plans/plan_form_screen.dart';
@@ -73,6 +74,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/plans',
                 builder: (context, state) => const PlansScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/cashflow',
+                builder: (context, state) => const CashFlowScreen(),
               ),
             ],
           ),
