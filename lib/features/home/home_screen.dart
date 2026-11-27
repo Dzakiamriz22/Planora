@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:planora/core/calc/global_composition_calc.dart';
 import 'package:planora/core/calc/planora_calc.dart';
 import 'package:planora/core/calc/planora_v22_calc.dart';
 import 'package:planora/core/format/formatters.dart';
@@ -14,6 +15,7 @@ import 'package:planora/data/db/app_database.dart';
 import 'package:planora/data/repositories/plan_repository.dart';
 import 'package:planora/data/repositories/portfolio_repository.dart';
 import 'package:planora/data/repositories/settings_repository.dart';
+import 'package:planora/features/home/global_composition_card.dart';
 import 'package:planora/features/portfolios/contribution_sheet.dart';
 import 'package:planora/features/shared/planora_providers.dart';
 import 'package:planora/widgets/planora_charts.dart';
@@ -38,6 +40,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _selectedMonth =
           DateTime(_selectedMonth.year, _selectedMonth.month + delta);
     });
+  }
+
+  Future<void> _toggleHideAmounts(bool nextValue) async {
+    await ref.read(settingsRepositoryProvider).setHideAmounts(nextValue);
+    final updated = await ref.read(settingsRepositoryProvider).getSettings();
+    final activePlan = ref
+        .read(plansWithAllocationsProvider)
+        .where((p) => p.plan.isActive)
+        .firstOrNull;
+    await ref.read(reminderServiceProvider).syncSchedules(
+          setting: updated,
+          activePlanName: activePlan?.plan.name,
+          activePlanTotal: activePlan?.totalMonthly ?? 0,
+        );
   }
 
   Future<void> _showScaleDownDialog(
@@ -89,6 +105,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final summary = ref.watch(financialSummaryProvider);
     final snapshots = ref.watch(portfolioSnapshotsProvider);
     final dashboard = ref.watch(dashboardDataProvider);
+    final globalComp = ref.watch(globalCompositionProvider);
+    final hideAmounts = ref.watch(hideAmountsProvider);
     final profile = ref.watch(userProfileStreamProvider).value;
     final setting = ref.watch(settingsStreamProvider).value;
     final notifAllowed =
@@ -229,7 +247,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               thisMonthDeposit: dashboard.thisMonthDeposit,
               momLabel: momSummary,
               instrumentSubtotals: sortedInstruments,
+              globalSlices: globalComp.slices,
+              hideAmounts: hideAmounts,
+              onToggleHideAmounts: () => _toggleHideAmounts(!hideAmounts),
             ),
+
+            if (!globalComp.isEmpty) ...[
+              const SizedBox(height: 12),
+              GlobalCompositionCard(
+                composition: globalComp,
+                hideAmounts: hideAmounts,
+                onTapPortfolio: (pid) => context.push('/portfolios/$pid'),
+              ),
+            ],
 
             const SizedBox(height: 12),
 
@@ -923,6 +953,9 @@ class _TotalBalanceCard extends StatelessWidget {
     required this.thisMonthDeposit,
     required this.momLabel,
     required this.instrumentSubtotals,
+    required this.globalSlices,
+    required this.hideAmounts,
+    required this.onToggleHideAmounts,
   });
 
   final int totalBalance;
@@ -931,9 +964,17 @@ class _TotalBalanceCard extends StatelessWidget {
   final int thisMonthDeposit;
   final String momLabel;
   final List<MapEntry<String, int>> instrumentSubtotals;
+  final List<GlobalInstrumentSlice> globalSlices;
+  final bool hideAmounts;
+  final VoidCallback onToggleHideAmounts;
 
   @override
   Widget build(BuildContext context) {
+    final pctByNorm = {
+      for (final s in globalSlices)
+        s.instrumentType.trim().toLowerCase(): s.actualPercent,
+    };
+
     return Container(
       decoration: BoxDecoration(
         color: PlanoraColors.primary,
@@ -998,14 +1039,35 @@ class _TotalBalanceCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  AppFormatters.rupiah(totalBalance),
-                  style: AppTheme.sora(
-                    size: 25,
-                    weight: FontWeight.w800,
-                    color: PlanoraColors.balanceText,
-                    tabular: true,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        AppFormatters.rupiah(totalBalance),
+                        style: AppTheme.sora(
+                          size: 25,
+                          weight: FontWeight.w800,
+                          color: PlanoraColors.balanceText,
+                          tabular: true,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      key: const Key('privacy_toggle_button'),
+                      tooltip: hideAmounts
+                          ? 'Tampilkan nominal'
+                          : 'Sembunyikan nominal',
+                      onPressed: onToggleHideAmounts,
+                      icon: Icon(
+                        hideAmounts
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        size: 21,
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -1024,6 +1086,8 @@ class _TotalBalanceCard extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 8,
                     children: instrumentSubtotals.map((entry) {
+                      final pct =
+                          pctByNorm[entry.key.trim().toLowerCase()] ?? 0.0;
                       return Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 11,
@@ -1038,7 +1102,9 @@ class _TotalBalanceCard extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              entry.key.toUpperCase(),
+                              pct > 0
+                                  ? '${entry.key.toUpperCase()} · ${PlanoraV22Calc.formatPercent(pct)}'
+                                  : entry.key.toUpperCase(),
                               style: AppTheme.manrope(
                                 size: 9.5,
                                 weight: FontWeight.w700,

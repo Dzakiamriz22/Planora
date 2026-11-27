@@ -27,7 +27,7 @@ class _ContributionsHistoryScreenState
       builder: (ctx) => AlertDialog(
         title: const Text('Hapus Catatan Setoran?'),
         content: Text(
-          'Setoran sebesar ${AppFormatters.rupiah(contribution.amount)} akan dihapus dan saldo porto terkait akan dihitung ulang.',
+          'Setoran sebesar ${AppFormatters.rupiah(contribution.amount, allowMask: false)} akan dihapus dan saldo porto terkait akan dihitung ulang.',
         ),
         actions: [
           TextButton(
@@ -52,6 +52,7 @@ class _ContributionsHistoryScreenState
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(hideAmountsProvider);
     final portfolios = ref.watch(portfoliosStreamProvider).value ?? const [];
     final contributionsAsync = ref.watch(contributionsStreamProvider);
     final portfolioById = {for (final p in portfolios) p.id: p};

@@ -278,7 +278,7 @@ class _PlanoraAllocationDonutChartState
                     tabular: true,
                   ),
                 ),
-                if (s.amount > 0) ...[
+                if (s.amount > 0 && !AppFormatters.hideAmounts) ...[
                   const SizedBox(width: 6),
                   Text(
                     PlanoraChartTokens.compactRupiah(s.amount),
@@ -590,8 +590,8 @@ class PlanoraBalanceAreaChart extends StatelessWidget {
                   const AxisTitles(sideTitles: SideTitles(showTitles: false)),
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 54,
+                  showTitles: !AppFormatters.hideAmounts,
+                  reservedSize: AppFormatters.hideAmounts ? 8 : 54,
                   interval: maxY / 3,
                   getTitlesWidget: (value, meta) {
                     if (value == meta.max) return const SizedBox.shrink();
@@ -752,8 +752,8 @@ class PlanoraMonthlyStackedBarChart extends StatelessWidget {
                   const AxisTitles(sideTitles: SideTitles(showTitles: false)),
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 54,
+                  showTitles: !AppFormatters.hideAmounts,
+                  reservedSize: AppFormatters.hideAmounts ? 8 : 54,
                   interval: maxY / 3,
                   getTitlesWidget: (v, meta) {
                     if (v == meta.max) return const SizedBox.shrink();

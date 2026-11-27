@@ -190,6 +190,7 @@ class PlansScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final plans = ref.watch(plansWithAllocationsProvider);
+    ref.watch(hideAmountsProvider);
     final portfolios = ref.watch(portfoliosStreamProvider).value ?? const [];
     final summary = ref.watch(financialSummaryProvider);
     final cs = Theme.of(context).colorScheme;

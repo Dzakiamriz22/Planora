@@ -34,6 +34,7 @@ class _PortfoliosScreenState extends ConsumerState<PortfoliosScreen> {
   @override
   Widget build(BuildContext context) {
     final portfoliosAsync = ref.watch(portfoliosStreamProvider);
+    ref.watch(hideAmountsProvider);
     final snapshots = ref.watch(portfolioSnapshotsProvider);
     final cs = Theme.of(context).colorScheme;
 

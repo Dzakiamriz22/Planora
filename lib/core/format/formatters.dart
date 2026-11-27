@@ -11,7 +11,11 @@ class AppFormatters {
 
   static final NumberFormat _numberFormat = NumberFormat.decimalPattern('id_ID');
 
-  static String rupiah(int amount) {
+  static const String maskedRupiah = 'Rp ••••••';
+  static bool hideAmounts = false;
+
+  static String rupiah(int amount, {bool allowMask = true}) {
+    if (allowMask && hideAmounts) return maskedRupiah;
     final isNegative = amount < 0;
     final formatted = _rupiahFormat.format(amount.abs()).replaceAll('\u00A0', ' ');
     return isNegative ? '-$formatted' : formatted;
@@ -21,7 +25,8 @@ class AppFormatters {
     return _numberFormat.format(amount);
   }
 
-  static String compactRupiah(int amount) {
+  static String compactRupiah(int amount, {bool allowMask = true}) {
+    if (allowMask && hideAmounts) return maskedRupiah;
     final abs = amount.abs();
     final prefix = amount < 0 ? '-Rp ' : 'Rp ';
     if (abs >= 1000000000) {

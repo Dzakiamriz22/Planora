@@ -327,6 +327,12 @@ class AppDatabase extends _$AppDatabase {
               'ALTER TABLE plan_allocations ADD COLUMN fixed_amount INTEGER',
             );
           }
+          if (await _hasTable('settings') &&
+              !await _hasColumn('settings', 'hide_amounts')) {
+            await customStatement(
+              'ALTER TABLE settings ADD COLUMN hide_amounts INTEGER NOT NULL DEFAULT 0',
+            );
+          }
         },
       );
 

@@ -64,6 +64,9 @@ class Settings extends Table {
   BoolColumn get reminderMilestoneEnabled =>
       boolean().withDefault(const Constant(false))();
 
+  BoolColumn get hideAmounts =>
+      boolean().withDefault(const Constant(false))();
+
   TextColumn get createdAt => text()();
   TextColumn get updatedAt => text()();
   TextColumn get syncStatus => text().withDefault(const Constant('local'))();

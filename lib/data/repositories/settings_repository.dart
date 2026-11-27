@@ -156,6 +156,17 @@ class SettingsRepository {
     );
   }
 
+  Future<void> setHideAmounts(bool hide) async {
+    final current = await getSettings();
+    await (_db.update(_db.settings)..where((t) => t.id.equals(current.id)))
+        .write(
+      SettingsCompanion(
+        hideAmounts: Value(hide),
+        updatedAt: Value(DateTime.now().toUtc().toIso8601String()),
+      ),
+    );
+  }
+
   Future<void> updateReminderSettings({
     bool? reminderMonthlyEnabled,
     int? reminderMonthlyDay,
@@ -250,6 +261,7 @@ class SettingsRepository {
         'onboarding_done': settingsRow.onboardingDone,
         'component_input_mode': settingsRow.componentInputMode,
         'quote_card_dismissed_month': settingsRow.quoteCardDismissedMonth,
+        'hide_amounts': settingsRow.hideAmounts,
       },
       'portfolios': portfolios
           .map(
@@ -511,6 +523,9 @@ class SettingsRepository {
               ),
               quoteCardDismissedMonth: Value(
                 settingsJson['quote_card_dismissed_month'] as String?,
+              ),
+              hideAmounts: Value(
+                (settingsJson['hide_amounts'] as bool?) ?? false,
               ),
               seedVersion: const Value(3),
               createdAt: nowIso,

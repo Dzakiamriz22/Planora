@@ -806,6 +806,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final settingsAsync = ref.watch(settingsStreamProvider);
+    ref.watch(hideAmountsProvider);
     final profile = ref.watch(userProfileStreamProvider).value;
     final refs = ref.watch(priceReferencesStreamProvider).value ?? const [];
     final cs = Theme.of(context).colorScheme;
@@ -978,6 +979,62 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           color: cs.onSurfaceVariant,
                           height: 1.4,
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                PlanoraCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Tampilan & Privasi',
+                        style: AppTheme.manrope(
+                          size: 13.5,
+                          weight: FontWeight.w800,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      SwitchListTile(
+                        key: const Key('privacy_mode_switch'),
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          'Sembunyikan nominal',
+                          style: AppTheme.manrope(
+                            size: 13,
+                            weight: FontWeight.w700,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Samarkan semua angka rupiah di layar dan isi notifikasi. Persentase tetap ditampilkan.',
+                          style: AppTheme.manrope(
+                            size: 12,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                        value: setting.hideAmounts,
+                        onChanged: (v) async {
+                          await ref
+                              .read(settingsRepositoryProvider)
+                              .setHideAmounts(v);
+                          final updated = await ref
+                              .read(settingsRepositoryProvider)
+                              .getSettings();
+                          final activePlan = ref
+                              .read(plansWithAllocationsProvider)
+                              .where((p) => p.plan.isActive)
+                              .firstOrNull;
+                          await ref.read(reminderServiceProvider).syncSchedules(
+                                setting: updated,
+                                activePlanName: activePlan?.plan.name,
+                                activePlanTotal: activePlan?.totalMonthly ?? 0,
+                              );
+                        },
                       ),
                     ],
                   ),
@@ -1298,7 +1355,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   ),
                                 ),
                                 Text(
-                                  'Versi 3.1.0 · Penyimpanan lokal, tanpa internet',
+                                  'Versi 3.2.0 · Penyimpanan lokal, tanpa internet',
                                   style: AppTheme.manrope(
                                     size: 11.5,
                                     color: cs.onSurfaceVariant,

@@ -266,11 +266,23 @@ class ReminderService {
     }
 
     if (setting.reminderMonthlyEnabled) {
-      final planLabel = activePlanName != null && activePlanName.isNotEmpty
-          ? '$activePlanName (${AppFormatters.rupiah(activePlanTotal)})'
-          : (activePlanTotal > 0
-              ? 'rencana setoran ${AppFormatters.rupiah(activePlanTotal)}'
-              : 'rencana setoran bulananmu');
+      final hasPlanName = activePlanName != null && activePlanName.isNotEmpty;
+      final String planLabel;
+      if (setting.hideAmounts) {
+        planLabel = hasPlanName
+            ? activePlanName
+            : 'rencana setoran bulananmu';
+      } else {
+        final formattedTotal = AppFormatters.rupiah(
+          activePlanTotal,
+          allowMask: false,
+        );
+        planLabel = hasPlanName
+            ? '$activePlanName ($formattedTotal)'
+            : (activePlanTotal > 0
+                ? 'rencana setoran $formattedTotal'
+                : 'rencana setoran bulananmu');
+      }
       await _gateway.scheduleMonthly(
         id: monthlyReminderId,
         title: 'Waktunya setor bulan ini',

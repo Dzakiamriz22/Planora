@@ -1172,6 +1172,21 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
         ),
         defaultValue: const Constant(false),
       );
+  static const VerificationMeta _hideAmountsMeta = const VerificationMeta(
+    'hideAmounts',
+  );
+  @override
+  late final GeneratedColumn<bool> hideAmounts = GeneratedColumn<bool>(
+    'hide_amounts',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("hide_amounts" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1250,6 +1265,7 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
     reminderExpenseHour,
     reminderExpenseMinute,
     reminderMilestoneEnabled,
+    hideAmounts,
     createdAt,
     updatedAt,
     syncStatus,
@@ -1443,6 +1459,15 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
         ),
       );
     }
+    if (data.containsKey('hide_amounts')) {
+      context.handle(
+        _hideAmountsMeta,
+        hideAmounts.isAcceptableOrUnknown(
+          data['hide_amounts']!,
+          _hideAmountsMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1566,6 +1591,10 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
         DriftSqlType.bool,
         data['${effectivePrefix}reminder_milestone_enabled'],
       )!,
+      hideAmounts: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}hide_amounts'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}created_at'],
@@ -1616,6 +1645,7 @@ class Setting extends DataClass implements Insertable<Setting> {
   final int reminderExpenseHour;
   final int reminderExpenseMinute;
   final bool reminderMilestoneEnabled;
+  final bool hideAmounts;
   final String createdAt;
   final String updatedAt;
   final String syncStatus;
@@ -1642,6 +1672,7 @@ class Setting extends DataClass implements Insertable<Setting> {
     required this.reminderExpenseHour,
     required this.reminderExpenseMinute,
     required this.reminderMilestoneEnabled,
+    required this.hideAmounts,
     required this.createdAt,
     required this.updatedAt,
     required this.syncStatus,
@@ -1685,6 +1716,7 @@ class Setting extends DataClass implements Insertable<Setting> {
     map['reminder_milestone_enabled'] = Variable<bool>(
       reminderMilestoneEnabled,
     );
+    map['hide_amounts'] = Variable<bool>(hideAmounts);
     map['created_at'] = Variable<String>(createdAt);
     map['updated_at'] = Variable<String>(updatedAt);
     map['sync_status'] = Variable<String>(syncStatus);
@@ -1729,6 +1761,7 @@ class Setting extends DataClass implements Insertable<Setting> {
       reminderExpenseHour: Value(reminderExpenseHour),
       reminderExpenseMinute: Value(reminderExpenseMinute),
       reminderMilestoneEnabled: Value(reminderMilestoneEnabled),
+      hideAmounts: Value(hideAmounts),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       syncStatus: Value(syncStatus),
@@ -1787,6 +1820,7 @@ class Setting extends DataClass implements Insertable<Setting> {
       reminderMilestoneEnabled: serializer.fromJson<bool>(
         json['reminderMilestoneEnabled'],
       ),
+      hideAmounts: serializer.fromJson<bool>(json['hideAmounts']),
       createdAt: serializer.fromJson<String>(json['createdAt']),
       updatedAt: serializer.fromJson<String>(json['updatedAt']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
@@ -1824,6 +1858,7 @@ class Setting extends DataClass implements Insertable<Setting> {
       'reminderMilestoneEnabled': serializer.toJson<bool>(
         reminderMilestoneEnabled,
       ),
+      'hideAmounts': serializer.toJson<bool>(hideAmounts),
       'createdAt': serializer.toJson<String>(createdAt),
       'updatedAt': serializer.toJson<String>(updatedAt),
       'syncStatus': serializer.toJson<String>(syncStatus),
@@ -1853,6 +1888,7 @@ class Setting extends DataClass implements Insertable<Setting> {
     int? reminderExpenseHour,
     int? reminderExpenseMinute,
     bool? reminderMilestoneEnabled,
+    bool? hideAmounts,
     String? createdAt,
     String? updatedAt,
     String? syncStatus,
@@ -1893,6 +1929,7 @@ class Setting extends DataClass implements Insertable<Setting> {
     reminderExpenseMinute: reminderExpenseMinute ?? this.reminderExpenseMinute,
     reminderMilestoneEnabled:
         reminderMilestoneEnabled ?? this.reminderMilestoneEnabled,
+    hideAmounts: hideAmounts ?? this.hideAmounts,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     syncStatus: syncStatus ?? this.syncStatus,
@@ -1957,6 +1994,9 @@ class Setting extends DataClass implements Insertable<Setting> {
       reminderMilestoneEnabled: data.reminderMilestoneEnabled.present
           ? data.reminderMilestoneEnabled.value
           : this.reminderMilestoneEnabled,
+      hideAmounts: data.hideAmounts.present
+          ? data.hideAmounts.value
+          : this.hideAmounts,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       syncStatus: data.syncStatus.present
@@ -1990,6 +2030,7 @@ class Setting extends DataClass implements Insertable<Setting> {
           ..write('reminderExpenseHour: $reminderExpenseHour, ')
           ..write('reminderExpenseMinute: $reminderExpenseMinute, ')
           ..write('reminderMilestoneEnabled: $reminderMilestoneEnabled, ')
+          ..write('hideAmounts: $hideAmounts, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('syncStatus: $syncStatus, ')
@@ -2021,6 +2062,7 @@ class Setting extends DataClass implements Insertable<Setting> {
     reminderExpenseHour,
     reminderExpenseMinute,
     reminderMilestoneEnabled,
+    hideAmounts,
     createdAt,
     updatedAt,
     syncStatus,
@@ -2051,6 +2093,7 @@ class Setting extends DataClass implements Insertable<Setting> {
           other.reminderExpenseHour == this.reminderExpenseHour &&
           other.reminderExpenseMinute == this.reminderExpenseMinute &&
           other.reminderMilestoneEnabled == this.reminderMilestoneEnabled &&
+          other.hideAmounts == this.hideAmounts &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.syncStatus == this.syncStatus &&
@@ -2079,6 +2122,7 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
   final Value<int> reminderExpenseHour;
   final Value<int> reminderExpenseMinute;
   final Value<bool> reminderMilestoneEnabled;
+  final Value<bool> hideAmounts;
   final Value<String> createdAt;
   final Value<String> updatedAt;
   final Value<String> syncStatus;
@@ -2106,6 +2150,7 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     this.reminderExpenseHour = const Value.absent(),
     this.reminderExpenseMinute = const Value.absent(),
     this.reminderMilestoneEnabled = const Value.absent(),
+    this.hideAmounts = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.syncStatus = const Value.absent(),
@@ -2134,6 +2179,7 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     this.reminderExpenseHour = const Value.absent(),
     this.reminderExpenseMinute = const Value.absent(),
     this.reminderMilestoneEnabled = const Value.absent(),
+    this.hideAmounts = const Value.absent(),
     required String createdAt,
     required String updatedAt,
     this.syncStatus = const Value.absent(),
@@ -2165,6 +2211,7 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     Expression<int>? reminderExpenseHour,
     Expression<int>? reminderExpenseMinute,
     Expression<bool>? reminderMilestoneEnabled,
+    Expression<bool>? hideAmounts,
     Expression<String>? createdAt,
     Expression<String>? updatedAt,
     Expression<String>? syncStatus,
@@ -2204,6 +2251,7 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
         'reminder_expense_minute': reminderExpenseMinute,
       if (reminderMilestoneEnabled != null)
         'reminder_milestone_enabled': reminderMilestoneEnabled,
+      if (hideAmounts != null) 'hide_amounts': hideAmounts,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (syncStatus != null) 'sync_status': syncStatus,
@@ -2234,6 +2282,7 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     Value<int>? reminderExpenseHour,
     Value<int>? reminderExpenseMinute,
     Value<bool>? reminderMilestoneEnabled,
+    Value<bool>? hideAmounts,
     Value<String>? createdAt,
     Value<String>? updatedAt,
     Value<String>? syncStatus,
@@ -2269,6 +2318,7 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
           reminderExpenseMinute ?? this.reminderExpenseMinute,
       reminderMilestoneEnabled:
           reminderMilestoneEnabled ?? this.reminderMilestoneEnabled,
+      hideAmounts: hideAmounts ?? this.hideAmounts,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       syncStatus: syncStatus ?? this.syncStatus,
@@ -2355,6 +2405,9 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
         reminderMilestoneEnabled.value,
       );
     }
+    if (hideAmounts.present) {
+      map['hide_amounts'] = Variable<bool>(hideAmounts.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<String>(createdAt.value);
     }
@@ -2399,6 +2452,7 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
           ..write('reminderExpenseHour: $reminderExpenseHour, ')
           ..write('reminderExpenseMinute: $reminderExpenseMinute, ')
           ..write('reminderMilestoneEnabled: $reminderMilestoneEnabled, ')
+          ..write('hideAmounts: $hideAmounts, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('syncStatus: $syncStatus, ')
@@ -9818,6 +9872,7 @@ typedef $$SettingsTableCreateCompanionBuilder = SettingsCompanion Function({
   Value<int> reminderExpenseHour,
   Value<int> reminderExpenseMinute,
   Value<bool> reminderMilestoneEnabled,
+  Value<bool> hideAmounts,
   required String createdAt,
   required String updatedAt,
   Value<String> syncStatus,
@@ -9846,6 +9901,7 @@ typedef $$SettingsTableUpdateCompanionBuilder = SettingsCompanion Function({
   Value<int> reminderExpenseHour,
   Value<int> reminderExpenseMinute,
   Value<bool> reminderMilestoneEnabled,
+  Value<bool> hideAmounts,
   Value<String> createdAt,
   Value<String> updatedAt,
   Value<String> syncStatus,
@@ -9977,6 +10033,11 @@ class $$SettingsTableFilterComposer
 
   ColumnFilters<bool> get reminderMilestoneEnabled => $composableBuilder(
     column: $table.reminderMilestoneEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hideAmounts => $composableBuilder(
+    column: $table.hideAmounts,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10133,6 +10194,11 @@ class $$SettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get hideAmounts => $composableBuilder(
+    column: $table.hideAmounts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -10284,6 +10350,11 @@ class $$SettingsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get hideAmounts => $composableBuilder(
+    column: $table.hideAmounts,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -10373,6 +10444,7 @@ class $$SettingsTableTableManager
                 Value<int> reminderExpenseHour = const Value.absent(),
                 Value<int> reminderExpenseMinute = const Value.absent(),
                 Value<bool> reminderMilestoneEnabled = const Value.absent(),
+                Value<bool> hideAmounts = const Value.absent(),
                 Value<String> createdAt = const Value.absent(),
                 Value<String> updatedAt = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
@@ -10400,6 +10472,7 @@ class $$SettingsTableTableManager
                 reminderExpenseHour: reminderExpenseHour,
                 reminderExpenseMinute: reminderExpenseMinute,
                 reminderMilestoneEnabled: reminderMilestoneEnabled,
+                hideAmounts: hideAmounts,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 syncStatus: syncStatus,
@@ -10429,6 +10502,7 @@ class $$SettingsTableTableManager
                 Value<int> reminderExpenseHour = const Value.absent(),
                 Value<int> reminderExpenseMinute = const Value.absent(),
                 Value<bool> reminderMilestoneEnabled = const Value.absent(),
+                Value<bool> hideAmounts = const Value.absent(),
                 required String createdAt,
                 required String updatedAt,
                 Value<String> syncStatus = const Value.absent(),
@@ -10456,6 +10530,7 @@ class $$SettingsTableTableManager
                 reminderExpenseHour: reminderExpenseHour,
                 reminderExpenseMinute: reminderExpenseMinute,
                 reminderMilestoneEnabled: reminderMilestoneEnabled,
+                hideAmounts: hideAmounts,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 syncStatus: syncStatus,

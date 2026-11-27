@@ -153,6 +153,7 @@ class PlanoraApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
     final profile = ref.watch(userProfileStreamProvider).value;
+    ref.watch(hideAmountsProvider);
 
     final themeMode = switch (profile?.themePref) {
       'terang' => ThemeMode.light,

@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:planora/core/format/formatters.dart';
 
 class PlanoraChartTokens {
   PlanoraChartTokens._();
@@ -83,7 +84,10 @@ class PlanoraChartTokens {
     return Icons.category_outlined;
   }
 
-  static String compactRupiah(int amount) {
+  static String compactRupiah(int amount, {bool allowMask = true}) {
+    if (allowMask && AppFormatters.hideAmounts) {
+      return AppFormatters.maskedRupiah;
+    }
     final abs = amount.abs();
     final sign = amount < 0 ? '-' : '';
     if (abs >= 1000000000) {

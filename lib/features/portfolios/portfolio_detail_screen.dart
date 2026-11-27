@@ -44,7 +44,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('Hapus Transaksi Saham?'),
         content: Text(
-          'Transaksi $sideLabel ${tx.ticker} ${tx.lots} lot (${AppFormatters.rupiah(tx.totalAmount)}) akan dihapus. Posisi, harga rata-rata, dan setoran terkait akan dihitung ulang.',
+          'Transaksi $sideLabel ${tx.ticker} ${tx.lots} lot (${AppFormatters.rupiah(tx.totalAmount, allowMask: false)}) akan dihapus. Posisi, harga rata-rata, dan setoran terkait akan dihitung ulang.',
         ),
         actions: [
           TextButton(
@@ -155,7 +155,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('Hapus Catatan Setoran?'),
         content: Text(
-          'Setoran sebesar ${AppFormatters.rupiah(contribution.amount)} akan dihapus dan saldo porto akan dihitung ulang.',
+          'Setoran sebesar ${AppFormatters.rupiah(contribution.amount, allowMask: false)} akan dihapus dan saldo porto akan dihitung ulang.',
         ),
         actions: [
           TextButton(
@@ -654,6 +654,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final snapshots = ref.watch(portfolioSnapshotsProvider);
+    ref.watch(hideAmountsProvider);
     final snap = snapshots
         .where((s) => s.portfolio.id == widget.portfolioId)
         .firstOrNull;

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:planora/core/calc/global_composition_calc.dart';
 import 'package:planora/core/calc/plan_percent_calc.dart';
 import 'package:planora/core/calc/planora_calc.dart';
 import 'package:planora/core/calc/planora_v22_calc.dart';
@@ -615,5 +616,61 @@ final plansWithAllocationsProvider =
       fixedAmountsByPortfolioId: useExactFixed ? fixedMap : null,
     );
   }).toList();
+});
+
+final hideAmountsProvider = Provider<bool>((ref) {
+  final hide = ref.watch(settingsStreamProvider).value?.hideAmounts ?? false;
+  AppFormatters.hideAmounts = hide;
+  return hide;
+});
+
+final globalCompositionProvider = Provider<GlobalCompositionSummary>((ref) {
+  final snapshots = ref.watch(portfolioSnapshotsProvider);
+  final stockTxs =
+      ref.watch(allStockTransactionsStreamProvider).value ?? const [];
+
+  final inputs = <GlobalComponentInput>[];
+  for (final snap in snapshots) {
+    final p = snap.portfolio;
+    final isNoTarget = p.category == 'no_target' ||
+        p.savedTarget == null ||
+        p.savedTarget! <= 0;
+    for (final c in snap.components) {
+      inputs.add(
+        GlobalComponentInput(
+          portfolioId: p.id,
+          portfolioName: p.name,
+          portfolioColor: p.color,
+          isNoTarget: isNoTarget,
+          portfolioTargetTotal: p.savedTarget ?? 0,
+          instrumentType: c.instrumentType,
+          actualAmount: c.actualAmount,
+          targetPercent: c.targetPercent,
+          isLotBased: c.mechanism == StockLotCalc.mechanismLotBased,
+        ),
+      );
+    }
+  }
+
+  final txRecords = stockTxs
+      .map(
+        (t) => StockTxRecord(
+          id: t.id,
+          ticker: t.ticker,
+          side: t.side,
+          lots: t.lots,
+          shares: t.shares,
+          pricePerShare: t.pricePerShare,
+          totalAmount: t.totalAmount,
+          transactionDate: t.transactionDate,
+          createdAt: t.createdAt,
+        ),
+      )
+      .toList();
+
+  return GlobalCompositionCalc.compute(
+    components: inputs,
+    allStockTransactions: txRecords,
+  );
 });
 
